@@ -1,0 +1,4 @@
+# environment config (dev / prod)
+spring:
+  profiles:
+    active: dev

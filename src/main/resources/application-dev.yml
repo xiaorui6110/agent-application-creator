@@ -1,0 +1,92 @@
+# dev environment（生产环境）
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
+  tomcat:
+    max-connections: 1000
+    accept-count: 100
+    connection-timeout: 20000
+spring:
+  application:
+    name: agent-application-creator
+  # 文件上传设置
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      enabled: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/xiaorui_app_creator
+    username: root
+    password: 123456
+  # Session 配置
+  session:
+    redis:
+      namespace: "xiaorui:session" # 定义存储在 Redis 中的 session 数据的命名空间
+      flush-mode: on_save  # 每次保存或更新 session 时立即将数据同步到 Redis
+      save-mode: always  # 每次请求结束时都保存 session
+  # 邮箱配置
+  mail:
+    username: 368649957@qq.com
+    password: ozxbkjocwsaicbag  # 邮箱授权码
+    host: smtp.qq.com  # SMTP服务器地址
+    port: 465  # SMTP服务器端口
+  security:
+    user:
+      name: xiaorui
+      password: 123456
+  # Redis 配置
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 3
+      # Redis 密码，如果有的话
+      #password: 123456
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 16
+          min-idle: 4
+          max-wait: 3000ms
+        shutdown-timeout: 200ms
+      # 若服务器未配置淘汰策略，可添加：
+      # max-memory-policy: volatile-random
+# Mybaits-Plus 配置
+mybatis-plus:
+  configuration:
+    # 驼峰命名开启
+    map-underscore-to-camel-case: true
+    # 仅在开发环境开启日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  # MyBatis Mapper所对应的XML文件位置
+  mapper-locations: classpath*:/mapper/*Mapper.xml
+  global-config:
+    # 关闭MP3.0自带的banner
+    banner: false
+    db-config:
+      # 使用数据库自增 ID 作为主键
+      id-type: AUTO
+      # 默认数据库表下划线命名
+      table-underline: true
+# springdoc-openapi（4 版本的 knife4j 接口文档依赖于 springdoc）
+springdoc:
+  group-configs:
+    - group: 'default'
+      packages-to-scan: com.xiaorui.agentapplicationcreator.controller
+# knife4j 接口文档
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
