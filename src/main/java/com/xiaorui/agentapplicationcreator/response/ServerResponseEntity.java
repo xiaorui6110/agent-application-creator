@@ -59,7 +59,7 @@ public class ServerResponseEntity<T> implements Serializable {
 
     public ServerResponseEntity() {
         // 版本号
-        this.version = "xiaorui-mail-001";
+        this.version = "xiaorui-agent-app-creator-001";
         // 时间戳
         this.timestamp = System.currentTimeMillis();
         // 签名

@@ -75,7 +75,7 @@
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session-data-redis</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
+        <!-- AOP切面编程 @https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
@@ -87,18 +87,35 @@
             <version>3.0.5</version>
             <scope>test</scope>
         </dependency>
-        <!-- MyBatisPlus框架 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter -->
+        <!-- mybatis-flex框架 @https://mybatis-flex.com/zh/intro/getting-started.html-->
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.5.10.1</version>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-spring-boot3-starter</artifactId>
+            <version>1.11.4</version>
         </dependency>
-        <!-- MyBatisPlus分页插件 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-jsqlparser -->
+        <!-- mybatis-flex代码生成模块 @https://mybatis-flex.com/zh/others/codegen.html -->
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
-            <version>3.5.10.1</version>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-codegen</artifactId>
+            <version>1.11.4</version>
         </dependency>
+        <!-- mysql数据库连接池 -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+        <!--        &lt;!&ndash; MyBatisPlus框架 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.baomidou</groupId>-->
+<!--            <artifactId>mybatis-plus-boot-starter</artifactId>-->
+<!--            <version>3.5.10.1</version>-->
+<!--        </dependency>-->
+<!--        &lt;!&ndash; MyBatisPlus分页插件 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-jsqlparser &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.baomidou</groupId>-->
+<!--            <artifactId>mybatis-plus-jsqlparser</artifactId>-->
+<!--            <version>3.5.10.1</version>-->
+<!--        </dependency>-->
         <!-- hutool工具库 @https://doc.hutool.cn/pages/index/#%F0%9F%8D%8Amaven -->
         <dependency>
             <groupId>cn.hutool</groupId>
