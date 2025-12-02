@@ -7,6 +7,7 @@ import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -114,5 +115,13 @@ public interface UserService extends IService<User> {
      * @return 是否成功
      */
     boolean resetUserPassword(String userEmail, String emailVerifyCode, String newPassword, String checkPassword);
+
+    /**
+     * 修改用户头像（上传本地文件修改头像）
+     *
+     * @param multipartFile 文件
+     * @return 上传图片的 URL
+     */
+    String updateUserAvatar(MultipartFile multipartFile);
 
 }

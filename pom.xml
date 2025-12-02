@@ -87,7 +87,7 @@
             <version>3.0.5</version>
             <scope>test</scope>
         </dependency>
-        <!-- mybatis-flex框架 @https://mybatis-flex.com/zh/intro/getting-started.html-->
+        <!-- mybatis-flex框架（代替MyBatisPlus） @https://mybatis-flex.com/zh/intro/getting-started.html-->
         <dependency>
             <groupId>com.mybatis-flex</groupId>
             <artifactId>mybatis-flex-spring-boot3-starter</artifactId>
@@ -170,7 +170,12 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.8.1</version>
         </dependency>
-
+        <!-- minIO存储桶 @https://github.com/minio/minio-java -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.9</version>
+        </dependency>
     </dependencies>
 
     <build>

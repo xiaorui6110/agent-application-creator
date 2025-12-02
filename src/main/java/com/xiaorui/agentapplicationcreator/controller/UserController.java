@@ -7,24 +7,17 @@ import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.model.dto.user.*;
+import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
+import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.utils.SecurityUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import com.xiaorui.agentapplicationcreator.model.entity.User;
-import com.xiaorui.agentapplicationcreator.service.UserService;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -185,6 +178,15 @@ public class UserController {
     }
 
     /**
+     * 更新用户头像（本地文件上传）
+     */
+    @PostMapping("/updateAvatar")
+    public ServerResponseEntity<String> updateUserAvatar(MultipartFile multipartFile) {
+        String result = userService.updateUserAvatar(multipartFile);
+        return ServerResponseEntity.success(result);
+    }
+
+    /**
      * 获得脱敏后的用户信息
      */
     private UserVO getUserVO(User user) {
@@ -207,6 +209,5 @@ public class UserController {
                 .map(this::getUserVO)
                 .collect(Collectors.toList());
     }
-
 
 }

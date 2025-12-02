@@ -13,9 +13,11 @@ import com.xiaorui.agentapplicationcreator.enums.UserStatusEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.minio.FileManager;
 import com.xiaorui.agentapplicationcreator.manager.password.PasswordCheckManager;
 import com.xiaorui.agentapplicationcreator.manager.token.TokenStoreManager;
 import com.xiaorui.agentapplicationcreator.model.bo.UserInfoInTokenBO;
+import com.xiaorui.agentapplicationcreator.model.dto.file.UploadPictureResult;
 import com.xiaorui.agentapplicationcreator.model.dto.user.UserQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.mapper.UserMapper;
@@ -31,11 +33,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +73,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
 
     @Resource
     private TokenStoreManager tokenStoreManager;
+
+    @Resource
+    private FileManager fileManager;
 
     /**
      * 用户注册（使用邮箱进行注册）
@@ -128,7 +133,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             if (!result) {
                 throw new BusinessException(ErrorCode.OPERATION_ERROR,"用户注册失败");
             }
-            log.info("user register success : {}",user.getUserId());
+            log.info("user register success : {}", user.getUserId());
             // 删除验证码
             stringRedisTemplate.delete(verifyCodeKey);
             // 返回用户ID
@@ -388,7 +393,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             if (!updateResult) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR,"修改邮箱失败");
             }
-            log.info("user change email success : {}",userId);
+            log.info("user change email success : {}", userId);
             // 删除验证码
             stringRedisTemplate.delete(verifyCodeKey);
             // 返回修改结果
@@ -439,7 +444,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (!updateResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"修改密码失败");
         }
-        log.info("user change password success : {}",userId);
+        log.info("user change password success : {}", userId);
         return true;
     }
 
@@ -492,11 +497,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (!updateResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"重置密码失败");
         }
-        log.info("user reset password success : {}",userId);
+        log.info("user reset password success : {}", userId);
         // 删除验证码
         stringRedisTemplate.delete(verifyCodeKey);
         return true;
     }
 
-
+    /**
+     * 修改用户头像（上传本地文件修改头像）
+     * @param multipartFile 文件
+     * @return 上传图片的 URL
+     */
+    @Override
+    public String updateUserAvatar(MultipartFile multipartFile) {
+        // 查询用户信息
+        String userId = SecurityUtil.getUser().getUserId();
+        User loginUser = this.mapper.selectOneById(userId);
+        ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+        // 判断文件是否为空
+        ThrowUtil.throwIf(multipartFile.isEmpty(), ErrorCode.PARAMS_ERROR,"文件不能为空");
+        // 上传图片，得到图片信息（头像文件直接存放在avatar文件夹中，就不做进一步的分类了）
+        String uploadPathPrefix = "avatar";
+        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        // 更新用户头像
+        loginUser.setUserAvatar(uploadPictureResult.getPicUrl());
+        // 更新MySQL
+        boolean result = mapper.update(loginUser) > 0;
+        log.info("user change avatar success : {}", userId);
+        ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR,"修改头像失败");
+        return uploadPictureResult.getPicUrl();
+    }
 }
