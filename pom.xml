@@ -75,7 +75,7 @@
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session-data-redis</artifactId>
         </dependency>
-        <!-- AOP切面编程 @https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
+        <!-- AOP 切面编程 @https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
@@ -87,54 +87,54 @@
             <version>3.0.5</version>
             <scope>test</scope>
         </dependency>
-        <!-- mybatis-flex框架（代替MyBatisPlus） @https://mybatis-flex.com/zh/intro/getting-started.html-->
+        <!-- mybatis-flex 框架（代替 MyBatisPlus） @https://mybatis-flex.com/zh/intro/getting-started.html-->
         <dependency>
             <groupId>com.mybatis-flex</groupId>
             <artifactId>mybatis-flex-spring-boot3-starter</artifactId>
             <version>1.11.4</version>
         </dependency>
-        <!-- mybatis-flex代码生成模块 @https://mybatis-flex.com/zh/others/codegen.html -->
+        <!-- mybatis-flex 代码生成模块 @https://mybatis-flex.com/zh/others/codegen.html -->
         <dependency>
             <groupId>com.mybatis-flex</groupId>
             <artifactId>mybatis-flex-codegen</artifactId>
             <version>1.11.4</version>
         </dependency>
-        <!-- mysql数据库连接池 -->
+        <!-- mysql 数据库连接池 -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
         </dependency>
-        <!--        &lt;!&ndash; MyBatisPlus框架 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter &ndash;&gt;-->
+        <!--        &lt;!&ndash; MyBatisPlus 框架 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter &ndash;&gt;-->
 <!--        <dependency>-->
 <!--            <groupId>com.baomidou</groupId>-->
 <!--            <artifactId>mybatis-plus-boot-starter</artifactId>-->
 <!--            <version>3.5.10.1</version>-->
 <!--        </dependency>-->
-<!--        &lt;!&ndash; MyBatisPlus分页插件 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-jsqlparser &ndash;&gt;-->
+<!--        &lt;!&ndash; MyBatisPlus 分页插件 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-jsqlparser &ndash;&gt;-->
 <!--        <dependency>-->
 <!--            <groupId>com.baomidou</groupId>-->
 <!--            <artifactId>mybatis-plus-jsqlparser</artifactId>-->
 <!--            <version>3.5.10.1</version>-->
 <!--        </dependency>-->
-        <!-- hutool工具库 @https://doc.hutool.cn/pages/index/#%F0%9F%8D%8Amaven -->
+        <!-- hutool 工具库 @https://doc.hutool.cn/pages/index/#%F0%9F%8D%8Amaven -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>5.8.38</version>
         </dependency>
-        <!-- knife4j接口文档 @https://doc.xiaominfo.com/docs/quick-start#spring-boot-3 -->
+        <!-- knife4j 接口文档 @https://doc.xiaominfo.com/docs/quick-start#spring-boot-3 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
             <version>4.4.0</version>
         </dependency>
-        <!-- SpringDoc接口文档（为了兼容knife4j4版本） @https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui -->
+        <!-- SpringDoc 接口文档（为了兼容knife4j4版本） @https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.8.4</version>
         </dependency>
-        <!-- Redisson集成分布式锁 @https://mvnrepository.com/artifact/org.redisson/redisson-spring-boot-starter -->
+        <!-- Redisson 集成分布式锁 @https://mvnrepository.com/artifact/org.redisson/redisson-spring-boot-starter -->
         <!--        <dependency>-->
         <!--            <groupId>org.redisson</groupId>-->
         <!--            <artifactId>redisson-spring-boot-starter</artifactId>-->
@@ -146,36 +146,71 @@
             <artifactId>javax.mail</artifactId>
             <version>1.6.2</version>
         </dependency>
-        <!-- Sa-Token权限认证 @https://sa-token.cc -->
+        <!-- Sa-Token 权限认证 @https://sa-token.cc -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot3-starter</artifactId>
             <version>1.44.0</version>
         </dependency>
-        <!-- JSON处理库 @https://github.com/alibaba/fastjson -->
+        <!-- JSON 处理库 @https://github.com/alibaba/fastjson -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>1.2.83</version>
         </dependency>
-        <!-- TTL线程池 @https://github.com/alibaba/transmittable-thread-local -->
+        <!-- TTL 线程池 @https://github.com/alibaba/transmittable-thread-local -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>
             <version>2.14.5</version>
         </dependency>
-        <!-- maven.plugins配置 -->
+        <!-- maven.plugins 配置 -->
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.8.1</version>
         </dependency>
-        <!-- minIO存储桶 @https://github.com/minio/minio-java -->
+        <!-- MinIO 存储桶 @https://github.com/minio/minio-java -->
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.5.9</version>
         </dependency>
+        <!--Spring AI Alibaba Agent Framework  @https://java2ai.com/docs/overview -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-agent-framework</artifactId>
+            <version>1.1.0.0-M5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+            <version>1.1.0.0-M5</version>
+        </dependency>
+        <!-- HTTP 客户端（ApacheHttpClient）-->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 阿里云百炼 DashScope SDK @https://mvnrepository.com/artifact/com.alibaba/dashscope-sdk-java -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dashscope-sdk-java</artifactId>
+            <version>2.22.0</version>
+        </dependency>
+        <!-- Spring AI（包括阿里版）在注册 ToolCallback 时，会尝试把工具方法的入参自动转成 JSON Schema。（AnnotationHelper not found） -->
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>4.36.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-jackson</artifactId>
+            <version>4.36.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

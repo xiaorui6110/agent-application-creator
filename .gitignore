@@ -1,4 +1,7 @@
-README.md
+### CUSTOM ###
+application-dev.yml
+.env
+
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
