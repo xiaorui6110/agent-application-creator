@@ -8,7 +8,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * @description: Security 配置（关闭 SpringSecurity 自带的的登录认证）
+ * @description: Security 配置
  * @author: xiaorui
  * @date: 2025-11-29 16:08
  **/
@@ -19,6 +19,7 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                // 关闭 SpringSecurity 自带的的登录认证
                 .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }

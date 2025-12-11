@@ -1,6 +1,6 @@
 package com.xiaorui.agentapplicationcreator.emailsend;
 
-import com.xiaorui.agentapplicationcreator.utils.EmailSenderUtil;
+import com.xiaorui.agentapplicationcreator.util.EmailSenderUtil;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

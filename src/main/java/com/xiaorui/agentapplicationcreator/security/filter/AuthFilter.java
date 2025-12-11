@@ -1,16 +1,16 @@
-package com.xiaorui.agentapplicationcreator.filter;
+package com.xiaorui.agentapplicationcreator.security.filter;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
-import com.xiaorui.agentapplicationcreator.adapter.AuthConfigAdapter;
+import com.xiaorui.agentapplicationcreator.security.adapter.AuthConfigAdapter;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
-import com.xiaorui.agentapplicationcreator.handler.HttpHandler;
+import com.xiaorui.agentapplicationcreator.security.handler.HttpHandler;
 import com.xiaorui.agentapplicationcreator.manager.token.TokenStoreManager;
 import com.xiaorui.agentapplicationcreator.model.bo.UserInfoInTokenBO;
 import com.xiaorui.agentapplicationcreator.response.ResponseEnum;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
-import com.xiaorui.agentapplicationcreator.utils.AuthUserContextUtil;
+import com.xiaorui.agentapplicationcreator.util.AuthUserContextUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;

@@ -18,6 +18,8 @@ public class CodeOptimizerTool implements BiFunction<String, ToolContext, String
             @ToolParam(description = "Raw code content or project path") String code,
             ToolContext toolContext) {
 
+        // TODO 3. 真实处理逻辑。。。（Tool）
+
         return """
                {
                    "summary": "Code analyzed. Improvements found.",

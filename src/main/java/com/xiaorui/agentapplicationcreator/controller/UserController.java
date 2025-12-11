@@ -12,7 +12,7 @@ import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.UserService;
-import com.xiaorui.agentapplicationcreator.utils.SecurityUtil;
+import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;

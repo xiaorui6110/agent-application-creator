@@ -199,7 +199,7 @@
             <artifactId>dashscope-sdk-java</artifactId>
             <version>2.22.0</version>
         </dependency>
-        <!-- Spring AI（包括阿里版）在注册 ToolCallback 时，会尝试把工具方法的入参自动转成 JSON Schema。（AnnotationHelper not found） -->
+        <!-- Spring AI（包括阿里版）在注册 ToolCallback 时，会尝试把工具方法的入参自动转成 JSON Schema。（解决 AnnotationHelper not found 问题） -->
         <dependency>
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-generator</artifactId>

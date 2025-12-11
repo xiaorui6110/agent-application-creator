@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.adapter;
+package com.xiaorui.agentapplicationcreator.security.adapter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.utils;
+package com.xiaorui.agentapplicationcreator.util;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.xiaorui.agentapplicationcreator.model.bo.UserInfoInTokenBO;

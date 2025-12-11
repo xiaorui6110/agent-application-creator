@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.generator;
+package com.xiaorui.agentapplicationcreator.temp.generator;
 
 import cn.hutool.core.lang.Dict;
 import cn.hutool.setting.yaml.YamlUtil;
@@ -49,7 +49,7 @@ public class MyBatisCodeGenerator {
         // 创建配置内容
         GlobalConfig globalConfig = new GlobalConfig();
         // 设置根包（临时包）
-        globalConfig.getPackageConfig().setBasePackage("com.xiaorui.agentapplicationcreator.genresult");
+        globalConfig.getPackageConfig().setBasePackage("com.xiaorui.agentapplicationcreator.temp.genresult");
         // 设置表前缀和只生成哪些表，setGenerateTable 未配置时，生成所有表
         globalConfig.getStrategyConfig().setTablePrefix("xr_").setGenerateTable(TABLE_NAMES).setLogicDeleteColumn("isDeleted");
         // 设置生成 entity 并启用 Lombok

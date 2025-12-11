@@ -1,7 +1,7 @@
 package com.xiaorui.agentapplicationcreator.ai.example;
 
 /**
- * @description: 测试用 apikey（不要泄露）
+ * @description: 测试用 apikey（不要泄露，不要搞我ε(┬┬﹏┬┬)3）
  * @author: xiaorui
  * @date: 2025-12-09 16:29
  **/

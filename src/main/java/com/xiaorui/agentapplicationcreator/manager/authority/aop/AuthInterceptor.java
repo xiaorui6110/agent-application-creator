@@ -6,7 +6,7 @@ import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.UserService;
-import com.xiaorui.agentapplicationcreator.utils.SecurityUtil;
+import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;

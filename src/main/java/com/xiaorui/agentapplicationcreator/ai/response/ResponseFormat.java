@@ -16,7 +16,7 @@ public class ResponseFormat {
     private String agentResponse;
 
     /**
-     * 如果可用的话，关于应用的其他信息
+     * 如果可用的话，关于应用的其他信息（TODO String 内使用 JSON 格式，之后提取一下（ResponseFormat））
      */
     private String appConditions;
 

@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.utils;
+package com.xiaorui.agentapplicationcreator.util;
 
 import jakarta.servlet.http.HttpServletRequest;
 

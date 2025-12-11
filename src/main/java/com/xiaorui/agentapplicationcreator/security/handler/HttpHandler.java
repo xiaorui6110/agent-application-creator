@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.handler;
+package com.xiaorui.agentapplicationcreator.security.handler;
 
 import cn.hutool.core.util.CharsetUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;

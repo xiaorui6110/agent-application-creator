@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.utils;
+package com.xiaorui.agentapplicationcreator.util;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;

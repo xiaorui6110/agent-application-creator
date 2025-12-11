@@ -27,17 +27,16 @@ public class MiniAppCreatorTest {
         // 生成一个随机的 threadId
         String threadId = UUID.randomUUID().toString();
 
-        // threadId 是给定对话的唯一标识符
+        // threadId 是给定对话的唯一标识符，使用 threadId 维护对话上下文
         RunnableConfig runnableConfig = RunnableConfig.builder().threadId(threadId).addMetadata("user_id", "1").build();
 
         // 调用 Agent（第一次调用）
-        AssistantMessage response = appCreatorAgent.call("帮我做一个简易的在线图书管理系统，先给出初步的设计方案吧，尽量简单些。");
+        AssistantMessage response = appCreatorAgent.call("帮我做一个简易的在线图书管理系统，先给出初步的设计方案吧，尽量简单些。", runnableConfig);
 
         // 打印结果（方便调试）
         System.out.println("Agent Response: " + response.getText());
 
-
-        // 注意我们可以使用相同的 threadId 继续对话
+        // 注意我们可以使用相同的 threadId 继续对话（第二次调用）
         response = appCreatorAgent.call("谢谢你呀^^!", runnableConfig);
         System.out.println(response.getText());
 

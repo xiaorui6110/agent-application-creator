@@ -1,5 +1,5 @@
 # AI 智能体应用生成平台（毕设）
-> 参考大佬程序员鱼皮 https://github.com/liyupi 的开源项目进行学习扩展。
+> 基本上全是参考 Spring AI Alibaba https://github.com/alibaba/spring-ai-alibaba 进行自主学习
 
 # xiaorui-ai-agent-platform
 
@@ -14,5 +14,6 @@
 - 安全组件：Spring Security、BCryptPasswordEncoder
 - 其他：Lombok、Hutool
 
-## 环境要求
+## 环境要求（后续待补充）
+
 
