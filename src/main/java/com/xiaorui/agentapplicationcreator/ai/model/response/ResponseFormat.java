@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.response;
+package com.xiaorui.agentapplicationcreator.ai.model.response;
 
 import lombok.Data;
 
@@ -16,7 +16,7 @@ public class ResponseFormat {
     private String agentResponse;
 
     /**
-     * 如果可用的话，关于应用的其他信息（TODO String 内使用 JSON 格式，之后提取一下（ResponseFormat））
+     * 如果可用的话，关于应用的其他信息
      */
     private String appConditions;
 

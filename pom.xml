@@ -71,6 +71,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        <!-- MongoDB 数据库连接 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.session</groupId>
             <artifactId>spring-session-data-redis</artifactId>
@@ -104,18 +109,6 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
         </dependency>
-        <!--        &lt;!&ndash; MyBatisPlus 框架 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.baomidou</groupId>-->
-<!--            <artifactId>mybatis-plus-boot-starter</artifactId>-->
-<!--            <version>3.5.10.1</version>-->
-<!--        </dependency>-->
-<!--        &lt;!&ndash; MyBatisPlus 分页插件 @https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-jsqlparser &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.baomidou</groupId>-->
-<!--            <artifactId>mybatis-plus-jsqlparser</artifactId>-->
-<!--            <version>3.5.10.1</version>-->
-<!--        </dependency>-->
         <!-- hutool 工具库 @https://doc.hutool.cn/pages/index/#%F0%9F%8D%8Amaven -->
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -135,11 +128,11 @@
             <version>2.8.4</version>
         </dependency>
         <!-- Redisson 集成分布式锁 @https://mvnrepository.com/artifact/org.redisson/redisson-spring-boot-starter -->
-        <!--        <dependency>-->
-        <!--            <groupId>org.redisson</groupId>-->
-        <!--            <artifactId>redisson-spring-boot-starter</artifactId>-->
-        <!--            <version>3.44.0</version>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>3.52.0</version>
+        </dependency>
         <!-- 邮件发送 @https://mvnrepository.com/artifact/com.sun.mail/javax.mail -->
         <dependency>
             <groupId>com.sun.mail</groupId>
@@ -210,7 +203,6 @@
             <artifactId>jsonschema-module-jackson</artifactId>
             <version>4.36.0</version>
         </dependency>
-
     </dependencies>
 
     <build>

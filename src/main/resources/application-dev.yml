@@ -61,6 +61,11 @@ spring:
           min-idle: 4
           max-wait: 3000ms
         shutdown-timeout: 200ms
+#    mongodb:
+#      host: 127.0.0.1
+#      port: 27017
+#      password: 123456
+#      uri: mongodb://127.0.0.1:27017/agent_app_creator
   # AI 配置
   ai:
     dashscope:

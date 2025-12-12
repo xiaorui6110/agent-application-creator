@@ -2,13 +2,15 @@ package com.xiaorui.agentapplicationcreator.ai.agent;
 
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
-import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
+import com.alibaba.cloud.ai.graph.checkpoint.savers.RedisSaver;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaorui.agentapplicationcreator.ai.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.ai.interceptor.ToolErrorInterceptor;
-import com.xiaorui.agentapplicationcreator.ai.response.ResponseFormat;
 import com.xiaorui.agentapplicationcreator.ai.tool.CodeOptimizerTool;
+import com.xiaorui.agentapplicationcreator.ai.tool.ExampleTestTool;
 import com.xiaorui.agentapplicationcreator.ai.tool.ProjectGeneratorTool;
 import com.xiaorui.agentapplicationcreator.ai.tool.RequirementParserTool;
+import org.redisson.api.RedissonClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
@@ -28,7 +30,10 @@ public class AppCreatorAgentConfig {
      * 创建 agent
      */
     @Bean
-    public ReactAgent appCreatorAgent(ChatModel chatModel, ToolCallback requirementParserTool, ToolCallback generateProjectTool, ToolCallback optimizeCodeTool) {
+    public ReactAgent appCreatorAgent(ChatModel chatModel,
+                ToolCallback requirementParserTool, ToolCallback generateProjectTool, ToolCallback optimizeCodeTool,
+                ToolCallback exampleTestTool,
+                RedissonClient redissonClient, ObjectMapper objectMapper) {
         return ReactAgent.builder()
                 // 模型名称（自定义）
                 .name("app_creator_agent")
@@ -39,15 +44,17 @@ public class AppCreatorAgentConfig {
                 // 详细指令（自定义）
                 .instruction(INSTRUCTION)
                 // 定义响应格式（可选）
-                .outputType(ResponseFormat.class)
+                //.outputType(ResponseFormat.class)
+                .outputSchema(CUSTOMSCHEMA)
                 // 工具调用（可组合使用）
-                .tools(requirementParserTool, generateProjectTool, optimizeCodeTool)
+                //.tools(requirementParserTool, generateProjectTool, optimizeCodeTool)
+                .tools(exampleTestTool)
                 // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要）（TODO runLimit 最好从配置文件中获取）
                 .hooks(new LoggingHook(), ModelCallLimitHook.builder().runLimit(50).build())
                 // 工具错误处理（可组合使用）
                 .interceptors(new ToolErrorInterceptor())
-                // 添加记忆（可选）（TODO 生产环境：使用 RedisSaver、MongoSaver 等持久化存储替代 MemorySaver。）
-                .saver(new MemorySaver())
+                // 添加记忆（可选）（TODO 生产环境：使用 RedisSaver✅、MongoSaver 等持久化存储替代 MemorySaver。）
+                .saver(new RedisSaver(redissonClient, objectMapper))
                 .build();
     }
 
@@ -70,6 +77,11 @@ public class AppCreatorAgentConfig {
     @Bean
     public ToolCallback optimizeCodeTool() {
         return FunctionToolCallback.builder("optimizeCode", new CodeOptimizerTool()).description("Analyze and optimize code, returning suggestions or patches").inputType(String.class).build();
+    }
+
+    @Bean
+    public ToolCallback exampleTestTool() {
+        return FunctionToolCallback.builder("exampleTestTool", new ExampleTestTool()).description("this is a test tool，no usage").inputType(String.class).build();
     }
 
     // endregion
@@ -235,7 +247,7 @@ public class AppCreatorAgentConfig {
      * TODO 看情况使用（CUSTOMSCHEMA）
      */
     private static final String CUSTOMSCHEMA = """
-            请严格按照以下 JSON 格式返回结果：
+            请严格按照以下 JSON 格式返回结果（时间戳取当前北京时间）：
             
             {
               "answer": "最终给用户的自然语言回答，清晰、简洁、专业。",
