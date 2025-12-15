@@ -3,7 +3,6 @@ package com.xiaorui.agentapplicationcreator.temp.generator;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.setting.yaml.YamlUtil;
 import com.mybatisflex.codegen.Generator;
-import com.mybatisflex.codegen.config.ColumnConfig;
 import com.mybatisflex.codegen.config.GlobalConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -20,7 +19,7 @@ public class MyBatisCodeGenerator {
     /**
      * 需要生成的表名（每次修改表名生成）
      */
-    private static final String[] TABLE_NAMES = {"xr_user"};
+    private static final String[] TABLE_NAMES = {"xr_user_thread_bind"};
 
     public static void main(String[] args) {
         // 获取数据源信息（从yml文件中获取）

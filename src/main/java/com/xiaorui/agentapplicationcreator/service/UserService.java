@@ -124,4 +124,8 @@ public interface UserService extends IService<User> {
      */
     String updateUserAvatar(MultipartFile multipartFile);
 
+
+
+
+
 }

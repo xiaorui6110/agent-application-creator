@@ -203,6 +203,12 @@
             <artifactId>jsonschema-module-jackson</artifactId>
             <version>4.36.0</version>
         </dependency>
+        <!-- 基于 DFA 算法实现的高性能 java 敏感词过滤工具框架 @https://github.com/houbb/sensitive-word-->
+        <dependency>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>sensitive-word</artifactId>
+            <version>0.29.2</version>
+        </dependency>
     </dependencies>
 
     <build>

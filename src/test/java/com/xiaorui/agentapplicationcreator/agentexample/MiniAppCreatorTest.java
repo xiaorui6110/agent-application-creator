@@ -38,7 +38,7 @@ public class MiniAppCreatorTest {
 
         // 打印结果（方便调试）
         System.out.println("Agent Response 1: ------------" + "\n" + response.getText());
-
+        System.out.println("##############################################");
         // 注意我们可以使用相同的 threadId 继续对话（第二次调用）
         response = appCreatorAgent.call("谢谢你呀^^!", runnableConfig);
         System.out.println("Agent Response 2: ------------" + "\n" + response.getText());
@@ -64,7 +64,7 @@ public class MiniAppCreatorTest {
         System.out.println("Agent Response: -----------" + "\n" + response.getText());
 
         /*
-            TODO 清理中间节点（节省 Redis 空间）  百炼 Agent 支持配置「状态清理策略」
+             清理中间节点（节省 Redis 空间）  百炼 Agent 支持配置「状态清理策略」
             从 Redis 存储数据来看，单次调用出现多个 ID 是阿里云百炼 Agent 框架的「节点化执行流程」导致的正常现象。
             业务层面只需关注 logging.after 节点的最终回复，其他节点是流程追溯数据，可保留或清理。
                 阿里云百炼 Agent 并非 “一次性调用 LLM”，而是将单次用户请求拆解为多个执行节点（Node） 串联执行，
@@ -73,4 +73,6 @@ public class MiniAppCreatorTest {
                      → model（核心LLM调用）→ ModelCallLimit.afterModel（限流后置）→ logging.after（后置日志）→ __END__（结束）
          */
     }
+
+
 }

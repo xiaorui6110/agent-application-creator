@@ -3,10 +3,10 @@ server:
   port: 8123
   servlet:
     context-path: /api
-    # cookie 30 天过期
+    # cookie 7 天过期
     session:
       cookie:
-        max-age: 2592000
+        max-age: 604800
   tomcat:
     max-connections: 1000
     accept-count: 100
@@ -61,11 +61,13 @@ spring:
           min-idle: 4
           max-wait: 3000ms
         shutdown-timeout: 200ms
-#    mongodb:
-#      host: 127.0.0.1
-#      port: 27017
-#      password: 123456
-#      uri: mongodb://127.0.0.1:27017/agent_app_creator
+    # 解决 IDEA 连接 Mongodb 失败问题：https://stackoverflow.com/questions/79843528/intellij-idea-driver-class-com-dbschema-mongojdbcdriver-is-incompatible-with
+    mongodb:
+      host: 127.0.0.1
+      port: 27017
+      #password: 123456
+      uri: mongodb://127.0.0.1:27017
+      database: agent_memory_store # 自定义数据库
   # AI 配置
   ai:
     dashscope:
@@ -90,7 +92,7 @@ knife4j:
     language: zh_cn
 # minio 配置
 minio:
-  endpoint: http://172.30.43.12:9000  # minio服务器API地址
+  endpoint: http://172.30.43.12:9000  # minio服务器API地址（linux）
   access-key: xiaorui   # minio服务器用户名
   secret-key: 18656412886ty   # minio服务器密码
   default-bucket: agent-app-creator-bucket  # 创建的 bucket 名称

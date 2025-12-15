@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 用户表 服务层实现。
+ * 用户表 服务层实现。 TODO 好像都没有判断该用户是否逻辑删除了 （哭笑）
  *
  * @author xiaorui
  */
@@ -337,7 +337,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      */
     @Override
     public UserVO getUserInfo() {
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User user = this.mapper.selectOneById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
@@ -371,7 +371,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"验证码错误或已过期");
         }
         // 获取当前用户信息
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = this.mapper.selectOneById(userId);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
@@ -426,7 +426,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"两次输入的密码不一致");
         }
         // 查询用户信息
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = this.mapper.selectOneById(userId);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
@@ -483,7 +483,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"验证码错误或已过期");
         }
         // 查询用户信息
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = this.mapper.selectOneById(userId);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
@@ -511,7 +511,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
     @Override
     public String updateUserAvatar(MultipartFile multipartFile) {
         // 查询用户信息
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = this.mapper.selectOneById(userId);
         ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR,"用户不存在");
         // 判断文件是否为空

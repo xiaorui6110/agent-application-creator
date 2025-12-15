@@ -41,7 +41,7 @@ public class AuthInterceptor {
         RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
         HttpServletRequest request = ((ServletRequestAttributes) requestAttributes).getRequest();
         // 当前登录用户
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         UserRoleEnum mustRoleEnum = UserRoleEnum.getEnumByValue(mustRole);
         // 不需要权限，放行

@@ -1,15 +1,19 @@
 package com.xiaorui.agentapplicationcreator.ai;
 
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
-import com.xiaorui.agentapplicationcreator.ai.model.dto.CallAgentRequest;
+import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
+import com.xiaorui.agentapplicationcreator.service.AgentChatMemoryService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
+import com.xiaorui.agentapplicationcreator.service.UserThreadBindService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import jodd.util.StringUtil;
@@ -21,7 +25,7 @@ import java.util.Optional;
 
 /**
  * @description: 简易版应用生成智能体开发
- *              TODO ✨ 给 threadId 做持久化管理（Redis / MySQL）、✨ 加一个 ChatHistoryService 显示完整会话历史
+ *              TODO ✨ 给 threadId 做持久化管理（Redis / MongoDB）✅、✨ 加一个 ChatHistoryService 显示完整会话历史
  *                   ✨ 支持流式响应（SSE）做成 ChatGPT 一样的输出、✨ 全链路日志 + Agent 调用审计系统
  * @author: xiaorui
  * @date: 2025-12-10 13:07
@@ -38,55 +42,73 @@ public class MiniAppCreator {
     @Resource
     private UserService userService;
 
+    @Resource
+    private UserThreadBindService userThreadBindService;
+
+    @Resource
+    private AgentChatMemoryService agentChatMemoryService;
+
+
     /**
      * 智能体对话
      */
-    public AgentResponse chat(CallAgentRequest callAgentRequest) throws GraphRunnerException {
+    public AgentResponse chat(String message, String transThreadId) throws GraphRunnerException {
         // 获取当前用户
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
         }
-        // threadId：沿用 or 生成
-        String threadId = Optional.ofNullable(callAgentRequest.getThreadId())
+        // threadId：非空沿用旧的 / 空的生成新的  TODO 这里可以将 threadId 存到 Redis 缓存中
+        String threadId = Optional.ofNullable(transThreadId)
                 .filter(StringUtil::isNotBlank)
                 .orElse(UUID.randomUUID().toString());
-
-        // TODO 第一次对话时，就应该将 userId -> threadId 存储起来， 在UserService中编写方法来存储
-
         // 强制绑定 userId 与 threadId
         if (!threadBelongsToUser(userId, threadId)) {
-            throw new BusinessException("非法对话 ID，已阻断", ErrorCode.PARAMS_ERROR);
+            throw new BusinessException("非法对话 ID，已阻断访问", ErrorCode.FORBIDDEN_ERROR);
         }
         // 输入校验
-        String callAgentRequestMessage = callAgentRequest.getMessage();
-        validateUserInput(callAgentRequestMessage);
+        validateUserInput(message);
+        // 保存用户输入到 MongoDB 中
+        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "user", message));
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
         // 调用 Agent
         AssistantMessage response;
         try {
-            response = appCreatorAgent.call(callAgentRequestMessage, runnableConfig);
+            response = appCreatorAgent.call(message, runnableConfig);
+            // 保存 Agent 回复到 MongoDB 中
+            agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "assistant", response.getText()));
         } catch (Exception e) {
             log.error("Agent 调用失败, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
-        // 构建返回
-        AgentResponse agentResponse = new AgentResponse();
-        agentResponse.setThreadId(threadId);
-        agentResponse.setUserId(userId);
-        agentResponse.setReply(response.getText());
-        agentResponse.setTimestamp(System.currentTimeMillis());
-        return agentResponse;
+        // 构建返回值
+        return AgentResponse.builder()
+                .threadId(threadId)
+                .userId(userId)
+                .messageId(UUID.randomUUID().toString())
+                .agentName("app-creator-agent")
+                .reply(response.getText())
+                .fromMemory(false)
+                .timestamp(System.currentTimeMillis())
+                .confidence(0.85)
+                .build();
     }
 
     /**
-     * 判断对话是否属于当前用户（否则用户 A 可能传入用户 B 的 threadId，看到 B 的对话内容（非常危险））
+     * 判断对话是否属于当前用户（否则用户 A 可能传入用户 B 的 threadId，看到 B 的对话内容，非常危险）
      */
     private boolean threadBelongsToUser(String userId, String threadId) {
-        // TODO 需要用 Redis 或 MySQL （userId -> threadId list），应该最后是要落库的，用 threadId 标识会话
-        //  好比：https://chatgpt.com/c/6938df19-bb9c-8324-afd2-3257481af02e
+        // threadId 肯定非空，新 thread：绑定
+        if (StrUtil.isNotBlank(threadId)) {
+            userThreadBindService.bindThread(userId, threadId, "app_creator_agent");
+        } else {
+            // 老 thread：校验归属
+            if (!userThreadBindService.validateThreadOwner(userId, threadId)) {
+                throw new BusinessException("非法对话 ID，已阻断访问", ErrorCode.FORBIDDEN_ERROR);
+            }
+        }
         return true;
     }
 
@@ -101,7 +123,7 @@ public class MiniAppCreator {
     }
 
     /**
-     * 用户输入校验
+     * 用户输入校验：敏感词检测 ...
      */
     private void validateUserInput(String input) {
         if (StringUtil.isBlank(input)) {
@@ -110,11 +132,29 @@ public class MiniAppCreator {
         if (input.length() > MAX_INPUT_LENGTH) {
             throw new BusinessException("输入过长，请分段发送", ErrorCode.PARAMS_ERROR);
         }
-        // TODO 敏感词检测/安全检测/Prompt 攻击检测/超长文本截断... ，可按需扩展 https://github.com/houbb/sensitive-word
-        // https://blog.csdn.net/m0_62128476/article/details/144548205
-        //if (SensitiveWordUtil.contains(input)) {
-        //    throw new BusinessException("输入包含不适宜内容");
-        //}
+        // 验证字符串是否包含敏感词（目前先使用第三方框架简单实现）
+        if (SensitiveWordHelper.contains(input)) {
+            throw new BusinessException("输入包含不适宜内容", ErrorCode.PARAMS_ERROR);
+        }
     }
+
+    /**
+     * 构建消息实体（MongoDB）
+     */
+    private AgentChatMessage buildMessage(
+            String userId,
+            String threadId,
+            String role,
+            String content) {
+        AgentChatMessage msg = new AgentChatMessage();
+        msg.setUserId(userId);
+        msg.setThreadId(threadId);
+        msg.setRole(role);
+        msg.setContent(content);
+        msg.setAgentName("app_creator_agent");
+        msg.setTimestamp(System.currentTimeMillis());
+        return msg;
+    }
+
 
 }

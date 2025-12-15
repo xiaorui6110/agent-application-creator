@@ -2,15 +2,14 @@ package com.xiaorui.agentapplicationcreator.ai.agent;
 
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
-import com.alibaba.cloud.ai.graph.checkpoint.savers.RedisSaver;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.alibaba.cloud.ai.graph.checkpoint.savers.MongoSaver;
 import com.xiaorui.agentapplicationcreator.ai.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.ai.interceptor.ToolErrorInterceptor;
 import com.xiaorui.agentapplicationcreator.ai.tool.CodeOptimizerTool;
 import com.xiaorui.agentapplicationcreator.ai.tool.ExampleTestTool;
 import com.xiaorui.agentapplicationcreator.ai.tool.ProjectGeneratorTool;
 import com.xiaorui.agentapplicationcreator.ai.tool.RequirementParserTool;
-import org.redisson.api.RedissonClient;
+import jakarta.annotation.Resource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
@@ -26,14 +25,32 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AppCreatorAgentConfig {
 
+    @Resource
+    private ToolCallback requirementParserTool;
+
+    @Resource
+    private ToolCallback generateProjectTool;
+
+    @Resource
+    private ToolCallback optimizeCodeTool;
+
+    @Resource
+    private ToolCallback exampleTestTool;
+
+    @Resource
+    private LoggingHook loggingHook;
+
+    @Resource
+    private ToolErrorInterceptor toolErrorInterceptor;
+
+    @Resource
+    private MongoSaver mongoSaver;
+
     /**
      * 创建 agent
      */
     @Bean
-    public ReactAgent appCreatorAgent(ChatModel chatModel,
-                ToolCallback requirementParserTool, ToolCallback generateProjectTool, ToolCallback optimizeCodeTool,
-                ToolCallback exampleTestTool,
-                RedissonClient redissonClient, ObjectMapper objectMapper) {
+    public ReactAgent appCreatorAgent(ChatModel chatModel) {
         return ReactAgent.builder()
                 // 模型名称（自定义）
                 .name("app_creator_agent")
@@ -44,17 +61,16 @@ public class AppCreatorAgentConfig {
                 // 详细指令（自定义）
                 .instruction(INSTRUCTION)
                 // 定义响应格式（可选）
-                //.outputType(ResponseFormat.class)
                 .outputSchema(CUSTOMSCHEMA)
                 // 工具调用（可组合使用）
                 //.tools(requirementParserTool, generateProjectTool, optimizeCodeTool)
                 .tools(exampleTestTool)
-                // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要）（TODO runLimit 最好从配置文件中获取）
-                .hooks(new LoggingHook(), ModelCallLimitHook.builder().runLimit(50).build())
+                // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要）
+                .hooks(loggingHook, ModelCallLimitHook.builder().runLimit(50).build())
                 // 工具错误处理（可组合使用）
-                .interceptors(new ToolErrorInterceptor())
-                // 添加记忆（可选）（TODO 生产环境：使用 RedisSaver✅、MongoSaver 等持久化存储替代 MemorySaver。）
-                .saver(new RedisSaver(redissonClient, objectMapper))
+                .interceptors(toolErrorInterceptor)
+                // 添加记忆（可选）
+                .saver(mongoSaver)
                 .build();
     }
 
@@ -244,7 +260,6 @@ public class AppCreatorAgentConfig {
 
     /**
      * 自定义输出格式（通用智能 Agent 格式）
-     * TODO 看情况使用（CUSTOMSCHEMA）
      */
     private static final String CUSTOMSCHEMA = """
             请严格按照以下 JSON 格式返回结果（时间戳取当前北京时间）：

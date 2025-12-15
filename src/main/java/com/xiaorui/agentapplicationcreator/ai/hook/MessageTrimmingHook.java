@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * @description: TODO ModelHook - 在模型调用前后执行（例如：消息修剪），
+ * @description: 修剪消息 TODO ModelHook - 在模型调用前后执行（例如：消息修剪），
  *              区别于AgentHook，ModelHook在一次agent调用中可能会调用多次，也就是每次 reasoning-acting 迭代都会执行
  *              适用场景：
  *                  超出上下文窗口的长期对话

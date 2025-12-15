@@ -38,7 +38,7 @@ public class SecurityUtil {
     /**
      * 获取用户
      */
-    public static UserInfoBO getUser() {
+    public static UserInfoBO getUserInfo() {
         String token = StpUtil.getTokenValue();
         String keyName = OauthCacheConstant.USER_INFO + token;
         // 从redis中获取token

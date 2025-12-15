@@ -151,7 +151,7 @@ public class UserController {
     @PostMapping("/updateInfo")
     public ServerResponseEntity<Boolean> updateUserInfo(@RequestBody UserUpdateInfoRequest userUpdateInfoRequest) {
         ThrowUtil.throwIf(userUpdateInfoRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
-        String userId = SecurityUtil.getUser().getUserId();
+        String userId = SecurityUtil.getUserInfo().getUserId();
         if (!userId.equals(userUpdateInfoRequest.getUserId())) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "只能更新自己的信息");
         }

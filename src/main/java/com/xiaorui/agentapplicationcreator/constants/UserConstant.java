@@ -16,4 +16,16 @@ public interface UserConstant {
      */
     String ADMIN_ROLE = "admin";
 
+    /**
+     * 用户对话线程绑定状态 0-未绑定
+     */
+    int BIND_STATUS_UNBOUND = 0;
+
+    /**
+     * 用户对话线程绑定状态 1-已绑定
+     */
+    int BIND_STATUS_BOUND = 1;
+
+
+
 }
