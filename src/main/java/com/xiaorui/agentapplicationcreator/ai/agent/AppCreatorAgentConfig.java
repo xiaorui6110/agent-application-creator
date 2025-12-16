@@ -2,14 +2,10 @@ package com.xiaorui.agentapplicationcreator.ai.agent;
 
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
-import com.alibaba.cloud.ai.graph.checkpoint.savers.MongoSaver;
+import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import com.xiaorui.agentapplicationcreator.ai.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.ai.interceptor.ToolErrorInterceptor;
-import com.xiaorui.agentapplicationcreator.ai.tool.CodeOptimizerTool;
 import com.xiaorui.agentapplicationcreator.ai.tool.ExampleTestTool;
-import com.xiaorui.agentapplicationcreator.ai.tool.ProjectGeneratorTool;
-import com.xiaorui.agentapplicationcreator.ai.tool.RequirementParserTool;
-import jakarta.annotation.Resource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
@@ -25,32 +21,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AppCreatorAgentConfig {
 
-    @Resource
-    private ToolCallback requirementParserTool;
-
-    @Resource
-    private ToolCallback generateProjectTool;
-
-    @Resource
-    private ToolCallback optimizeCodeTool;
-
-    @Resource
-    private ToolCallback exampleTestTool;
-
-    @Resource
-    private LoggingHook loggingHook;
-
-    @Resource
-    private ToolErrorInterceptor toolErrorInterceptor;
-
-    @Resource
-    private MongoSaver mongoSaver;
-
     /**
      * 创建 agent
      */
     @Bean
     public ReactAgent appCreatorAgent(ChatModel chatModel) {
+
+        // 创建 Hooks 和 Interceptors
+        LoggingHook loggingHook = new LoggingHook();
+        ToolErrorInterceptor toolErrorInterceptor = new ToolErrorInterceptor();
+
+        // 直接在这里创建工具回调，避免循环依赖
+        ToolCallback exampleTestTool = FunctionToolCallback.builder("exampleTestTool", new ExampleTestTool())
+                .description("this is a test tool，no usage").inputType(String.class).build();
+
         return ReactAgent.builder()
                 // 模型名称（自定义）
                 .name("app_creator_agent")
@@ -69,38 +53,11 @@ public class AppCreatorAgentConfig {
                 .hooks(loggingHook, ModelCallLimitHook.builder().runLimit(50).build())
                 // 工具错误处理（可组合使用）
                 .interceptors(toolErrorInterceptor)
-                // 添加记忆（可选）
-                .saver(mongoSaver)
+                // 只做短生命周期
+                .saver(new MemorySaver())
                 .build();
     }
 
-
-    /**
-     * 创建工具回调
-     */
-    // region
-
-    @Bean
-    public ToolCallback requirementParserTool() {
-        return FunctionToolCallback.builder("parseRequirements", new RequirementParserTool()).description("Parse user natural language requirements into structured JSON").inputType(String.class).build();
-    }
-
-    @Bean
-    public ToolCallback generateProjectTool() {
-        return FunctionToolCallback.builder("generateProject", new ProjectGeneratorTool()).description("Generate full-stack project code based on structured requirements JSON").inputType(String.class).build();
-    }
-
-    @Bean
-    public ToolCallback optimizeCodeTool() {
-        return FunctionToolCallback.builder("optimizeCode", new CodeOptimizerTool()).description("Analyze and optimize code, returning suggestions or patches").inputType(String.class).build();
-    }
-
-    @Bean
-    public ToolCallback exampleTestTool() {
-        return FunctionToolCallback.builder("exampleTestTool", new ExampleTestTool()).description("this is a test tool，no usage").inputType(String.class).build();
-    }
-
-    // endregion
 
     /**
      * 系统提示词
@@ -262,7 +219,7 @@ public class AppCreatorAgentConfig {
      * 自定义输出格式（通用智能 Agent 格式）
      */
     private static final String CUSTOMSCHEMA = """
-            请严格按照以下 JSON 格式返回结果（时间戳取当前北京时间）：
+            请严格按照以下 JSON 格式返回结果：
             
             {
               "answer": "最终给用户的自然语言回答，清晰、简洁、专业。",
@@ -283,7 +240,7 @@ public class AppCreatorAgentConfig {
               "metadata": {
                 "confidence": 0.8,
                 "agent": "app-creator-agent",
-                "timestamp": "yyyy-MM-dd HH:mm:ss"
+                "time": "yyyy-MM-dd HH:mm:ss"（时间取当前北京时间）
               }
             }
             """;

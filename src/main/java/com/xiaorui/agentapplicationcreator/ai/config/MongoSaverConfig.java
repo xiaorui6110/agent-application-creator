@@ -47,13 +47,13 @@ public class MongoSaverConfig {
 
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-        // 让抽象 Message 能反序列化（之前炸的根源）
+
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
         );
-        // Java Time 支持
+
         mapper.registerModule(new JavaTimeModule());
 
         return mapper;
@@ -73,5 +73,6 @@ public class MongoSaverConfig {
                 agentMemoryDb
         );
     }
+
 }
 

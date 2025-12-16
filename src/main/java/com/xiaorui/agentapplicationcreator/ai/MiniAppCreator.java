@@ -25,8 +25,7 @@ import java.util.Optional;
 
 /**
  * @description: 简易版应用生成智能体开发
- *              TODO ✨ 给 threadId 做持久化管理（Redis / MongoDB）✅、✨ 加一个 ChatHistoryService 显示完整会话历史
- *                   ✨ 支持流式响应（SSE）做成 ChatGPT 一样的输出、✨ 全链路日志 + Agent 调用审计系统
+ *              TODO ✨ 支持流式响应（SSE）做成 ChatGPT 一样的输出、✨ 全链路日志 + Agent 调用审计系统
  * @author: xiaorui
  * @date: 2025-12-10 13:07
  **/
@@ -59,7 +58,7 @@ public class MiniAppCreator {
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
         }
-        // threadId：非空沿用旧的 / 空的生成新的  TODO 这里可以将 threadId 存到 Redis 缓存中
+        // threadId：非空沿用旧的 / 空的生成新的  TODO 这里可以将 threadId 存到 Redis 缓存中，threadId 生命周期管理
         String threadId = Optional.ofNullable(transThreadId)
                 .filter(StringUtil::isNotBlank)
                 .orElse(UUID.randomUUID().toString());

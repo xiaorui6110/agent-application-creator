@@ -1,5 +1,5 @@
 ### CUSTOM ###
-src/main/resources/application-dev.yml
+application-dev.yml
 .env
 
 target/
