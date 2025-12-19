@@ -61,17 +61,24 @@ spring:
           min-idle: 4
           max-wait: 3000ms
         shutdown-timeout: 200ms
-    # 解决 IDEA 连接 Mongodb 失败问题：https://stackoverflow.com/questions/79843528/intellij-idea-driver-class-com-dbschema-mongojdbcdriver-is-incompatible-with
+    # MongoDB 配置
     mongodb:
       host: 127.0.0.1
       port: 27017
       #password: 123456
       uri: mongodb://127.0.0.1:27017
-      database: agent_memory_store # 自定义数据库
+      database: agent_memory_store  # 自定义数据库
   # AI 配置
   ai:
     dashscope:
-      api-key: sk-b1aea9f904d6478db3fa8bf439a1a460 # 阿里云百炼
+      api-key: sk-b1aea9f904d6478db3fa8bf439a1a460  # 阿里云百炼
+      chat:
+        # 这里的配置其实在阿里云百炼的智能体应用控制台中也配置了，看情况是否需要
+        options:
+          model: "qwen3-coder-plus"  # 这里就使用 通义千问3-Coder-Plus
+          stream: true
+          incremental-output: true  # 开启增量输出
+          temperature: 0.1  # 设置在 0.1 至 0.3 之间，以减少生成结果的随机性。
 
 # springdoc-openapi（4 版本的 knife4j 接口文档依赖于 springdoc）
 springdoc:

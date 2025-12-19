@@ -173,12 +173,14 @@
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-agent-framework</artifactId>
-            <version>1.1.0.0-M5</version>
+            <version>1.1.0.0-RC2</version>
         </dependency>
+
+        <!-- DashScope ChatModel 支持（如果使用其他模型，请跳转 Spring AI 文档选择对应的 starter） -->
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
-            <version>1.1.0.0-M5</version>
+            <version>1.1.0.0-RC2</version>
         </dependency>
         <!-- HTTP 客户端（ApacheHttpClient）-->
         <dependency>
@@ -192,7 +194,7 @@
             <artifactId>dashscope-sdk-java</artifactId>
             <version>2.22.0</version>
         </dependency>
-        <!-- Spring AI（包括阿里版）在注册 ToolCallback 时，会尝试把工具方法的入参自动转成 JSON Schema。（解决 AnnotationHelper not found 问题） -->
+        <!-- Spring AI（包括阿里版）在注册 ToolCallback 时，都会尝试把工具方法的入参自动转成 JSON Schema。（解决 AnnotationHelper not found 问题） -->
         <dependency>
             <groupId>com.github.victools</groupId>
             <artifactId>jsonschema-generator</artifactId>
@@ -203,7 +205,7 @@
             <artifactId>jsonschema-module-jackson</artifactId>
             <version>4.36.0</version>
         </dependency>
-        <!-- 基于 DFA 算法实现的高性能 java 敏感词过滤工具框架 @https://github.com/houbb/sensitive-word-->
+        <!-- 敏感词过滤工具 @https://github.com/houbb/sensitive-word-->
         <dependency>
             <groupId>com.github.houbb</groupId>
             <artifactId>sensitive-word</artifactId>

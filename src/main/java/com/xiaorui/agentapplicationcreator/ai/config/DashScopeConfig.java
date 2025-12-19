@@ -2,7 +2,6 @@ package com.xiaorui.agentapplicationcreator.ai.config;
 
 import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,15 +32,6 @@ public class DashScopeConfig {
         return DashScopeChatModel.builder()
                 .dashScopeApi(api)
                 // TODO 后期按需调整设置（ChatModel）
-                //.defaultOptions(DashScopeChatOptions.builder()
-                //    // 控制随机性（控制输出的随机性（0.0-1.0），值越高越有创造性）
-                //    .withTemperature(0.7)
-                //    // 最大输出长度（限制单次响应的最大 token 数）
-                //    .withMaxToken(2000)
-                //    // 核采样参数（核采样，控制输出的多样性）
-                //    .withTopP(0.9)
-                //    .enableThinking(true)
-                //    .build())
                 .build();
     }
 }

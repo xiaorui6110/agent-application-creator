@@ -1,16 +1,21 @@
 package com.xiaorui.agentapplicationcreator.ai.agent;
 
+import cn.hutool.core.io.FileUtil;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import com.xiaorui.agentapplicationcreator.ai.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.ai.interceptor.ToolErrorInterceptor;
+import com.xiaorui.agentapplicationcreator.ai.model.result.SingleFileCodeResult;
 import com.xiaorui.agentapplicationcreator.ai.tool.ExampleTestTool;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -32,22 +37,28 @@ public class AppCreatorAgentConfig {
         ToolErrorInterceptor toolErrorInterceptor = new ToolErrorInterceptor();
 
         // 直接在这里创建工具回调，避免循环依赖
-        ToolCallback exampleTestTool = FunctionToolCallback.builder("exampleTestTool", new ExampleTestTool())
-                .description("this is a test tool，no usage").inputType(String.class).build();
+        ToolCallback exampleTestTool = FunctionToolCallback
+                .builder("ExampleTestTool", new ExampleTestTool())
+                .description("获取当前北京时间")
+                .inputType(String.class)
+                .build();
+
+        // 使用 BeanOutputConverter 生成 outputSchema 结构化输出
+        BeanOutputConverter<SingleFileCodeResult> outputConverter = new BeanOutputConverter<>(SingleFileCodeResult.class);
+        String format = outputConverter.getFormat();
 
         return ReactAgent.builder()
                 // 模型名称（自定义）
                 .name("app_creator_agent")
                 // 具体模型（可选）
                 .model(chatModel)
-                // 系统提示词（自定义）
-                .systemPrompt(SYSTEM_PROMPT)
+                // 系统提示词（自定义） TODO 测试时随时修改
+                .systemPrompt(SINGLE_HTML_PROMPT)
                 // 详细指令（自定义）
-                .instruction(INSTRUCTION)
-                // 定义响应格式（可选）
-                .outputSchema(CUSTOMSCHEMA)
+                //.instruction(INSTRUCTION)
+                // 定义响应格式（可选） TODO 测试时随时修改
+                .outputSchema(format)
                 // 工具调用（可组合使用）
-                //.tools(requirementParserTool, generateProjectTool, optimizeCodeTool)
                 .tools(exampleTestTool)
                 // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要）
                 .hooks(loggingHook, ModelCallLimitHook.builder().runLimit(50).build())
@@ -57,7 +68,6 @@ public class AppCreatorAgentConfig {
                 .saver(new MemorySaver())
                 .build();
     }
-
 
     /**
      * 系统提示词
@@ -146,103 +156,17 @@ public class AppCreatorAgentConfig {
      * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）
      * TODO 可能需要根据实际测试进行调整（INSTRUCTION）（以下是用在 Cursor 上的 Rules）
      */
-    private static final String INSTRUCTION = """
-            # AI助手核心规则
-                                
-            ## 三阶段工作流
-                    
-            ### 阶段一：分析问题
-                    
-            **声明格式**：`【分析问题】`
-                    
-            **目的**
-            因为可能存在多个可选方案，要做出正确的决策，需要足够的依据。
-                    
-            **必须做的事**：
-            - 理解我的意图，如果有歧义请问我
-            - 搜索所有相关代码
-            - 识别问题根因
-                    
-            **主动发现问题**
-            - 发现重复代码
-            - 识别不合理的命名
-            - 发现多余的代码、类
-            - 发现可能过时的设计
-            - 发现过于复杂的设计、调用
-            - 发现不一致的类型定义
-            - 进一步搜索代码，看是否更大范围内有类似问题
-                    
-            做完以上事项，就可以向我提问了。
-                    
-            **绝对禁止**：
-            - ❌ 修改任何代码
-            - ❌ 急于给出解决方案
-            - ❌ 跳过搜索和理解步骤
-            - ❌ 不分析就推荐方案
-                    
-            **阶段转换规则**
-            本阶段你要向我提问。
-            如果存在多个你无法抉择的方案，要问我，作为提问的一部分。
-            如果没有需要问我的，则直接进入下一阶段。
-                    
-            ### 阶段二：制定方案
-            **声明格式**：`【制定方案】`
-                    
-            **前置条件**：
-            - 我明确回答了关键技术决策。
-                    
-            **必须做的事**：
-            - 列出变更（新增、修改、删除）的文件，简要描述每个文件的变化
-            - 消除重复逻辑：如果发现重复代码，必须通过复用或抽象来消除
-            - 确保修改后的代码符合DRY原则和良好的架构设计
-                    
-            如果新发现了向我收集的关键决策，在这个阶段你还可以继续问我，直到没有不明确的问题之后，本阶段结束。
-            本阶段不允许自动切换到下一阶段。
-                    
-            ### 阶段三：执行方案
-            **声明格式**：`【执行方案】`
-                    
-            **必须做的事**：
-            - 严格按照选定方案实现
-            - 修改后运行类型检查
-                    
-            **绝对禁止**：
-            - ❌ 提交代码（除非用户明确要求）
-            - 启动开发服务器
-                    
-            如果在这个阶段发现了拿不准的问题，请向我提问。
-                    
-            收到用户消息时，一般从【分析问题】阶段开始，除非用户明确指定阶段的名字。
-            """;
+    private final String INSTRUCTION = FileUtil.readString("prompt/system_instruction.md",StandardCharsets.UTF_8);
 
     /**
-     * 自定义输出格式（通用智能 Agent 格式）
+     * 单页面网站的 Prompt（优化后）（test）
      */
-    private static final String CUSTOMSCHEMA = """
-            请严格按照以下 JSON 格式返回结果：
-            
-            {
-              "answer": "最终给用户的自然语言回答，清晰、简洁、专业。",
-              
-              "actions": [
-                {
-                  "tool": "调用的工具名称，没有工具调用则为空数组",
-                  "input": "传给工具的输入",
-                  "output": "工具返回的结果"
-                }
-              ],
-            
-              "analysis": {
-                "intent": "用户意图的简要判断",
-                "reasoning": "你的推理过程摘要（不要暴露Chain-of-Thought，只需给结论的简述）"
-              },
-            
-              "metadata": {
-                "confidence": 0.8,
-                "agent": "app-creator-agent",
-                "time": "yyyy-MM-dd HH:mm:ss"（时间取当前北京时间）
-              }
-            }
-            """;
+    private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/front_single_html_prompt.md", StandardCharsets.UTF_8);
+
+    /**
+     * 多页面网站的 Prompt（优化后）（test）
+     */
+    private final String MULTI_FILE_PROMPT = FileUtil.readString("prompt/front_multi_file_prompt.md", StandardCharsets.UTF_8);
+    
 
 }

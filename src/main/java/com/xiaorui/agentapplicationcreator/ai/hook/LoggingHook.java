@@ -21,13 +21,13 @@ public class LoggingHook extends AgentHook {
 
     @Override
     public CompletableFuture<Map<String, Object>> beforeAgent(OverAllState state, RunnableConfig config) {
-        System.out.println("Agent 开始执行，等耐心等待噢");
+        System.out.println("Agent 开始执行，请耐心等待噢");
         return CompletableFuture.completedFuture(Map.of());
     }
 
     @Override
     public CompletableFuture<Map<String, Object>> afterAgent(OverAllState state, RunnableConfig config) {
-        System.out.println("Agent 执行完成，OK 啦");
+        System.out.println("Agent 执行完成，看看回复了啥");
         return CompletableFuture.completedFuture(Map.of());
     }
 }

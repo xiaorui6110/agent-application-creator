@@ -1,6 +1,7 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
-import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
+import com.alibaba.dashscope.exception.InputRequiredException;
+import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.xiaorui.agentapplicationcreator.ai.MiniAppCreator;
 import com.xiaorui.agentapplicationcreator.ai.model.dto.CallAgentRequest;
 import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
@@ -30,7 +31,7 @@ public class AgentController {
      * 智能体对话接口
      */
     @PostMapping("/chat")
-    public ServerResponseEntity<AgentResponse> chat(@RequestBody CallAgentRequest callAgentRequest) throws GraphRunnerException {
+    public ServerResponseEntity<AgentResponse> chat(@RequestBody CallAgentRequest callAgentRequest) {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
@@ -39,6 +40,18 @@ public class AgentController {
     }
 
 
+    /**
+     * 智能体对话接口（流式输出）
+     */
+    @PostMapping("/stream_chat")
+    public ServerResponseEntity<AgentResponse> streamChat(@RequestBody CallAgentRequest callAgentRequest)
+            throws NoApiKeyException, InputRequiredException, InterruptedException {
+        ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String message = callAgentRequest.getMessage();
+        String threadId = callAgentRequest.getThreadId();
+        AgentResponse response = miniAppCreator.streamChat(message, threadId);
+        return ServerResponseEntity.success(response);
+    }
 
 
 }

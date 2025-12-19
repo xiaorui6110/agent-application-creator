@@ -1,9 +1,11 @@
 package com.xiaorui.agentapplicationcreator.service.impl;
 
-import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
+import com.mongodb.MongoWriteException;
 import com.xiaorui.agentapplicationcreator.infrastructure.repository.AgentChatMessageRepository;
+import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.service.AgentChatMemoryService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.List;
  * @author: xiaorui
  * @date: 2025-12-15 15:03
  **/
+@Slf4j
 @Service
 public class AgentChatMemoryServiceImpl implements AgentChatMemoryService {
 
@@ -27,7 +30,12 @@ public class AgentChatMemoryServiceImpl implements AgentChatMemoryService {
     @Override
     public void saveMessage(AgentChatMessage message) {
         message.setTimestamp(System.currentTimeMillis());
-        repository.save(message);
+        // 保存信息失败时：不会返回任何值，而是直接抛出 MongoWriteException/MongoException 等异常
+        try {
+            repository.save(message);
+        } catch (MongoWriteException e ) {
+            log.error("MongoDB 保存对话消息失败：{}", e.getMessage());
+        }
     }
 
     /**

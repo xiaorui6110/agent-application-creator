@@ -55,24 +55,4 @@ public class MessageTrimmingHook extends ModelHook {
         return CompletableFuture.completedFuture(Map.of());
     }
 
-    /* Spring AI Alibaba 内置实现： 消息压缩（Summarization）
-
-    import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
-
-    // 创建消息压缩 Hook
-    SummarizationHook summarizationHook = SummarizationHook.builder()
-        .model(chatModel)
-        .maxTokensBeforeSummary(4000)
-        .messagesToKeep(20)
-        .build();
-
-    // 使用
-    ReactAgent agent = ReactAgent.builder()
-        .name("my_agent")
-        .model(chatModel)
-        .hooks(summarizationHook)
-        .build();
-
-     */
-
 }
