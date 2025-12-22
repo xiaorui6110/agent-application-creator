@@ -1,6 +1,7 @@
 ### CUSTOM ###
 application-dev.yml
 .env
+tmp
 
 target/
 .mvn/wrapper/maven-wrapper.jar

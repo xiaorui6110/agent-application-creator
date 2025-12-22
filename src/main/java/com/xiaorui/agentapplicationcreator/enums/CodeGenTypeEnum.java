@@ -4,23 +4,24 @@ import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
 /**
- * @description: 用户角色枚举
+ * @description: 代码生成类型枚举
  * @author: xiaorui
- * @date: 2025-11-30 12:25
+ * @date: 2025-12-22 11:38
  **/
 @Getter
-public enum UserRoleEnum {
+public enum CodeGenTypeEnum {
+
     /**
-     * 用户角色枚举
+     * 代码生成类型枚举
      */
-    USER("用户", "user"),
-    ADMIN("管理员", "admin");
+    SINGLE_FILE("原生 HTML 模式", "single_file"),
+    MULTI_FILE("原生多文件模式", "multi_file"),
+    VUE_PROJECT("Vue 工程模式", "vue_project");
 
     private final String text;
-
     private final String value;
 
-    UserRoleEnum(String text, String value) {
+    CodeGenTypeEnum(String text, String value) {
         this.text = text;
         this.value = value;
     }
@@ -31,17 +32,15 @@ public enum UserRoleEnum {
      * @param value 枚举值的value
      * @return 枚举值
      */
-    public static UserRoleEnum getEnumByValue(String value) {
+    public static CodeGenTypeEnum getEnumByValue(String value) {
         if (ObjUtil.isEmpty(value)) {
             return null;
         }
-        for (UserRoleEnum anEnum : UserRoleEnum.values()) {
+        for (CodeGenTypeEnum anEnum : CodeGenTypeEnum.values()) {
             if (anEnum.value.equals(value)) {
                 return anEnum;
             }
         }
         return null;
     }
-
-
 }

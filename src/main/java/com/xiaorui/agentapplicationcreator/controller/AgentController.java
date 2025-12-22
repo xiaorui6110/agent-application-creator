@@ -2,7 +2,7 @@ package com.xiaorui.agentapplicationcreator.controller;
 
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
-import com.xiaorui.agentapplicationcreator.ai.MiniAppCreator;
+import com.xiaorui.agentapplicationcreator.ai.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.ai.model.dto.CallAgentRequest;
 import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AgentController {
 
     @Resource
-    private MiniAppCreator miniAppCreator;
+    private AgentAppCreator agentAppCreator;
 
     /**
      * 智能体对话接口
@@ -35,7 +35,7 @@ public class AgentController {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
-        AgentResponse response = miniAppCreator.chat(message, threadId);
+        AgentResponse response = agentAppCreator.chat(message, threadId);
         return ServerResponseEntity.success(response);
     }
 
@@ -49,7 +49,7 @@ public class AgentController {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
-        AgentResponse response = miniAppCreator.streamChat(message, threadId);
+        AgentResponse response = agentAppCreator.streamChat(message, threadId);
         return ServerResponseEntity.success(response);
     }
 

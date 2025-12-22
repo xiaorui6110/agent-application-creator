@@ -17,9 +17,9 @@ import java.util.Map;
 public class MyBatisCodeGenerator {
 
     /**
-     * 需要生成的表名（每次修改表名生成）
+     * TODO 需要生成的表名（每次修改表名生成）
      */
-    private static final String[] TABLE_NAMES = {"xr_user_thread_bind"};
+    private static final String[] TABLE_NAMES = {"xr_app"};
 
     public static void main(String[] args) {
         // 获取数据源信息（从yml文件中获取）

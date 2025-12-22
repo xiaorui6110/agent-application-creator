@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai;
+package com.xiaorui.agentapplicationcreator.ai.creator;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
@@ -36,19 +36,16 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @description: 简易版应用生成智能体开发
+ * @description: 智能体应用生成开发
  * @author: xiaorui
  * @date: 2025-12-10 13:07
  **/
 @Slf4j
 @Component
-public class MiniAppCreator {
+public class AgentAppCreator {
 
     private final static Integer MAX_INPUT_LENGTH = 2000;
 
-    /**
-     * 单页面网站的 Prompt（优化后）（test）
-     */
     private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/front_single_html_prompt.md", StandardCharsets.UTF_8);
 
     @Resource
@@ -94,7 +91,7 @@ public class MiniAppCreator {
             // 保存 Agent 回复到 MongoDB 中
             agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "assistant", response.getText()));
         } catch (Exception e) {
-            log.error("Agent 调用失败, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
+            log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 构建返回值
@@ -110,16 +107,16 @@ public class MiniAppCreator {
                 .build();
     }
 
-
     /**
      * TODO 让 agent 获取历史对话信息，来维持记忆
      */
 
     /**
-     * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，暂时不使用，待优化）
+     * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，暂时不使用，待优化，比如输出格式、等等）
      * <a href="https://bailian.console.aliyun.com/tab=doc?tab=doc#/doc/?type=model&url=2866129">...</a>
      */
-    public AgentResponse streamChat(String userMessage, String transThreadId) throws NoApiKeyException, InputRequiredException, InterruptedException {
+    public AgentResponse streamChat(String userMessage, String transThreadId)
+            throws NoApiKeyException, InputRequiredException, InterruptedException {
         // 获取当前用户
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
@@ -136,7 +133,7 @@ public class MiniAppCreator {
         }
         // 输入校验
         validateUserInput(userMessage);
-        // TODO 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体
+        // TODO 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
         // 通义千问 API 是无状态的，不会保存对话历史。要实现多轮对话，需在每次请求中显式传入历史对话消息（好吧）
         // 保存用户输入到 MongoDB 中（底层已校验插入成功与否的错误处理，此处不做追加处理 log）
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "user", userMessage));
@@ -186,7 +183,7 @@ public class MiniAppCreator {
                         // onError: 处理错误
                         error -> {
                             System.err.println("\n请求失败: " + error.getMessage());
-                            log.error("Agent 调用失败, threadId={}, userId={}, error={}", threadId, userId, error.getMessage());
+                            log.error("agent stream call failed, threadId={}, userId={}, error={}", threadId, userId, error.getMessage());
                             latch.countDown();
                             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
                         },

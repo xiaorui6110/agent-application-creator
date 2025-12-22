@@ -1,0 +1,79 @@
+package com.xiaorui.agentapplicationcreator.model.vo;
+
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.core.keygen.KeyGenerators;
+import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * @description: 应用vo
+ * @author: xiaorui
+ * @date: 2025-12-22 10:59
+ **/
+@Data
+public class AppVO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 3583557824430216469L;
+
+    /**
+     * 应用id（雪花算法）
+     */
+    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
+    private String appId;
+
+    /**
+     * 应用名称
+     */
+    private String appName;
+
+    /**
+     * 应用封面
+     */
+    private String appCover;
+
+    /**
+     * 应用初始化的 prompt
+     */
+    private String appInitPrompt;
+
+    /**
+     * 应用描述
+     */
+    private String appDescription;
+
+    /**
+     * 代码生成类型（枚举）
+     */
+    private String codeGenType;
+
+    /**
+     * 部署访问地址
+     */
+    private String deployUrl;
+
+    /**
+     * 部署时间
+     */
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    private LocalDateTime deployedTime;
+
+    /**
+     * 创建时间
+     */
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    private LocalDateTime updateTime;
+
+
+}

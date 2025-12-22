@@ -3,7 +3,7 @@ package com.xiaorui.agentapplicationcreator.manager.password;
 import cn.hutool.core.util.StrUtil;
 import com.xiaorui.agentapplicationcreator.enums.SysTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
-import com.xiaorui.agentapplicationcreator.util.IpHelper;
+import com.xiaorui.agentapplicationcreator.util.IpHelperUtil;
 import com.xiaorui.agentapplicationcreator.util.RedisUtil;
 import jakarta.annotation.Resource;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -83,7 +83,7 @@ public class PasswordCheckManager {
     private String buildRedisKey(SysTypeEnum sysTypeEnum, String userEmail) {
         return sysTypeEnum.getValue()
                 + CHECK_VALID_CODE_NUM_PREFIX
-                + IpHelper.getIpAddr()
+                + IpHelperUtil.getIpAddr()
                 + "_" + userEmail;
     }
 

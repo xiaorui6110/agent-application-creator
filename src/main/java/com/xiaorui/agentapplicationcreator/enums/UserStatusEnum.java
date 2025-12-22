@@ -24,4 +24,5 @@ public enum UserStatusEnum {
     UserStatusEnum(Integer value) {
         this.value = value;
     }
+
 }

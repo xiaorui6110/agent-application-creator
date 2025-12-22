@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author: xiaorui
  * @date: 2025-11-30 14:26
  **/
-public class IpHelper {
+public class IpHelperUtil {
 
     /**
      * 未知IP

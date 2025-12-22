@@ -11,7 +11,6 @@ import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
-import com.xiaorui.agentapplicationcreator.ai.MiniAppCreator;
 import com.xiaorui.agentapplicationcreator.ai.model.result.SingleFileCodeResult;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
@@ -29,13 +28,10 @@ import java.util.concurrent.CountDownLatch;
  * @date: 2025-12-10 14:14
  **/
 @SpringBootTest
-public class MiniAppCreatorTest {
+public class AgentAppCreatorTest {
 
     @Resource
     private ReactAgent appCreatorAgent;
-
-    @Resource
-    private MiniAppCreator miniAppCreator;
 
     /**
      *  测试 agent 调用
