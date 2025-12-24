@@ -4,7 +4,7 @@ import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.xiaorui.agentapplicationcreator.ai.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.ai.model.dto.CallAgentRequest;
-import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
@@ -31,12 +31,12 @@ public class AgentController {
      * 智能体对话接口
      */
     @PostMapping("/chat")
-    public ServerResponseEntity<AgentResponse> chat(@RequestBody CallAgentRequest callAgentRequest) {
+    public ServerResponseEntity<SystemOutput> chat(@RequestBody CallAgentRequest callAgentRequest) {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
-        AgentResponse response = agentAppCreator.chat(message, threadId);
-        return ServerResponseEntity.success(response);
+        SystemOutput systemOutput = agentAppCreator.chat(message, threadId);
+        return ServerResponseEntity.success(systemOutput);
     }
 
 
@@ -44,13 +44,13 @@ public class AgentController {
      * 智能体对话接口（流式输出）
      */
     @PostMapping("/stream_chat")
-    public ServerResponseEntity<AgentResponse> streamChat(@RequestBody CallAgentRequest callAgentRequest)
+    public ServerResponseEntity<SystemOutput> streamChat(@RequestBody CallAgentRequest callAgentRequest)
             throws NoApiKeyException, InputRequiredException, InterruptedException {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
-        AgentResponse response = agentAppCreator.streamChat(message, threadId);
-        return ServerResponseEntity.success(response);
+        SystemOutput systemOutput = agentAppCreator.streamChat(message, threadId);
+        return ServerResponseEntity.success(systemOutput);
     }
 
 

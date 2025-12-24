@@ -3,6 +3,7 @@ package com.xiaorui.agentapplicationcreator.ai.creator;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.dashscope.aigc.generation.Generation;
@@ -13,7 +14,11 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
+import com.xiaorui.agentapplicationcreator.ai.context.AgentContext;
+import com.xiaorui.agentapplicationcreator.ai.hook.AgentHookExecutor;
+import com.xiaorui.agentapplicationcreator.ai.model.enums.AgentLifecycleEvent;
 import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
@@ -32,6 +37,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
@@ -60,10 +66,52 @@ public class AgentAppCreator {
     @Resource
     private AgentChatMemoryService agentChatMemoryService;
 
+    @Resource
+    private AgentHookExecutor agentHookExecutor;
+
+    /**
+     * 智能体对话（Test）
+     */
+    public SystemOutput chatTest(String userMessage, String transThreadId) {
+        // 构建 Agent 上下文
+        AgentContext context = AgentContext.builder()
+                .appId("appId_1212121")
+                .userId("userId_1212121221")
+                .threadId("threadId_121212")
+                .startTime(System.currentTimeMillis())
+                .build();
+
+        // 提前在外部声明 POJO 变量
+        AssistantMessage response;
+        AgentResponse agentResponse;
+        try {
+            // 调用 Agent
+            response = appCreatorAgent.call(userMessage);
+            // JSON 转 Bean
+            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class);
+            Map<String, String> files = agentResponse.getStructuredReply().getFiles();
+            // 将代码文件写入本地文件夹
+            agentHookExecutor.fire(AgentLifecycleEvent.AFTER_AGENT, context, files);
+        } catch (Exception e) {
+            throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
+        }
+        // 构建返回值
+        return SystemOutput.builder()
+                .agentName("app-creator-agent")
+                .threadId("threadId_121212")
+                .userId("user_id_123456")
+                .messageId(transThreadId)
+                .agentResponse(agentResponse)
+                .fromMemory(false)
+                .timestamp(System.currentTimeMillis())
+                .build();
+    }
+
+
     /**
      * 智能体对话
      */
-    public AgentResponse chat(String userMessage, String transThreadId) {
+    public SystemOutput chat(String userMessage, String transThreadId) {
         // 获取当前用户
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
@@ -84,10 +132,13 @@ public class AgentAppCreator {
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "user", userMessage));
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
-        // 调用 Agent
+        // 提前在外部声明 POJO 变量
         AssistantMessage response;
+        AgentResponse agentResponse;
         try {
             response = appCreatorAgent.call(userMessage, runnableConfig);
+            // JSON 转 Bean
+            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class);
             // 保存 Agent 回复到 MongoDB 中
             agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "assistant", response.getText()));
         } catch (Exception e) {
@@ -95,15 +146,15 @@ public class AgentAppCreator {
             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 构建返回值
-        return AgentResponse.builder()
+        return SystemOutput.builder()
                 .threadId(threadId)
                 .userId(userId)
                 .messageId(UUID.randomUUID().toString())
                 .agentName("app-creator-agent")
-                .reply(response.getText())
+                .agentResponse(agentResponse)
+                // TODO 这里后面做缓存时，要进行判断（标志位）
                 .fromMemory(false)
                 .timestamp(System.currentTimeMillis())
-                .confidence(0.85)
                 .build();
     }
 
@@ -115,7 +166,7 @@ public class AgentAppCreator {
      * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，暂时不使用，待优化，比如输出格式、等等）
      * <a href="https://bailian.console.aliyun.com/tab=doc?tab=doc#/doc/?type=model&url=2866129">...</a>
      */
-    public AgentResponse streamChat(String userMessage, String transThreadId)
+    public SystemOutput streamChat(String userMessage, String transThreadId)
             throws NoApiKeyException, InputRequiredException, InterruptedException {
         // 获取当前用户
         String userId = SecurityUtil.getUserInfo().getUserId();
@@ -196,20 +247,21 @@ public class AgentAppCreator {
                 );
         // 主线程等待异步任务完成
         latch.await();
+        // TODO 这玩意的 fullContent.toString() 好像不是 JSON 格式的，流式输出！！！
+        AgentResponse agentResponse = JSONUtil.toBean(fullContent.toString(), AgentResponse.class);
         // 保存 Agent 回复到 MongoDB 中
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "assistant", fullContent.toString()));
         System.out.println("程序执行完成");
         // 构建返回值
-        return AgentResponse.builder()
+        return SystemOutput.builder()
                 .threadId(threadId)
                 .userId(userId)
                 .messageId(UUID.randomUUID().toString())
                 .agentName("app-creator-agent")
                 // 使用 try/catch 后，外部代码块获取不到 AI 回复信息，故未使用 try/catch
-                .reply(fullContent.toString())
+                .agentResponse(agentResponse)
                 .fromMemory(false)
                 .timestamp(System.currentTimeMillis())
-                .confidence(0.85)
                 .build();
 
     }
@@ -242,7 +294,7 @@ public class AgentAppCreator {
     }
 
     /**
-     * 用户输入校验：敏感词检测 ...
+     * 用户输入校验：敏感词检测 ...（TODO 其实也可以改为 Hook 实现）
      */
     private void validateUserInput(String input) {
         if (StringUtil.isBlank(input)) {

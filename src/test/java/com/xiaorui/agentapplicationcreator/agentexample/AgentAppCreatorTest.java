@@ -2,7 +2,6 @@ package com.xiaorui.agentapplicationcreator.agentexample;
 
 
 import cn.hutool.core.lang.UUID;
-import cn.hutool.json.JSONUtil;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
@@ -11,7 +10,8 @@ import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
-import com.xiaorui.agentapplicationcreator.ai.model.result.SingleFileCodeResult;
+import com.xiaorui.agentapplicationcreator.ai.creator.AgentAppCreator;
+import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
@@ -32,6 +32,9 @@ public class AgentAppCreatorTest {
 
     @Resource
     private ReactAgent appCreatorAgent;
+
+    @Resource
+    private AgentAppCreator agentAppCreator;
 
     /**
      *  测试 agent 调用
@@ -107,10 +110,10 @@ public class AgentAppCreatorTest {
         AssistantMessage response = appCreatorAgent.call("我想要做一个番茄计时专注小工具", runnableConfig);
         System.out.println("Agent Response: -----------" + "\n" + response.getText());
 
-        System.out.println("##############################################" + "\n");
-        // 从 JSON 中输出生成的代码（在 JSON 上看代码有转义字符的原因是内容需要符合JSON 协议，JSON 是“协议”，代码是“内容”）
-        String code = JSONUtil.toBean(response.getText(), SingleFileCodeResult.class).getHtmlCode();
-        System.out.println(code);
+        //System.out.println("##############################################" + "\n");
+        //// 从 JSON 中输出生成的代码（在 JSON 上看代码有转义字符的原因是内容需要符合JSON 协议，JSON 是“协议”，代码是“内容”）
+        //String code = JSONUtil.toBean(response.getText(), SingleFileCodeResult.class).getHtmlCode();
+        //System.out.println(code);
 
     }
 
@@ -191,6 +194,45 @@ public class AgentAppCreatorTest {
             e.printStackTrace();
         }
     }
+
+
+    /**
+     * 测试 agent 结构化输出（需不断优化，在优化 prompt 时需要优化结构化输出）
+     */
+    @Test
+    public void testAgentOutput() {
+
+        String threadId = UUID.randomUUID().toString();
+        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现", threadId);
+        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+
+        /*
+        结构化输出：
+
+        SystemOutput(threadId=f804ff7e-5a59-463d-8090-fc5d520c3c66, userId=user_id_123456, messageId=f804ff7e-5a59-463d-8090-fc5d520c3c66, agentName=app-creator-agent, agentOutput={
+          "confidence": 0.95,
+          "intentSummary": "用户希望创建一个使用原生HTML、CSS和JavaScript实现的番茄计时专注小工具，具备基本的计时功能和交互性。",
+          "metadata": {},
+          "reply": "已为您生成一个基于原生 HTML、CSS 和 JavaScript 的番茄计时专注小工具。该工具支持标准的25分钟工作计时和5分钟休息计时，具有开始、暂停和重置功能，并在时间结束时弹出提示。界面简洁美观，响应式设计适配桌面和移动设备。",
+          "structuredReply": {
+            "description": "一个使用原生 HTML、CSS 和 JavaScript 实现的番茄计时器，支持开始、暂停、重置功能，包含工作与休息模式切换。",
+            "entry": "pomodoro-timer.html",
+            "files": {
+              "pomodoro-timer.html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>番茄计时器</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background: linear-gradient(135deg, #f6d365, #fda085);\n            height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            color: #333;\n        }\n\n        .container {\n            background-color: rgba(255, 255, 255, 0.92);\n            border-radius: 20px;\n            padding: 30px;\n            width: 90%;\n            max-width: 500px;\n            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);\n            text-align: center;\n        }\n\n        h1 {\n            font-size: 2rem;\n            margin-bottom: 20px;\n            color: #e74c3c;\n        }\n\n        .timer-display {\n            font-size: 4rem;\n            font-weight: bold;\n            margin: 20px 0;\n            color: #2c3e50;\n        }\n\n        .status {\n            font-size: 1.2rem;\n            margin-bottom: 20px;\n            color: #7f8c8d;\n        }\n\n        .controls button {\n            background-color: #e74c3c;\n            color: white;\n            border: none;\n            padding: 12px 24px;\n            margin: 0 10px;\n            border-radius: 50px;\n            cursor: pointer;\n            font-size: 1rem;\n            transition: background-color 0.3s ease;\n        }\n\n        .controls button:hover {\n            background-color: #c0392b;\n        }\n\n        .controls button:disabled {\n            background-color: #95a5a6;\n            cursor: not-allowed;\n        }\n\n        @media (max-width: 600px) {\n            .timer-display {\n                font-size: 3rem;\n            }\n\n            h1 {\n                font-size: 1.8rem;\n            }\n\n            .controls button {\n                padding: 10px 20px;\n                margin: 5px;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1>番茄计时器</h1>\n        <div class=\"status\" id=\"status\">专注时间</div>\n        <div class=\"timer-display\" id=\"timer\">25:00</div>\n        <div class=\"controls\">\n            <button id=\"startBtn\">开始</button>\n            <button id=\"pauseBtn\" disabled>暂停</button>\n            <button id=\"resetBtn\">重置</button>\n        </div>\n    </div>\n\n    <script>\n        // 定义时间（单位：秒）\n        const WORK_TIME = 25 * 60; // 25分钟\n        const BREAK_TIME = 5 * 60;  // 5分钟\n\n        // 获取DOM元素\n        const timerDisplay = document.getElementById('timer');\n        const statusText = document.getElementById('status');\n        const startBtn = document.getElementById('startBtn');\n        const pauseBtn = document.getElementById('pauseBtn');\n        const resetBtn = document.getElementById('resetBtn');\n\n        let timeLeft = WORK_TIME;\n        let isRunning = false;\n        let isWorkTime = true;\n        let intervalId = null;\n\n        // 格式化时间为 MM:SS\n        function formatTime(seconds) {\n            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');\n            const secs = (seconds % 60).toString().padStart(2, '0');\n            return `${mins}:${secs}`;\n        }\n\n        // 更新显示\n        function updateDisplay() {\n            timerDisplay.textContent = formatTime(timeLeft);\n        }\n\n        // 开始计时\n        function startTimer() {\n            if (isRunning) return;\n            isRunning = true;\n            startBtn.disabled = true;\n            pauseBtn.disabled = false;\n\n            intervalId = setInterval(() => {\n                timeLeft--;\n                updateDisplay();\n\n                if (timeLeft <= 0) {\n                    clearInterval(intervalId);\n                    isRunning = false;\n                    // 切换模式\n                    isWorkTime = !isWorkTime;\n                    timeLeft = isWorkTime ? WORK_TIME : BREAK_TIME;\n                    statusText.textContent = isWorkTime ? '专注时间' : '休息时间';\n                    alert(isWorkTime ? '专注时间结束！现在开始休息吧！' : '休息时间结束！准备继续专注了吗？');\n                    startBtn.disabled = false;\n                    pauseBtn.disabled = true;\n                }\n            }, 1000);\n        }\n\n        // 暂停计时\n        function pauseTimer() {\n            if (!isRunning) return;\n            clearInterval(intervalId);\n            isRunning = false;\n            startBtn.disabled = false;\n            pauseBtn.disabled = true;\n        }\n\n        // 重置计时\n        function resetTimer() {\n            clearInterval(intervalId);\n            isRunning = false;\n            isWorkTime = true;\n            timeLeft = WORK_TIME;\n            updateDisplay();\n            statusText.textContent = '专注时间';\n            startBtn.disabled = false;\n            pauseBtn.disabled = true;\n        }\n\n        // 初始化\n        updateDisplay();\n\n        // 绑定事件\n        startBtn.addEventListener('click', startTimer);\n        pauseBtn.addEventListener('click', pauseTimer);\n        resetBtn.addEventListener('click', resetTimer);\n    </script>\n</body>\n</html>"
+            },
+            "runnable": true,
+            "type": "SINGLE_FILE"
+          },
+          "toolCalls": []
+        }, fromMemory=false, timestamp=1766561217785)
+
+         */
+
+    }
+
+
+
+
 
 
 }
