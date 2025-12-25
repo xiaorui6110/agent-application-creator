@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @description: Jackson 配置
+ * @description: Jackson 配置（好像没用哈，这是之前考虑 JSON 持久化配置的）
  * @author: xiaorui
  * @date: 2025-12-12 11:11
  **/

@@ -1,17 +1,16 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
 import com.mybatisflex.core.paginate.Page;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.model.dto.app.AppCreateRequest;
+import com.xiaorui.agentapplicationcreator.model.dto.app.AppDeployRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
+import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.AppService;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 /**
@@ -23,8 +22,30 @@ import java.util.List;
 @RequestMapping("/app")
 public class AppController {
 
-    @Autowired
+    @Resource
     private AppService appService;
+
+    /**
+     * 应用创建（用户在主页输入提示词）
+     */
+    @PostMapping("/create")
+    public ServerResponseEntity<String> appCreate(@RequestBody AppCreateRequest appCreateRequest) {
+        ThrowUtil.throwIf(appCreateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String appInitPrompt = appCreateRequest.getAppInitPrompt();
+        String appId = appService.appCreate(appInitPrompt);
+        return ServerResponseEntity.success(appId);
+    }
+
+    /**
+     * 应用部署
+     */
+    @PostMapping("/deploy")
+    public ServerResponseEntity<String> appDeploy(@RequestBody AppDeployRequest appDeployRequest) {
+        ThrowUtil.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String appId = appDeployRequest.getAppId();
+        String deployUrl = appService.appDeploy(appId);
+        return ServerResponseEntity.success(deployUrl);
+    }
 
     /**
      * 保存应用表。

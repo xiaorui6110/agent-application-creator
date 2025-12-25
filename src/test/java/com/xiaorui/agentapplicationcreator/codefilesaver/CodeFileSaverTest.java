@@ -29,7 +29,7 @@ public class CodeFileSaverTest {
         map.put("test2.css", "test222");
         map.put("test3.js", "test333");
         String appId = "123456";
-        codeFileSaverUtil.writeFiles(map, appId);
+        codeFileSaverUtil.writeFilesToLocal(map, appId);
     }
 
 }

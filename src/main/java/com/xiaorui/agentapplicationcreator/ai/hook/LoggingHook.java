@@ -36,7 +36,7 @@ public class LoggingHook extends AgentHook {
 
     ✔️ 适合 Hook 的典型动作：和业务无关、和 Agent 强相关、可以失败，但不影响主流程
 
-        ✔ 自动保存生成代码到本地
+        ✔ 自动保存生成代码到本地 ❎（失败会影响主流程，并且需要上下文）
         ✔ 记录生成快照（version）
         ✔ 更新应用状态（GENERATED）
         ✔ 写审计日志

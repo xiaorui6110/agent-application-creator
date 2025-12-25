@@ -41,7 +41,7 @@ public interface AppService extends IService<App> {
      * 部署应用
      *
      * @param appId 应用id
-     * @return 部署结果
+     * @return 部署结果url
      */
     String appDeploy(String appId);
 

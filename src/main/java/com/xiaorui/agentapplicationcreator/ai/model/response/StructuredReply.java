@@ -20,7 +20,7 @@ import java.util.Map;
 public class StructuredReply {
 
     /**
-     * 应用生成模式
+     * 应用生成模式（SINGLE_FILE / MULTI_FILE / VUE_PROJECT）
      */
     private CodeGenTypeEnum type;
 

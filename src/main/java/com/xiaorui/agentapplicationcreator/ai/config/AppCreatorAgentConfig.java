@@ -81,11 +81,11 @@ public class AppCreatorAgentConfig {
                 .instruction(INSTRUCTION)
                 // 定义响应格式（可选）
                 .outputSchema(agentResponseFormat)
-                // 工具调用（可组合使用）TODO 考虑使用 tool + CodeFileSaverUtil 让 agent 执行后自动进行代码的保存
+                // 工具调用（可组合使用）
                 .tools(exampleTestTool)
-                // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要）
+                // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要，before_*是正的，after_*是反的）
                 .hooks(loggingHook, summarizationHook, ModelCallLimitHook.builder().runLimit(50).build())
-                // 工具错误处理（可组合使用）
+                // 工具错误处理（可组合使用）（嵌套调用（第一个拦截器包装所有其他的））
                 .interceptors(toolErrorInterceptor, TodoListInterceptor.builder().build())
                 // 只做短生命周期
                 .saver(new MemorySaver())

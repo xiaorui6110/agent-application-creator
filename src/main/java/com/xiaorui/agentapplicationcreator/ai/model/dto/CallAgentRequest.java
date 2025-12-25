@@ -25,6 +25,11 @@ public class CallAgentRequest {
      */
     private String threadId;
 
+    /**
+     * 应用 ID（应用级 agent 对话标识，用于维护应用中的对话）
+     */
+    private String appId;
+
     //private String locale;     // 语言
     //private boolean stream;    // 是否流式
     //private Map<String,Object> context;  // 扩展使用

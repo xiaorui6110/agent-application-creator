@@ -27,9 +27,9 @@ public class SystemOutput {
     private String userId;
 
     /**
-     * 本次 Agent 回复的唯一 ID（用于追踪 / 回放 / 排错）
+     * 应用 ID
      */
-    private String messageId;
+    private String appId;
 
     /**
      * Agent 名称 / 标识
