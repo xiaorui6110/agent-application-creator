@@ -148,7 +148,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 检查是否已有 deployKey，否则生成 6 位 deployKey（字母 + 数字）
         String deployKey = app.getDeployKey();
         if (StrUtil.isBlank(deployKey)) {
-            app.setDeployKey(RandomUtil.randomString(6));
+            deployKey = RandomUtil.randomString(6);
         }
         // 获取源目录(code_output)
         Path sourceDirName = Paths.get(appId);
@@ -165,6 +165,11 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "部署失败：" + e.getMessage());
         }
+
+
+        // TODO 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署
+
+
         // 更新应用的 deployKey 和部署时间
         App updateApp = new App();
         updateApp.setAppId(appId);
@@ -174,7 +179,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         updateApp.setDeployUrl(String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey));
         boolean updateResult = this.updateById(updateApp);
         ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        // 返回可访问的 URL
+        // 返回可访问的 URL TODO 目前返回的是 http://localhost/WrEIYy/
         return String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey);
     }
 

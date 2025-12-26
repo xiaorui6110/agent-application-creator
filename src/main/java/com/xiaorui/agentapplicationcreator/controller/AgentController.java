@@ -30,8 +30,6 @@ public class AgentController {
     @Resource
     private AgentAppCreator agentAppCreator;
 
-    @Resource
-    private CodeFileSaverUtil codeFileSaverUtil;
 
     /**
      * 智能体对话接口 TODO 多轮对话时可能还会有些问题，比如频繁写入文件、多轮对话输出格式。。。
@@ -43,7 +41,7 @@ public class AgentController {
         String threadId = callAgentRequest.getThreadId();
         String appId = callAgentRequest.getAppId();
         SystemOutput systemOutput = agentAppCreator.chat(message, threadId, appId);
-        codeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
+        CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
         return ServerResponseEntity.success(systemOutput);
     }
 
@@ -58,7 +56,7 @@ public class AgentController {
         String threadId = callAgentRequest.getThreadId();
         String appId = callAgentRequest.getAppId();
         SystemOutput systemOutput = agentAppCreator.streamChat(message, threadId, appId);
-        codeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
+        CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
         return ServerResponseEntity.success(systemOutput);
     }
 

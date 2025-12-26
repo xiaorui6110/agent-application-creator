@@ -103,4 +103,9 @@ minio:
   access-key: xiaorui   # minio服务器用户名
   secret-key: 18656412886ty   # minio服务器密码
   default-bucket: agent-app-creator-bucket  # 创建的 bucket 名称
-
+# sftp 配置
+sftp:
+  host: 172.30.43.12  # Linux服务器IP
+  port: 22  # SFTP端口（默认22）
+  username: shenrui   # 服务器用户名
+  password: 18656412886ty   # 服务器密码

@@ -38,9 +38,6 @@ public class AgentAppCreatorTest {
     @Resource
     private AgentAppCreator agentAppCreator;
 
-    @Resource
-    private CodeFileSaverUtil codeFileSaverUtil;
-
     /**
      *  测试 agent 调用
      */
@@ -244,7 +241,7 @@ public class AgentAppCreatorTest {
     public void testAgentHook() throws IOException {
 
         SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
-        codeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(),"app_id12121212");
+        CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(),"app_id12121212");
         System.out.println("Agent Response: -----------" + "\n" + systemOutput);
 
     }

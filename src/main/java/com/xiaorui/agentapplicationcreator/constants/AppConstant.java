@@ -27,7 +27,7 @@ public interface AppConstant {
     String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_deploy";
 
     /**
-     * 应用部署域名
+     * 应用部署域名（改为自己的 Liunx 服务器地址或本地地址）
      */
     String CODE_DEPLOY_HOST = "http://localhost";
 

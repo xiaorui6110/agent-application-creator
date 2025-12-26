@@ -1,7 +1,6 @@
 package com.xiaorui.agentapplicationcreator.util;
 
 import cn.hutool.core.io.FileUtil;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +19,6 @@ import static com.xiaorui.agentapplicationcreator.constants.AppConstant.CODE_OUT
  * @author: xiaorui
  * @date: 2025-12-22 14:08
  **/
-@Component
 public class CodeFileSaverUtil {
 
     /**
@@ -29,7 +27,7 @@ public class CodeFileSaverUtil {
      * @param files key: 相对路径, value: 文件内容
      * @param appId 应用ID
      */
-    public void writeFilesToLocal(Map<String, String> files, String appId) throws IOException {
+    public static void writeFilesToLocal(Map<String, String> files, String appId) throws IOException {
 
         for (Map.Entry<String, String> entry : files.entrySet()) {
 
@@ -64,14 +62,14 @@ public class CodeFileSaverUtil {
      * @param files key: 相对路径, value: 文件内容
      * @param appId 应用ID
      */
-    public void writeFilesToWeb(Map<String, String> files, String appId) throws IOException {
+    public static void writeFilesToWeb(Map<String, String> files, String appId) throws IOException {
 
         for (Map.Entry<String, String> entry : files.entrySet()) {
 
             String relativePath = entry.getKey();
             String content = entry.getValue();
 
-            // 构建唯一目录路径：tmp/code_deploy/{appId}
+            // TODO （改）构建唯一目录路径：tmp/code_deploy/{deployKey}
             Path uniqueDirName = Paths.get(appId);
             String dirPath = CODE_DEPLOY_ROOT_DIR + File.separator + uniqueDirName;
             // 创建应用存放文件夹
