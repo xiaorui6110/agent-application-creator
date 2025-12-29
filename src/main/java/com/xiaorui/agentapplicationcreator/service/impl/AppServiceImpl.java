@@ -18,6 +18,7 @@ import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
+import com.xiaorui.agentapplicationcreator.util.SftpFileUtil;
 import jakarta.annotation.Resource;
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SftpFileUtil sftpFileUtil;
 
     /**
      * 创建应用
@@ -158,18 +162,21 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用代码不存在，请先生成代码");
         }
-        // 复制文件到部署目录(code_deploy)
+        // 复制文件到本都部署文件保存目录(code_deploy) TODO 后面可能会改为使用本地目录部署（linux服务器有点不方便）
         String deployDirPath = CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
         try {
             FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "部署失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制本地文件到部署文件夹失败：" + e.getMessage());
         }
-
-
-        // TODO 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署
-
-
+        // 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署
+        String deployToLinuxDirPath = REMOTE_DEPLOY_DIR + File.separator + deployKey;
+        try {
+            sftpFileUtil.uploadDirToLinux(deployDirPath, deployToLinuxDirPath);
+            log.info("upload dir to linux success, deployToLinuxDirPath: {}", deployToLinuxDirPath);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "文件部署到服务器失败：" + e.getMessage());
+        }
         // 更新应用的 deployKey 和部署时间
         App updateApp = new App();
         updateApp.setAppId(appId);
@@ -179,7 +186,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         updateApp.setDeployUrl(String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey));
         boolean updateResult = this.updateById(updateApp);
         ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        // 返回可访问的 URL TODO 目前返回的是 http://localhost/WrEIYy/
+        // 返回可访问的 URL
         return String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey);
     }
 

@@ -5,11 +5,12 @@ import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
 import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
 import com.alibaba.cloud.ai.graph.agent.interceptor.todolist.TodoListInterceptor;
-import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
+import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
 import com.xiaorui.agentapplicationcreator.ai.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.ai.interceptor.ToolErrorInterceptor;
 import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.ai.tool.ExampleTestTool;
+import jakarta.annotation.Resource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.tool.ToolCallback;
@@ -21,12 +22,15 @@ import java.nio.charset.StandardCharsets;
 
 
 /**
- * @description: agent 核心配置   TODO 一些 hook、tool、interceptor 等等还需优化实现
+ * @description: agent 核心配置   TODO 一些 hook、tool、interceptor 等等还需优化实现，消息总结，对话历史操作等等
  * @author: xiaorui
  * @date: 2025-12-10 14:57
  **/
 @Configuration
 public class AppCreatorAgentConfig {
+
+    @Resource
+    private RedisSaver redisSaver;
 
     /**
      * 系统提示词 TODO 待指定优化后的文件，先将项目完整流程跑通
@@ -87,8 +91,8 @@ public class AppCreatorAgentConfig {
                 .hooks(loggingHook, summarizationHook, ModelCallLimitHook.builder().runLimit(50).build())
                 // 工具错误处理（可组合使用）（嵌套调用（第一个拦截器包装所有其他的））
                 .interceptors(toolErrorInterceptor, TodoListInterceptor.builder().build())
-                // 只做短生命周期
-                .saver(new MemorySaver())
+                // 使用 RedisSaver
+                .saver(redisSaver)
                 .build();
     }
 

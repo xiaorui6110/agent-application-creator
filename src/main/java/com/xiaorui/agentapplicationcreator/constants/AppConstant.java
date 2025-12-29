@@ -19,16 +19,21 @@ public interface AppConstant {
     /**
      * 应用生成目录
      */
-    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "\\tmp\\code_output";
 
     /**
      * 应用部署目录
      */
-    String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_deploy";
+    String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "\\tmp\\code_deploy";
 
     /**
-     * 应用部署域名（改为自己的 Liunx 服务器地址或本地地址）
+     * 应用部署域名（TODO 改为自己的 Liunx 服务器地址或本地地址）
      */
-    String CODE_DEPLOY_HOST = "http://localhost";
+    String CODE_DEPLOY_HOST = "http://172.30.43.12";
+
+    /**
+     * 远程部署目录（TODO 改为自己的 Liunx 服务器目录或本地目录）
+     */
+    String REMOTE_DEPLOY_DIR = "/home/shenrui/nginx/code_deploy/";
 
 }

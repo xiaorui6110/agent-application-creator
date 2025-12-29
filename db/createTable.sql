@@ -52,28 +52,44 @@ CREATE TABLE `xr_user_thread_bind` (
 -- 应用表
 drop table if exists `xr_app`;
 CREATE TABLE `xr_app` (
-  `app_id`          varchar(36)  not null default ''    comment '应用id',
-  `app_name`        varchar(256) not null default ''    comment '应用名称',
-  `app_cover`       varchar(255)          default null  comment '应用封面',
-  `app_init_prompt` text                  default null  comment '应用初始化的 prompt',
-  `app_description` varchar(500)          default null  comment '应用描述',
-  `code_gen_type`   varchar(64)           default null  comment '代码生成类型（枚举）',
-  `deploy_key`      varchar(64)           default null  comment '部署唯一标识',
-  `deploy_url`      varchar(255)          default null  comment '部署访问地址',
-  `deployed_time`   datetime              default null  comment '部署时间',
-  `app_priority`    int                   default 0     comment '应用排序优先级',
-  `user_id`         varchar(36)               not null  comment '创建用户id',
-  `create_time`     datetime default CURRENT_TIMESTAMP  comment '创建时间',
-  `update_time`     datetime default CURRENT_TIMESTAMP  on update CURRENT_TIMESTAMP comment '更新时间',
-  `is_deleted`      tinyint(4)  default '0'             COMMENT '是否删除 0-未删除 1-已删除',
-  PRIMARY KEY (app_id),
-  UNIQUE KEY uk_deploy_key (deploy_key),
-  INDEX idx_app_name (app_name),
-  INDEX idx_user_id (user_id),
-  INDEX idx_create_time (create_time)
+   `app_id`          varchar(36)  not null default ''    comment '应用id',
+   `app_name`        varchar(256) not null default ''    comment '应用名称',
+   `app_cover`       varchar(255)          default null  comment '应用封面',
+   `app_init_prompt` text                  default null  comment '应用初始化的 prompt',
+   `app_description` varchar(500)          default null  comment '应用描述',
+   `code_gen_type`   varchar(64)           default null  comment '代码生成类型（枚举）',
+   `deploy_key`      varchar(64)           default null  comment '部署唯一标识',
+   `deploy_url`      varchar(255)          default null  comment '部署访问地址',
+   `deployed_time`   datetime              default null  comment '部署时间',
+   `app_priority`    int                   default 0     comment '应用排序优先级',
+   `user_id`         varchar(36)               not null  comment '创建用户id',
+   `create_time`     datetime default CURRENT_TIMESTAMP  comment '创建时间',
+   `update_time`     datetime default CURRENT_TIMESTAMP  on update CURRENT_TIMESTAMP comment '更新时间',
+   `is_deleted`      tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
+   PRIMARY KEY (app_id),
+   UNIQUE KEY uk_deploy_key (deploy_key),
+   INDEX idx_app_name (app_name),
+   INDEX idx_user_id (user_id),
+   INDEX idx_create_time (create_time)
 ) COMMENT='应用表';
 
-
+-- 对话历史表（基本上同 AgentChatMessage，mongodb 实体类，只是新增了实现）
+drop table if exists `xr_chat_history`;
+CREATE TABLE `xr_chat_history` (
+    `chat_history_id`   varchar(36)  not null default ''    comment '对话历史id',
+    `chat_message`      text                      not null  comment '对话消息',
+    `chat_message_type` varchar(32)               not null  comment '消息类型：user/ai',
+    `app_id`            varchar(36)               not null  comment '应用id',
+    `user_id`           varchar(36)               not null  comment '创建用户id',
+    `parent_id`         varchar(36)                   null  comment '父消息id（用于上下文关联）',
+    `create_time`       datetime default CURRENT_TIMESTAMP  comment '创建时间',
+    `update_time`       datetime default CURRENT_TIMESTAMP  on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted`        tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
+    PRIMARY KEY (chat_history_id),
+    INDEX idx_app_id (app_id),
+    INDEX idx_create_time (create_time),
+    INDEX idx_app_id_create_time (app_id, create_time)
+) COMMENT='对话历史表';
 
 
 

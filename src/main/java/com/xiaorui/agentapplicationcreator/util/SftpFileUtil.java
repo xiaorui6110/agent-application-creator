@@ -49,7 +49,7 @@ public class SftpFileUtil {
     }
 
     /**
-     * 静态方法：上传整个文件夹
+     * 静态方法：上传整个文件夹（实际使用）
      */
     public void uploadDirToLinux(String localDir, String remoteParentDir) throws Exception {
         try {

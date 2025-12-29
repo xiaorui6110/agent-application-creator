@@ -1,10 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.vo;
 
-import com.mybatisflex.annotation.Id;
-import com.mybatisflex.annotation.KeyType;
-import com.mybatisflex.core.keygen.KeyGenerators;
 import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -24,7 +20,6 @@ public class AppVO implements Serializable {
     /**
      * 应用id（雪花算法）
      */
-    @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
     private String appId;
 
     /**
@@ -60,20 +55,16 @@ public class AppVO implements Serializable {
     /**
      * 部署时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
     private LocalDateTime deployedTime;
 
     /**
      * 创建时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
     private LocalDateTime updateTime;
-
 
 }

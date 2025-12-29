@@ -2,6 +2,7 @@ package com.xiaorui.agentapplicationcreator.sftpuploadfile;
 
 import com.xiaorui.agentapplicationcreator.util.SftpFileUtil;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @author: xiaorui
  * @date: 2025-12-26 13:54
  **/
+@Slf4j
 @SpringBootTest
 public class SftpFileUploadTest {
 

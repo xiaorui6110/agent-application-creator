@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Map;
 
 /**
- * @description: Agent 对话消息实体类（mongodb）
+ * @description: Agent 对话消息实体类（mongodb） TODO 后面应该需要在集成一下应用模块、对话历史模块等，要添加一些必要的字段
  * @author: xiaorui
  * @date: 2025-12-15 14:55
  **/
