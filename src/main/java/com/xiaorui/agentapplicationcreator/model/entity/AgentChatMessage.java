@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Map;
 
 /**
- * @description: Agent 对话消息实体类（mongodb） TODO 后面应该需要在集成一下应用模块、对话历史模块等，要添加一些必要的字段
+ * @description: Agent 对话消息实体类（mongodb）
  * @author: xiaorui
  * @date: 2025-12-15 14:55
  **/
@@ -34,6 +34,11 @@ public class AgentChatMessage {
     private String threadId;
 
     /**
+     * 应用 ID
+     */
+    private String appId;
+
+    /**
      * 角色：user / assistant / system
      */
     private String role;
@@ -49,7 +54,7 @@ public class AgentChatMessage {
     private String agentName;
 
     /**
-     * 时间戳
+     * 时间戳（秒）
      */
     private Long timestamp;
 

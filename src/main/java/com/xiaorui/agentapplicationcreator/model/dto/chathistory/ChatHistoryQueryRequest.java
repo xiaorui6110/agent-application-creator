@@ -46,11 +46,6 @@ public class ChatHistoryQueryRequest extends PageRequest implements Serializable
     private String userId;
 
     /**
-     * 父消息id（用于上下文关联）
-     */
-    private String parentId;
-
-    /**
      * 游标查询 - 最后一条记录的创建时间
      * 用于分页查询，获取早于此时间的记录
      */

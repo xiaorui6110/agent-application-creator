@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.xiaorui.agentapplicationcreator.constants.RedisMemoryConstant.AI_MESSAGE_MEMORY_PREFIX;
@@ -30,19 +31,22 @@ import static com.xiaorui.agentapplicationcreator.constants.RedisMemoryConstant.
 @Service
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService{
 
+    /**
+     * 存储到Redis的key的一部分，采用 yyyy-MM-dd_HH_mm_ss 格式（如 2025-12-30-16_14_31）
+     */
+    public static final DateTimeFormatter REDIS_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm_ss");
 
     /**
-     * 保存对话历史
+     * 保存对话历史（保存到 MySQL 数据库）
      *
      * @param appId 应用id
      * @param userId 用户id
-     * @param parentId 父消息id
      * @param chatMessage 对话消息
      * @param chatMessageType 消息类型：user/ai
      * @return true/false
      */
     @Override
-    public boolean saveChatHistory(String appId, String userId, String parentId, String chatMessage, String chatMessageType) {
+    public boolean saveChatHistory(String appId, String userId, String chatMessage, String chatMessageType) {
         // 参数校验
         if (StrUtil.isBlank(appId) || StrUtil.isBlank(userId) || StrUtil.isBlank(chatMessage) || StrUtil.isBlank(chatMessageType)) {
             throw new IllegalArgumentException("参数不能为空");
@@ -53,7 +57,6 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         ChatHistory chatHistory = ChatHistory.builder()
                 .appId(appId)
                 .userId(userId)
-                .parentId(parentId)
                 .chatMessage(chatMessage)
                 .chatMessageType(chatMessageType)
                 .build();
@@ -73,7 +76,6 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         String chatHistoryId = chatHistoryQueryRequest.getChatHistoryId();
         String appId = chatHistoryQueryRequest.getAppId();
         String userId = chatHistoryQueryRequest.getUserId();
-        String parentId = chatHistoryQueryRequest.getParentId();
         String chatMessage = chatHistoryQueryRequest.getChatMessage();
         String chatMessageType = chatHistoryQueryRequest.getChatMessageType();
         LocalDateTime lastCreateTime = chatHistoryQueryRequest.getLastCreateTime();
@@ -84,7 +86,6 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         queryWrapper.eq("chat_history_id", chatHistoryId)
                 .eq("app_id", appId)
                 .eq("user_id", userId)
-                .eq("parent_id", parentId)
                 .like("chat_message", chatMessage)
                 .eq("chat_message_type", chatMessageType);
         // 游标查询逻辑 - 只使用 create_time 作为游标
@@ -102,22 +103,24 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     /**
-     * 加载对话历史到 Redis 内存
+     * 从数据库加载对话历史到 Redis 内存（user + ai 信息）
      *
      * @param appId 应用id
-     * @param chatMessage 对话消息
      * @param maxCount 最大数量
      * @return 加载的对话历史数量
      */
     @Override
-    public int loadChatHistoryToRedis(String appId, String chatMessage, int maxCount) {
+    public int loadChatHistoryToRedis(String appId, int maxCount) {
+
         try {
             // 直接构造查询条件，起始点为 1 而不是 0，用于排除最新的用户消息
             QueryWrapper queryWrapper = QueryWrapper.create()
-                    .eq(ChatHistory::getAppId, appId)
-                    .orderBy(ChatHistory::getCreateTime, false)
+                    .eq("app_id", appId)
+                    .orderBy("create_time", false)
+                    // offset = 1，会排除掉最新的一条数据
                     .limit(1, maxCount);
-            List<ChatHistory> historyList = this.list(queryWrapper);
+            List<ChatHistory> historyList = this.mapper.selectListByQuery(queryWrapper);
+
             if (CollUtil.isEmpty(historyList)) {
                 return 0;
             }
@@ -125,14 +128,17 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             historyList = historyList.reversed();
             // 按时间顺序添加到记忆中
             int loadedCount = 0;
-            // 先清理历史缓存，防止重复加载（可以传一个值 或多个）
+            // 先清理历史缓存，防止重复加载（可以传一个值或多个）
             RedisUtil.del();
             for (ChatHistory history : historyList) {
                 if (ChatHistoryMsgTypeEnum.USER.getValue().equals(history.getChatMessageType())) {
-                    RedisUtil.set(USER_MESSAGE_MEMORY_PREFIX, history.getChatMessage());
+                    // key:xiaorui_user_memory:appId:timestamp    value:message
+                    String timePart = history.getCreateTime().format(REDIS_TIME_FORMATTER);
+                    RedisUtil.set(USER_MESSAGE_MEMORY_PREFIX + appId + ":" + timePart, history.getChatMessage());
                     loadedCount++;
                 } else if (ChatHistoryMsgTypeEnum.AI.getValue().equals(history.getChatMessageType())) {
-                    RedisUtil.set(AI_MESSAGE_MEMORY_PREFIX, history.getChatMessage());
+                    String timePart = history.getCreateTime().format(REDIS_TIME_FORMATTER);
+                    RedisUtil.set(AI_MESSAGE_MEMORY_PREFIX + appId + ":" + timePart, history.getChatMessage());
                     loadedCount++;
                 }
             }
@@ -143,6 +149,5 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             // 加载失败不影响系统运行，只是没有历史上下文
             return 0;
         }
-
     }
 }

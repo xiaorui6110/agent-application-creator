@@ -12,15 +12,17 @@ import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.xiaorui.agentapplicationcreator.ai.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
-import com.xiaorui.agentapplicationcreator.util.CodeFileSaverUtil;
+import com.xiaorui.agentapplicationcreator.execption.BusinessException;
+import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
@@ -29,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
  * @author: xiaorui
  * @date: 2025-12-10 14:14
  **/
+@Slf4j
 @SpringBootTest
 public class AgentAppCreatorTest {
 
@@ -37,6 +40,9 @@ public class AgentAppCreatorTest {
 
     @Resource
     private AgentAppCreator agentAppCreator;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
 
     /**
      *  测试 agent 调用
@@ -198,55 +204,86 @@ public class AgentAppCreatorTest {
     }
 
 
+    ///**
+    // * 测试 agent 结构化输出（需不断优化，在优化 prompt 时需要优化结构化输出）
+    // */
+    //@Test
+    //public void testAgentOutput() {
+    //
+    //    SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
+    //    System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+    //
+    //    /*
+    //    结构化输出：
+    //
+    //      SystemOutput(
+    //        threadId=threadId_121212,
+    //        userId=user_id_123456,
+    //        messageId=threadId_121212,
+    //        agentName=app-creator-agent,
+    //        agentResponse=AgentResponse(
+    //            reply=我将为您创建一个基于原生 HTML、CSS 和 JavaScript 的番茄计时专注小工具。,
+    //            structuredReply=StructuredReply(
+    //              type=null,
+    //              runnable=true,
+    //              entry=index.html,
+    //              files={index.html=code},
+    //              description=一个使用原生 HTML、CSS 和 JavaScript 实现的番茄计时专注小工具。),
+    //            toolCalls=[],
+    //            intentSummary=用户希望创建一个使用原生HTML、CSS和JavaScript实现的番茄计时专注小工具，具备基本的计时功能和交互性。,
+    //            confidence=0.95,
+    //            metadata={}),
+    //        fromMemory=false,
+    //        timestamp=1766633800831)
+    //
+    //     */
+    //
+    //}
+    //
+    ///**
+    // * 测试写入 agent 回复代码到本地文件夹
+    // */
+    //@Test
+    //public void testAgentHook() throws IOException {
+    //
+    //    SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
+    //    CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(),"app_id12121212");
+    //    System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+    //
+    //}
+
+
     /**
-     * 测试 agent 结构化输出（需不断优化，在优化 prompt 时需要优化结构化输出）
+     * 测试 agent 回复保存到MySQL数据库中
      */
     @Test
-    public void testAgentOutput() {
+    public void testAgentNewMemory() {
 
-        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
-        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个todolist待办事件小工具，使用原生HTML实现","thread_id_123");
 
-        /*
-        结构化输出：
-
-          SystemOutput(
-            threadId=threadId_121212,
-            userId=user_id_123456,
-            messageId=threadId_121212,
-            agentName=app-creator-agent,
-            agentResponse=AgentResponse(
-                reply=我将为您创建一个基于原生 HTML、CSS 和 JavaScript 的番茄计时专注小工具。,
-                structuredReply=StructuredReply(
-                  type=null,
-                  runnable=true,
-                  entry=index.html,
-                  files={index.html=code},
-                  description=一个使用原生 HTML、CSS 和 JavaScript 实现的番茄计时专注小工具。),
-                toolCalls=[],
-                intentSummary=用户希望创建一个使用原生HTML、CSS和JavaScript实现的番茄计时专注小工具，具备基本的计时功能和交互性。,
-                confidence=0.95,
-                metadata={}),
-            fromMemory=false,
-            timestamp=1766633800831)
-
-         */
+        boolean result = chatHistoryService.saveChatHistory(
+                systemOutput.getAppId(),
+                systemOutput.getUserId(),
+                systemOutput.getAgentResponse().toString(),
+                "ai");
+        if(result) {
+            System.out.println("保存对话历史到数据库成功");
+        } else {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "保存对话历史到数据库失败");
+        }
 
     }
 
     /**
-     * 测试写入 agent 回复代码到本地文件夹
+     * 测试 agent 回复从MySQL同步到Redis中
      */
     @Test
-    public void testAgentHook() throws IOException {
+    public void testAgentNewMemoryToRedis() {
 
-        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
-        CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(),"app_id12121212");
-        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+        int i = chatHistoryService.loadChatHistoryToRedis("app_id123456", 5);
+        System.out.println(i);
 
     }
-
-
 
 
 

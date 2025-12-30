@@ -60,7 +60,7 @@ public class AppCreatorAgentConfig {
         SummarizationHook summarizationHook = SummarizationHook.builder()
                 .model(chatModel)
                 .maxTokensBeforeSummary(5000)
-                .messagesToKeep(20)
+                .messagesToKeep(10)
                 .build();
 
         // 直接在这里创建工具回调，避免循环依赖

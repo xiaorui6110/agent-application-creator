@@ -22,7 +22,6 @@ import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.AgentChatMemoryService;
-import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.service.UserThreadBindService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
@@ -64,28 +63,30 @@ public class AgentAppCreator {
     @Resource
     private AgentChatMemoryService agentChatMemoryService;
 
-    @Resource
-    private AppService appService;
 
     /**
      * 智能体对话（Test）
      */
-    public SystemOutput chatTest(String userMessage) {
+    public SystemOutput chatTest(String userMessage, String threadId) {
 
+        // 构建配置
+        RunnableConfig runnableConfig = buildRunnableConfig(threadId,"user_id_123456");
         // 提前在外部声明 POJO 变量
         AssistantMessage response;
         AgentResponse agentResponse;
         try {
             // 调用 Agent
-            response = appCreatorAgent.call(userMessage);
+            response = appCreatorAgent.call(userMessage, runnableConfig);
+            System.out.println("Agent 成功调用");
             // JSON 转 Bean（主要是为了方便获取代码文件）
             agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 构建返回值
         return SystemOutput.builder()
-                .agentName("app-creator-agent")
+                .agentName("app-creator-agent-test")
                 .threadId("threadId_121212")
                 .userId("user_id_123456")
                 .appId("app_id123456")
@@ -104,7 +105,7 @@ public class AgentAppCreator {
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR, "用户不存在");
-        // threadId：非空沿用旧的 / 空的生成新的  TODO 这里可以将 threadId 存到 Redis 缓存中，以及 threadId 生命周期管理
+        // threadId：非空沿用旧的 / 空的生成新的
         String threadId = Optional.ofNullable(transThreadId)
                 .filter(StringUtil::isNotBlank)
                 .orElse(UUID.randomUUID().toString());
@@ -115,7 +116,7 @@ public class AgentAppCreator {
         // 输入校验
         validateUserInput(userMessage);
         // 保存用户输入到 MongoDB 中（底层已校验插入成功与否的错误处理，此处不做追加处理 log）
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "user", userMessage));
+        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
         // 提前在外部声明 POJO 变量
@@ -126,7 +127,7 @@ public class AgentAppCreator {
             // JSON 转 Bean（主要是为了方便获取代码文件）
             agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
             // 保存 Agent 回复到 MongoDB 中
-            agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "assistant", response.getText()));
+            agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         } catch (Exception e) {
             log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
@@ -144,9 +145,6 @@ public class AgentAppCreator {
                 .build();
     }
 
-    /**
-     * TODO 让 agent 获取历史对话信息，来维持记忆
-     */
 
     /**
      * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，暂时不使用，待优化，比如输出格式、等等）
@@ -160,7 +158,7 @@ public class AgentAppCreator {
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
         }
-        // threadId：非空沿用旧的 / 空的生成新的  TODO 这里可以将 threadId 存到 Redis 缓存中，以及 threadId 生命周期管理
+        // threadId：非空沿用旧的 / 空的生成新的
         String threadId = Optional.ofNullable(transThreadId)
                 .filter(StringUtil::isNotBlank)
                 .orElse(UUID.randomUUID().toString());
@@ -173,7 +171,7 @@ public class AgentAppCreator {
         // TODO 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
         // 通义千问 API 是无状态的，不会保存对话历史。要实现多轮对话，需在每次请求中显式传入历史对话消息（好吧）
         // 保存用户输入到 MongoDB 中（底层已校验插入成功与否的错误处理，此处不做追加处理 log）
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "user", userMessage));
+        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 初始化 Generation 实例
         Generation gen = new Generation();
         Message systemMsg = Message.builder()
@@ -236,7 +234,7 @@ public class AgentAppCreator {
         // TODO 这玩意的 fullContent.toString() 好像不是 JSON 格式的，流式输出 ？ 或者是先流式输出，后结构化
         AgentResponse agentResponse = JSONUtil.toBean(fullContent.toString(), AgentResponse.class,true);
         // 保存 Agent 回复到 MongoDB 中
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, "assistant", fullContent.toString()));
+        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", fullContent.toString()));
         System.out.println("程序执行完成");
         // 构建返回值
         return SystemOutput.builder()
@@ -280,7 +278,7 @@ public class AgentAppCreator {
     }
 
     /**
-     * 用户输入校验：敏感词检测 ...（TODO 其实也可以改为 Hook 实现）
+     * 用户输入校验：敏感词检测 ...
      */
     private void validateUserInput(String input) {
         if (StringUtil.isBlank(input)) {
@@ -301,11 +299,13 @@ public class AgentAppCreator {
     private AgentChatMessage buildMessage(
             String userId,
             String threadId,
+            String appId,
             String role,
             String content) {
         AgentChatMessage msg = new AgentChatMessage();
         msg.setUserId(userId);
         msg.setThreadId(threadId);
+        msg.setAppId(appId);
         msg.setRole(role);
         msg.setContent(content);
         msg.setAgentName("app_creator_agent");

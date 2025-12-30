@@ -47,7 +47,7 @@ public class SystemOutput {
     private boolean fromMemory;
 
     /**
-     * 本次回复时间戳（毫秒）
+     * 本次回复时间戳（秒）
      */
     private long timestamp;
 

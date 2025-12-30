@@ -20,6 +20,23 @@ public class ChatHistoryController {
     @Resource
     private ChatHistoryService chatHistoryService;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * 保存对话历史表。
      *

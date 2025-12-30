@@ -1,7 +1,7 @@
 package com.xiaorui.agentapplicationcreator.constants;
 
 /**
- * @description:
+ * @description: redis 对话历史信息内存key
  * @author: xiaorui
  * @date: 2025-12-29 16:45
  **/

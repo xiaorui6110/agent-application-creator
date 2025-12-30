@@ -57,7 +57,7 @@ public class ChatHistory implements Serializable {
     private String userId;
 
     /**
-     * 父消息id（用于上下文关联）
+     * 父消息id（用于上下文关联，好像并没有太大作用，通过时间就可以判断了呀）
      */
     private String parentId;
 

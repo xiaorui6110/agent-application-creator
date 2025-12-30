@@ -22,11 +22,11 @@ spring:
       enabled: true
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
+    time-zone: Asia/Shanghai  # 统一Jackson序列化时区（东八区）
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/xiaorui_app_creator
+    url: jdbc:mysql://localhost:3306/xiaorui_app_creator?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
     username: root
     password: 123456
   # Session 配置

@@ -30,8 +30,5 @@ public class CallAgentRequest {
      */
     private String appId;
 
-    //private String locale;     // 语言
-    //private boolean stream;    // 是否流式
-    //private Map<String,Object> context;  // 扩展使用
 
 }
