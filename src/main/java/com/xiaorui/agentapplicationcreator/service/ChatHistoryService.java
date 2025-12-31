@@ -1,9 +1,12 @@
 package com.xiaorui.agentapplicationcreator.service;
 
+import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.xiaorui.agentapplicationcreator.model.dto.chathistory.ChatHistoryQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.ChatHistory;
+
+import java.time.LocalDateTime;
 
 /**
  * 对话历史表 服务层。
@@ -39,5 +42,23 @@ public interface ChatHistoryService extends IService<ChatHistory> {
      * @return 加载的对话历史数量
      */
     int loadChatHistoryToRedis(String appId, int maxCount);
+
+    /**
+     * 分页查询应用的对话历史
+     *
+     * @param appId 应用id
+     * @param pageSize 每页数量
+     * @param lastCreateTime 上一次查询的时间
+     * @return 对话历史列表
+     */
+    Page<ChatHistory> listAppChatHistoryByPage(String appId, int pageSize, LocalDateTime lastCreateTime);
+
+    /**
+     * 根据应用id删除对话历史
+     *
+     * @param appId 应用id
+     * @return true/false
+     */
+     boolean deleteByAppId(String appId);
 
 }

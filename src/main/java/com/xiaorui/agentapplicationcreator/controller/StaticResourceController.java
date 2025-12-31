@@ -17,7 +17,7 @@ import java.io.File;
 import static com.xiaorui.agentapplicationcreator.constants.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
- * @description: 静态资源访问控制器
+ * @description: 静态资源访问控制器 TODO 待使用或实现
  * @author: xiaorui
  * @date: 2025-12-25 15:33
  **/

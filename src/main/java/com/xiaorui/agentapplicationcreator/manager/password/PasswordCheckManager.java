@@ -48,7 +48,7 @@ public class PasswordCheckManager {
         String redisKey = buildRedisKey(sysTypeEnum, userEmail);
         // 读取当前错误次数（优化：先判断key是否存在，不存在则初始化，避免冗余set）
         Integer currentCount = getCurrentErrorCount(redisKey);
-        // 校验错误次数阈值，超出则直接锁定
+        // 校验错误次数阈值，超出则直接锁定 TODO 那怎么锁定用户，限制其访问呢，前端实现？返回提示界面？
         if (currentCount > TIMES_CHECK_INPUT_PASSWORD_NUM) {
             throw new BusinessException("密码输入错误十次，已限制登录30分钟");
         }

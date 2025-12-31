@@ -6,6 +6,8 @@ import com.xiaorui.agentapplicationcreator.model.dto.app.AppQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 
+import java.util.List;
+
 /**
  * 应用表 服务层。
  *
@@ -30,6 +32,15 @@ public interface AppService extends IService<App> {
     QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest);
 
     /**
+     * 部署应用
+     *
+     * @param appId 应用id
+     * @return 部署结果url
+     */
+    String appDeploy(String appId);
+
+
+    /**
      * 获取应用信息
      *
      * @param appId 应用id
@@ -38,11 +49,11 @@ public interface AppService extends IService<App> {
     AppVO getAppInfo(String appId);
 
     /**
-     * 部署应用
+     * 获取应用信息列表
      *
-     * @param appId 应用id
-     * @return 部署结果url
+     * @param appList 应用列表
+     * @return 应用信息列表
      */
-    String appDeploy(String appId);
+    List<AppVO> getAppInfoList(List<App> appList);
 
 }

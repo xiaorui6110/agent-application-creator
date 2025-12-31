@@ -1,16 +1,27 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
+import com.xiaorui.agentapplicationcreator.common.DeleteRequest;
+import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
-import com.xiaorui.agentapplicationcreator.model.dto.app.AppCreateRequest;
-import com.xiaorui.agentapplicationcreator.model.dto.app.AppDeployRequest;
+import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
+import com.xiaorui.agentapplicationcreator.model.dto.app.*;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
+import com.xiaorui.agentapplicationcreator.model.entity.User;
+import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.AppService;
+import com.xiaorui.agentapplicationcreator.service.UserService;
+import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -24,6 +35,9 @@ public class AppController {
 
     @Resource
     private AppService appService;
+
+    @Resource
+    private UserService userService;
 
     /**
      * 应用创建（用户在主页输入提示词）
@@ -48,68 +62,123 @@ public class AppController {
     }
 
     /**
-     * 保存应用表。
-     *
-     * @param app 应用表
-     * @return {@code true} 保存成功，{@code false} 保存失败
+     * 应用信息更新（目前只是更新应用的名称、封面和描述）
      */
-    @PostMapping("save")
-    public boolean save(@RequestBody App app) {
-        return appService.save(app);
+    @PostMapping("/update")
+    public ServerResponseEntity<Boolean> updateApp(@RequestBody AppUpdateInfoRequest appUpdateRequest) {
+        ThrowUtil.throwIf(appUpdateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String appId = appUpdateRequest.getAppId();
+        // 判断是否存在
+        App oldApp = appService.getById(appId);
+        ThrowUtil.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR,"应用不存在");
+        // 仅本人可更新
+        ThrowUtil.throwIf(!oldApp.getUserId().equals(SecurityUtil.getUserInfo().getUserId()), ErrorCode.NOT_AUTH_ERROR,"无权限操作");
+        App app = new App();
+        app.setAppId(appId);
+        app.setAppName(appUpdateRequest.getAppName());
+        app.setAppCover(appUpdateRequest.getAppCover());
+        app.setAppDescription(appUpdateRequest.getAppDescription());
+        // 设置编辑时间
+        app.setUpdateTime(LocalDateTime.now());
+        boolean result = appService.updateById(app);
+        ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR,"应用更新失败");
+        return ServerResponseEntity.success(true);
     }
 
     /**
-     * 根据主键删除应用表。
-     *
-     * @param id 主键
-     * @return {@code true} 删除成功，{@code false} 删除失败
+     * 获取应用信息（包含用户信息）
      */
-    @DeleteMapping("remove/{id}")
-    public boolean remove(@PathVariable String id) {
-        return appService.removeById(id);
+    @GetMapping("/get/info/{appId}")
+    public ServerResponseEntity<AppVO> getAppInfoById(@PathVariable String appId) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR,"应用id不能为空");
+        // 查询数据库
+        App app = appService.getById(appId);
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 获取封装类（包含用户信息）
+        return ServerResponseEntity.success(appService.getAppInfo(appId));
     }
 
     /**
-     * 根据主键更新应用表。
-     *
-     * @param app 应用表
-     * @return {@code true} 更新成功，{@code false} 更新失败
+     * 删除应用
      */
-    @PutMapping("update")
-    public boolean update(@RequestBody App app) {
-        return appService.updateById(app);
+    @PostMapping("/delete")
+    public ServerResponseEntity<Boolean> deleteApp(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtil.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
+        String deleteRequestId = deleteRequest.getId();
+        ThrowUtil.throwIf(StrUtil.isBlank(deleteRequestId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        // 判断是否存在
+        App oldApp = appService.getById(deleteRequestId);
+        ThrowUtil.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 仅本人或管理员可删除
+        if (!oldApp.getUserId().equals(SecurityUtil.getUserInfo().getUserId())
+                && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "无权限操作");
+        }
+        return ServerResponseEntity.success(appService.removeById(deleteRequestId));
+    }
+
+
+    /**
+     * 【管理员】删除应用
+     */
+    @PostMapping("/admin/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Boolean> deleteAppByAdmin(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtil.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String deleteRequestId = deleteRequest.getId();
+        ThrowUtil.throwIf(StrUtil.isBlank(deleteRequestId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        // 判断是否存在
+        App oldApp = appService.getById(deleteRequestId);
+        ThrowUtil.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        return ServerResponseEntity.success(appService.removeById(deleteRequestId));
     }
 
     /**
-     * 查询所有应用表。
-     *
-     * @return 所有数据
+     * 【管理员】更新应用
      */
-    @GetMapping("list")
-    public List<App> list() {
-        return appService.list();
+    @PostMapping("/admin/update")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Boolean> updateAppByAdmin(@RequestBody AppAdminUpdateInfoRequest appAdminUpdateRequest) {
+        ThrowUtil.throwIf(appAdminUpdateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String appId = appAdminUpdateRequest.getAppId();
+        // 判断是否存在
+        App oldApp = appService.getById(appId);
+        ThrowUtil.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR,"应用不存在");
+        App app = new App();
+        BeanUtil.copyProperties(appAdminUpdateRequest, app);
+        app.setUpdateTime(LocalDateTime.now());
+        boolean result = appService.updateById(app);
+        ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR,"应用更新失败");
+        return ServerResponseEntity.success(true);
     }
 
     /**
-     * 根据主键获取应用表。
-     *
-     * @param id 应用表主键
-     * @return 应用表详情
+     * 【管理员】分页获取应用列表
      */
-    @GetMapping("getInfo/{id}")
-    public App getInfo(@PathVariable String id) {
-        return appService.getById(id);
+    @PostMapping("/admin/list/page/info")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Page<AppVO>> listAppInfoByPageByAdmin(@RequestBody AppQueryRequest appQueryRequest) {
+        ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR,"请求参数不能为空");
+        long current = appQueryRequest.getCurrent();
+        long pageSize = appQueryRequest.getPageSize();
+        QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
+        Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
+        // 数据封装
+        Page<AppVO> appInfoPage = new Page<>(current, pageSize, appPage.getTotalRow());
+        List<AppVO> appInfoList = appService.getAppInfoList(appPage.getRecords());
+        appInfoPage.setRecords(appInfoList);
+        return ServerResponseEntity.success(appInfoPage);
     }
 
     /**
-     * 分页查询应用表。
-     *
-     * @param page 分页对象
-     * @return 分页对象
+     * 【管理员】根据 id 获取应用详情
      */
-    @GetMapping("page")
-    public Page<App> page(Page<App> page) {
-        return appService.page(page);
+    @GetMapping("/admin/get/info/{appId}")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<AppVO> getAppInfoByIdByAdmin(@PathVariable String appId) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        return ServerResponseEntity.success(appService.getAppInfo(appId));
     }
 
 }

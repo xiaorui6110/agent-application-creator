@@ -10,7 +10,6 @@ import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.model.dto.file.UploadPictureResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,7 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @description: 文件上传管理器
+ * @description: 文件上传管理器（目前是使用minio对用户头像进行管理）
  * @author: xiaorui
  * @date: 2025-12-02 11:35
  **/

@@ -1,6 +1,7 @@
 package com.xiaorui.agentapplicationcreator.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -15,6 +16,7 @@ import com.xiaorui.agentapplicationcreator.model.dto.app.AppQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
+import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
@@ -28,6 +30,11 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.xiaorui.agentapplicationcreator.constants.AppConstant.*;
 
@@ -62,6 +69,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
         }
+        ThrowUtil.throwIf(StrUtil.isBlank(appInitPrompt), ErrorCode.PARAMS_ERROR, "应用初始化prompt不能为空");
         // 用户输入 prompt 校验
         validateUserInput(appInitPrompt);
         // 构造入库对象
@@ -105,24 +113,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
                 // TODO 这个 codeGenType 好像有点问题，现在的 AI 不回复这个类型，一直为 null
                 .eq("code_gen_type", codeGenType)
                 .orderBy(sortField, "ascend".equals(sortOrder));
-    }
-
-
-    /**
-     * 获取应用信息
-     *
-     * @param appId 应用id
-     * @return 应用信息vo
-     */
-    @Override
-    public AppVO getAppInfo(String appId) {
-        App app = this.mapper.selectOneById(appId);
-        if (app == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"应用不存在");
-        }
-        AppVO appVO = new AppVO();
-        BeanUtil.copyProperties(app, appVO);
-        return appVO;
     }
 
 
@@ -192,6 +182,55 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
 
     /**
+     * 获取应用信息
+     *
+     * @param appId 应用id
+     * @return 应用信息vo
+     */
+    @Override
+    public AppVO getAppInfo(String appId) {
+        App app = this.mapper.selectOneById(appId);
+        if (app == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"应用不存在");
+        }
+        AppVO appVO = new AppVO();
+        BeanUtil.copyProperties(app, appVO);
+        // 关联查询用户信息
+        String userId = app.getUserId();
+        if (userId != null) {
+            UserVO userVO = userService.getUserInfo();
+            appVO.setUser(userVO);
+        }
+
+        return appVO;
+    }
+
+    /**
+     * 获取应用信息列表
+     *
+     * @param appList 应用列表
+     * @return 应用信息列表
+     */
+    @Override
+    public List<AppVO> getAppInfoList(List<App> appList) {
+        if (CollUtil.isEmpty(appList)) {
+            return new ArrayList<>();
+        }
+        // 批量获取用户信息，避免 N+1 查询问题
+        Set<String> userIds = appList.stream()
+                .map(App::getUserId)
+                .collect(Collectors.toSet());
+        Map<String, UserVO> userVOMap = userService.listByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo()));
+        return appList.stream().map(app -> {
+            AppVO appVO = getAppInfo(app.getAppId());
+            UserVO userVO = userVOMap.get(app.getUserId());
+            appVO.setUser(userVO);
+            return appVO;
+        }).collect(Collectors.toList());
+    }
+
+    /**
      * 用户输入校验：敏感词检测 ...
      */
     private void validateUserInput(String input) {
@@ -206,5 +245,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
             throw new BusinessException("输入包含不适宜内容", ErrorCode.PARAMS_ERROR);
         }
     }
+
+
 
 }

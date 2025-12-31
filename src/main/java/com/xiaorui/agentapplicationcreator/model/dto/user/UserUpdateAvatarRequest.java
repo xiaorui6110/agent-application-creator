@@ -18,13 +18,8 @@ public class UserUpdateAvatarRequest implements Serializable {
     private static final long serialVersionUID = -7155010502755257432L;
 
     /**
-     * 用户id
-     */
-    private String userId;
-
-    /**
      * 用户头像文件
      */
-    private MultipartFile userAvatar;
+    private MultipartFile multipartFile;
 
 }

@@ -3,7 +3,7 @@ package com.xiaorui.agentapplicationcreator.enums;
 import lombok.Getter;
 
 /**
- * @description: 系统类型枚举
+ * @description: 系统类型枚举（已弃用）
  * @author: xiaorui
  * @date: 2025-11-29 16:10
  **/

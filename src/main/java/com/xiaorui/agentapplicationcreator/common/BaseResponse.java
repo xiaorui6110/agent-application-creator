@@ -6,7 +6,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @description: 响应工具类
+ * @description: 响应工具类（已弃用）
  * @author: xiaorui
  * @date: 2025-11-29 11:41
  **/

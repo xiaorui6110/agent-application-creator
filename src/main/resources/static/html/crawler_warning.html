@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能体应用生成平台-爬虫警告通知</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+
+        .main {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 520px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+
+        /* 顶部警示渐变条 */
+        .header-bar {
+            height: 6px;
+            background: linear-gradient(90deg, #FF4B4B, #FF7070);
+        }
+
+        /* 核心内容区域 */
+        .content {
+            padding: 40px 32px;
+        }
+
+        /* 标题样式 */
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        /* 副标题 */
+        .subtitle {
+            font-size: 15px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        /* 警告数据卡片*/
+        .warning-box {
+            position: relative;
+            margin-bottom: 32px;
+            width: 100%;
+            padding: 24px 20px;
+            background: linear-gradient(135deg, rgba(255, 75, 75, 0.05), rgba(255, 112, 112, 0.05));
+            border-radius: 8px;
+            border: 1px solid rgba(255, 75, 75, 0.1);
+            /* 悬浮动效 */
+            transition: all 0.3s ease;
+        }
+
+        .warning-box:hover {
+            box-shadow: 0 2px 10px rgba(255, 75, 75, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* 数据项样式 */
+        .info-item {
+            margin: 14px 0;
+            font-size: 15px;
+            color: #4b5563;
+            line-height: 1.7;
+            display: flex;
+            align-items: center;
+        }
+
+        .label {
+            font-weight: 500;
+            color: #6b7280;
+            flex-shrink: 0;
+            width: 110px;
+        }
+
+        .value {
+            color: #FF4B4B;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        /* 说明提示框*/
+        .description {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 32px;
+            border-left: 3px solid #FF4B4B;
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.8;
+        }
+
+        /* 页脚样式 */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.6;
+        }
+
+        .footer a {
+            color: #FF4B4B;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: #e04040;
+            text-decoration: underline;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 576px) {
+            .content {
+                padding: 24px 20px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+
+            .warning-box {
+                padding: 20px 16px;
+            }
+
+            .info-item {
+                font-size: 14px;
+            }
+
+            .label {
+                width: 90px;
+            }
+
+            .description {
+                padding: 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="main">
+    <!-- 顶部警示渐变条 -->
+    <div class="header-bar"></div>
+
+    <!-- 内容区域 -->
+    <div class="content">
+        <div class="title">AI智能体应用生成平台 爬虫警告通知</div>
+        <div class="subtitle">系统检测到异常访问行为，已执行自动风控处理</div>
+
+        <!-- 警告数据卡片 -->
+        <div class="warning-box">
+            <div class="info-item">
+                <span class="label">用户ID：</span>
+                <span class="value">:userId</span>
+            </div>
+            <div class="info-item">
+                <span class="label">用户邮箱：</span>
+                <span class="value">:userEmail</span>
+            </div>
+            <div class="info-item">
+                <span class="label">访问IP：</span>
+                <span class="value">:ipAddress</span>
+            </div>
+            <div class="info-item">
+                <span class="label">访问次数：</span>
+                <span class="value">:accessCount 次/3分钟</span>
+            </div>
+            <div class="info-item">
+                <span class="label">检测时间：</span>
+                <span class="value">:detectTime</span>
+            </div>
+        </div>
+
+        <!-- 说明提示框 -->
+        <div class="description">
+            该用户在短时间内频繁访问，可能存在爬虫行为。系统已自动进行处理，该用户已被暂时封禁。请及时审查用户行为，确认是否需要进行进一步处理。
+        </div>
+
+        <!-- 页脚-->
+        <div class="footer">
+            <a href="https://github.com/xiaorui6110/agent-application-creator" target="_blank">xiaorui</a> © 2026 - 笛响长空万里晴
+        </div>
+    </div>
+</div>
+</body>
+</html>

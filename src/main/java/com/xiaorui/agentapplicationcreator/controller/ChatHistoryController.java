@@ -1,12 +1,19 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
 import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
+import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
+import com.xiaorui.agentapplicationcreator.model.dto.chathistory.ChatHistoryQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.ChatHistory;
+import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * 对话历史表 控制层。
@@ -20,86 +27,31 @@ public class ChatHistoryController {
     @Resource
     private ChatHistoryService chatHistoryService;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
-     * 保存对话历史表。
-     *
-     * @param chatHistory 对话历史表
-     * @return {@code true} 保存成功，{@code false} 保存失败
+     * 分页查询某个应用的对话历史（游标查询）
      */
-    @PostMapping("save")
-    public boolean save(@RequestBody ChatHistory chatHistory) {
-        return chatHistoryService.save(chatHistory);
+    @GetMapping("/app/{appId}")
+    public ServerResponseEntity<Page<ChatHistory>> listAppChatHistory(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
+        ThrowUtil.throwIf(chatHistoryQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String appId = chatHistoryQueryRequest.getAppId();
+        int pageSize = chatHistoryQueryRequest.getPageSize();
+        LocalDateTime lastCreateTime = chatHistoryQueryRequest.getLastCreateTime();
+        return ServerResponseEntity.success(chatHistoryService.listAppChatHistoryByPage(appId, pageSize, lastCreateTime));
     }
 
     /**
-     * 根据主键删除对话历史表。
      *
-     * @param id 主键
-     * @return {@code true} 删除成功，{@code false} 删除失败
+     * 【管理员】分页查询所有对话历史（游标查询）
      */
-    @DeleteMapping("remove/{id}")
-    public boolean remove(@PathVariable String id) {
-        return chatHistoryService.removeById(id);
+    @PostMapping("/admin/list/page/vo")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Page<ChatHistory>> listAllChatHistoryByPageForAdmin(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
+        ThrowUtil.throwIf(chatHistoryQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        int current = chatHistoryQueryRequest.getCurrent();
+        long pageSize = chatHistoryQueryRequest.getPageSize();
+        QueryWrapper queryWrapper = chatHistoryService.getQueryWrapper(chatHistoryQueryRequest);
+        return ServerResponseEntity.success(chatHistoryService.page(Page.of(current, pageSize), queryWrapper));
     }
 
-    /**
-     * 根据主键更新对话历史表。
-     *
-     * @param chatHistory 对话历史表
-     * @return {@code true} 更新成功，{@code false} 更新失败
-     */
-    @PutMapping("update")
-    public boolean update(@RequestBody ChatHistory chatHistory) {
-        return chatHistoryService.updateById(chatHistory);
-    }
-
-    /**
-     * 查询所有对话历史表。
-     *
-     * @return 所有数据
-     */
-    @GetMapping("list")
-    public List<ChatHistory> list() {
-        return chatHistoryService.list();
-    }
-
-    /**
-     * 根据主键获取对话历史表。
-     *
-     * @param id 对话历史表主键
-     * @return 对话历史表详情
-     */
-    @GetMapping("getInfo/{id}")
-    public ChatHistory getInfo(@PathVariable String id) {
-        return chatHistoryService.getById(id);
-    }
-
-    /**
-     * 分页查询对话历史表。
-     *
-     * @param page 分页对象
-     * @return 分页对象
-     */
-    @GetMapping("page")
-    public Page<ChatHistory> page(Page<ChatHistory> page) {
-        return chatHistoryService.page(page);
-    }
 
 }

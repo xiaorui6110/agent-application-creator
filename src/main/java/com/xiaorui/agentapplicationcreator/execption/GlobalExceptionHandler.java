@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * @description: 全局异常处理器
+ * @description: 全局异常处理器（已弃用）
  * @author: xiaorui
  * @date: 2025-11-29 11:43
  **/
@@ -25,6 +25,4 @@ public class GlobalExceptionHandler {
         log.error("RuntimeException", e);
         return ResultUtil.error(ErrorCode.SYSTEM_ERROR, "系统错误");
     }
-
-
 }

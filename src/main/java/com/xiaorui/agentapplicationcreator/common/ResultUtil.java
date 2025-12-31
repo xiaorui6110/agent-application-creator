@@ -3,7 +3,7 @@ package com.xiaorui.agentapplicationcreator.common;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 
 /**
- * @description: 响应工具类
+ * @description: 响应工具类（已弃用）
  * @author: xiaorui
  * @date: 2025-11-29 11:42
  **/

@@ -9,10 +9,11 @@ import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * 用户表 服务层。TODO 一些管理员的方法还未实现，比如 getUserList、等等
+ * 用户表 服务层。
  *
  * @author xiaorui
  */
@@ -87,6 +88,22 @@ public interface UserService extends IService<User> {
     UserVO getUserInfo();
 
     /**
+     * 新增：带参重载方法（核心！适配「批量转换」场景）
+     * 作用：接收指定User对象，转换为对应的UserVO，供流式批量处理调用
+     *
+     * @param user 用户对象
+     * @return 用户信息vo
+     */
+    UserVO getUserInfo(User user);
+
+    /**
+     * 获得脱敏后的用户信息列表
+     * @param userList 用户列表
+     * @return 脱敏后的用户列表
+     */
+    List<UserVO> getUserInfoList(List<User> userList);
+
+    /**
      * 修改用户邮箱
      *
      * @param newUserEmail 新邮箱
@@ -124,8 +141,15 @@ public interface UserService extends IService<User> {
      */
     String updateUserAvatar(MultipartFile multipartFile);
 
-
-
+    /**
+     * 封禁或解禁用户
+     *
+     * @param userId 目标用户 id
+     * @param isUnban true - 解禁，false - 封禁
+     * @param admin 执行操作的管理员
+     * @return 是否操作成功
+     */
+    boolean banOrUnbanUser(String userId, Boolean isUnban, User admin);
 
 
 }

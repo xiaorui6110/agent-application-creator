@@ -35,7 +35,7 @@ public class AppCreatorAgentConfig {
     /**
      * 系统提示词 TODO 待指定优化后的文件，先将项目完整流程跑通
      */
-    private final String SYSTEM_PROMPT = FileUtil.readString("prompt/system_prompt.md", StandardCharsets.UTF_8);
+    private final String SYSTEM_PROMPT = FileUtil.readString("prompt/integrated_system_prompt(gpt).md", StandardCharsets.UTF_8);
 
     /**
      * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）

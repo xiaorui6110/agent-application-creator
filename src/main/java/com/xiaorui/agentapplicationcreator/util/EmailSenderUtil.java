@@ -42,6 +42,7 @@ public class EmailSenderUtil {
 
     /**
      * 生成验证码并发送邮件
+     *
      * @param toEmail  邮箱地址
      * @param generatedCode 验证码
      */
@@ -109,6 +110,44 @@ public class EmailSenderUtil {
                 content.append(line).append("\n");
             }
             return content.toString();
+        }
+    }
+
+    /**
+     * 发送爬虫警告邮件
+     *
+     * @param toEmail 收件人邮箱
+     * @param htmlContent html内容
+     */
+    public void sendWarningEmail(String toEmail, String htmlContent) {
+        Properties properties = new Properties();
+        properties.setProperty("mail.smtp.host", host);
+        properties.setProperty("mail.smtp.port", String.valueOf(port));
+        properties.put("mail.smtp.starttls.enable", "false");
+        properties.put("mail.smtp.ssl.enable", "true");
+        properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        properties.put("mail.smtp.socketFactory.port", String.valueOf(port));
+        properties.put("mail.smtp.auth", "true");
+
+        Session session = Session.getInstance(properties, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, password);
+            }
+        });
+        try {
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(toEmail));
+            // 编码邮件主题
+            String encodedSubject = MimeUtility.encodeText("爬虫警告通知", "UTF-8", "B");
+            message.setSubject(encodedSubject, "UTF-8");
+            // 设置邮件内容
+            message.setContent(htmlContent, "text/html;charset=UTF-8");
+            Transport.send(message);
+            logger.info("邮件发送成功");
+        } catch (MessagingException | IOException e) {
+            logger.error("邮件发送失败: {}", e.getMessage(), e);
         }
     }
 }

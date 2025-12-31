@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 public enum ErrorCode {
     /**
-     * 状态码（code 改为 String 类型，原本是 int 不方便扩展）
+     * 状态码（code 改为 String 类型，方便扩展）
      */
     SUCCESS("0", "ok"),
     PARAMS_ERROR("40000", "请求参数错误"),

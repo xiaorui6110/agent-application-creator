@@ -17,11 +17,6 @@ public class UserChangePasswordRequest implements Serializable {
     private static final long serialVersionUID = -1096558290800406929L;
 
     /**
-     * 用户id
-     */
-    private String userId;
-
-    /**
      * 原密码
      */
     private String oldPassword;

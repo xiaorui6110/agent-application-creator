@@ -2,10 +2,14 @@ package com.xiaorui.agentapplicationcreator.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
+import com.xiaorui.agentapplicationcreator.common.DeleteRequest;
+import com.xiaorui.agentapplicationcreator.constants.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
 import com.xiaorui.agentapplicationcreator.model.dto.user.*;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
@@ -47,8 +51,8 @@ public class UserController {
         String loginPassword = userRegisterRequest.getLoginPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
         String emailVerifyCode = userRegisterRequest.getEmailVerifyCode();
-        String userId = userService.userRegister(userEmail, loginPassword, checkPassword, emailVerifyCode);
-        return ServerResponseEntity.success(userId);
+        return ServerResponseEntity.success(
+                userService.userRegister(userEmail, loginPassword, checkPassword, emailVerifyCode));
     }
 
     /**
@@ -64,15 +68,15 @@ public class UserController {
         // 校验图形数字验证码（从登录逻辑中抽离出来了）
         boolean result = userService.checkPictureVerifyCode(verifyCode, serverVerifyCode);
         ThrowUtil.throwIf(!result, ErrorCode.PARAMS_ERROR, "验证码错误");
-        TokenInfoVO tokenInfoVO = userService.userLogin(userEmail, loginPassword);
-        return ServerResponseEntity.success(tokenInfoVO);
+        return ServerResponseEntity.success(userService.userLogin(userEmail, loginPassword));
     }
 
     /**
      * 发送邮箱验证码（点击向目标邮箱发送验证码）
      */
     @PostMapping("/sendEmailCode")
-    public ServerResponseEntity<String> sendEmailCode(@RequestBody UserSendEmailCodeRequest userSendEmailCodeRequest, HttpServletRequest request ) {
+    public ServerResponseEntity<String> sendEmailCode(@RequestBody UserSendEmailCodeRequest userSendEmailCodeRequest,
+                                                      HttpServletRequest request ) {
         ThrowUtil.throwIf(userSendEmailCodeRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userSendEmailCodeRequest.getUserEmail();
         String type = userSendEmailCodeRequest.getType();
@@ -85,8 +89,7 @@ public class UserController {
      */
     @GetMapping("/getPictureVerifyCode")
     public ServerResponseEntity<Map<String, String>> getPictureVerifyCode() {
-        Map<String, String> pictureVerifyCode = userService.getPictureVerifyCode();
-        return ServerResponseEntity.success(pictureVerifyCode);
+        return ServerResponseEntity.success(userService.getPictureVerifyCode());
     }
 
     /**
@@ -102,53 +105,50 @@ public class UserController {
      */
     @PostMapping("/logout")
     public ServerResponseEntity<Boolean> userLogout(HttpServletRequest request) {
-        boolean result = userService.userLogout(request);
-        return ServerResponseEntity.success(result);
+        return ServerResponseEntity.success(userService.userLogout(request));
     }
 
     /**
      * 修改用户邮箱
      */
-    @PostMapping("/changeEmail")
+    @PostMapping("/change/email")
     public ServerResponseEntity<Boolean> changUserEmail(@RequestBody UserChangeEmailRequest userChangeEmailRequest) {
         ThrowUtil.throwIf(userChangeEmailRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String newEmail = userChangeEmailRequest.getNewEmail();
         String emailVerifyCode = userChangeEmailRequest.getEmailVerifyCode();
-        boolean result = userService.changeUserEmail(newEmail, emailVerifyCode);
-        return ServerResponseEntity.success(result);
+        return ServerResponseEntity.success(userService.changeUserEmail(newEmail, emailVerifyCode));
     }
 
     /**
      * 修改用户密码
      */
-    @PostMapping("/changePassword")
+    @PostMapping("/change/password")
     public ServerResponseEntity<Boolean> changeUserPassword(@RequestBody UserChangePasswordRequest userChangePasswordRequest) {
         ThrowUtil.throwIf(userChangePasswordRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String oldPassword = userChangePasswordRequest.getOldPassword();
         String newPassword = userChangePasswordRequest.getNewPassword();
         String checkPassword = userChangePasswordRequest.getCheckPassword();
-        boolean result = userService.changeUserPassword(oldPassword, newPassword, checkPassword);
-        return ServerResponseEntity.success(result);
+        return ServerResponseEntity.success(userService.changeUserPassword(oldPassword, newPassword, checkPassword));
     }
 
     /**
      * 重置用户密码（用户忘记密码的情况下）
      */
-    @PostMapping("/resetPassword")
+    @PostMapping("/reset/password")
     public ServerResponseEntity<Boolean> resetUserPassword(@RequestBody UserResetPasswordRequest userResetPasswordRequest) {
         ThrowUtil.throwIf(userResetPasswordRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userResetPasswordRequest.getUserEmail();
         String emailVerifyCode = userResetPasswordRequest.getEmailVerifyCode();
         String newPassword = userResetPasswordRequest.getNewPassword();
         String checkPassword = userResetPasswordRequest.getCheckPassword();
-        boolean result = userService.resetUserPassword(userEmail, emailVerifyCode, newPassword, checkPassword);
-        return ServerResponseEntity.success(result);
+        return ServerResponseEntity.success(
+                userService.resetUserPassword(userEmail, emailVerifyCode, newPassword, checkPassword));
     }
 
     /**
      * 更新用户信息（只能更新自己的信息）
      */
-    @PostMapping("/updateInfo")
+    @PostMapping("/update/info")
     public ServerResponseEntity<Boolean> updateUserInfo(@RequestBody UserUpdateInfoRequest userUpdateInfoRequest) {
         ThrowUtil.throwIf(userUpdateInfoRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userId = SecurityUtil.getUserInfo().getUserId();
@@ -158,33 +158,105 @@ public class UserController {
         User user = new User();
         BeanUtils.copyProperties(userUpdateInfoRequest, user);
         user.setUpdateTime(LocalDateTime.now());
-        boolean result = userService.updateById(user);
-        return ServerResponseEntity.success(result);
+        return ServerResponseEntity.success(userService.updateById(user));
     }
 
     /**
      * 用户查询请求（根据用户id、昵称查询，分页获取）
      */
-    @PostMapping("/getVOList")
-    public ServerResponseEntity<Page<UserVO>> getUserVOByIdOrName(@RequestBody UserQueryRequest userQueryRequest) {
+    @PostMapping("/getInfoList")
+    public ServerResponseEntity<Page<UserVO>> getUserInfoByIdOrName(@RequestBody UserQueryRequest userQueryRequest) {
         ThrowUtil.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         int current = userQueryRequest.getCurrent();
         int pageSize = userQueryRequest.getPageSize();
-        Page<User> userPage = userService.page(new Page<>(current, pageSize), userService.getQueryWrapper(userQueryRequest));
-        Page<UserVO> userVOPage = new Page<>(current, pageSize, userPage.getTotalPage());
-        List<UserVO> userVOList = getUserVOList(userPage.getRecords());
-        userVOPage.setRecords(userVOList);
-        return ServerResponseEntity.success(userVOPage);
+        Page<User> userPage = userService.page(
+                new Page<>(current, pageSize), userService.getQueryWrapper(userQueryRequest));
+        Page<UserVO> userInfoPage = new Page<>(current, pageSize, userPage.getTotalPage());
+        List<UserVO> userInfoList = getUserVOList(userPage.getRecords());
+        userInfoPage.setRecords(userInfoList);
+        return ServerResponseEntity.success(userInfoPage);
     }
 
     /**
      * 更新用户头像（本地文件上传）
      */
-    @PostMapping("/updateAvatar")
-    public ServerResponseEntity<String> updateUserAvatar(MultipartFile multipartFile) {
-        String result = userService.updateUserAvatar(multipartFile);
-        return ServerResponseEntity.success(result);
+    @PostMapping("/update/avatar")
+    public ServerResponseEntity<String> updateUserAvatar(@RequestBody UserUpdateAvatarRequest userUpdateAvatarRequest) {
+        ThrowUtil.throwIf(userUpdateAvatarRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
+        MultipartFile multipartFile = userUpdateAvatarRequest.getMultipartFile();
+        return ServerResponseEntity.success(userService.updateUserAvatar(multipartFile));
     }
+
+    /**
+     * 【管理员】分页查询用户信息
+     */
+    @PostMapping("/list/page/info")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Page<UserVO>> listUserInfoByPage(@RequestBody UserQueryRequest userQueryRequest) {
+        ThrowUtil.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
+        long current = userQueryRequest.getCurrent();
+        long pageSize = userQueryRequest.getPageSize();
+        Page<User> userPage = userService.page(new Page<>(current, pageSize),
+                userService.getQueryWrapper(userQueryRequest));
+        Page<UserVO> userInfoPage = new Page<>(current, pageSize, userPage.getTotalPage());
+        List<UserVO> userInfoList = userService.getUserInfoList(userPage.getRecords());
+        userInfoPage.setRecords(userInfoList);
+        return ServerResponseEntity.success(userInfoPage);
+    }
+
+
+    /**
+     * 【管理员】根据 id 获取用户信息
+     */
+    @GetMapping("/get/{userId}")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<User> getUserById(@PathVariable String userId) {
+        ThrowUtil.throwIf(userId == null, ErrorCode.PARAMS_ERROR);
+        User user = userService.getById(userId);
+        ThrowUtil.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
+        return ServerResponseEntity.success(user);
+    }
+
+    /**
+     * 【管理员】删除用户
+     * @param deleteRequest 删除请求
+     * @return 是否删除成功
+     */
+    @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtil.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
+        ThrowUtil.throwIf(StrUtil.isBlank(deleteRequest.getId()), ErrorCode.PARAMS_ERROR, "用户id不能为空");
+        return ServerResponseEntity.success(userService.removeById(deleteRequest.getId()));
+    }
+
+    /**
+     * 【管理员】批量删除用户
+     */
+    @PostMapping("/delete/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Boolean> deleteBatchUser(@RequestBody List<DeleteRequest> deleteRequestList) {
+        ThrowUtil.throwIf(CollUtil.isEmpty(deleteRequestList), ErrorCode.PARAMS_ERROR, "参数不能为空");
+        List<String> idList = deleteRequestList.stream()
+                .map(DeleteRequest::getId)
+                .collect(Collectors.toList());
+        return ServerResponseEntity.success(userService.removeByIds(idList));
+    }
+
+    /**
+     * 【管理员】封禁或解封用户
+     */
+    @PostMapping("/ban")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ServerResponseEntity<Boolean> banOrUnbanUser(@RequestBody UserUnbanRequest userUnbanRequest) {
+        ThrowUtil.throwIf(userUnbanRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
+        User admin = userService.getById(SecurityUtil.getUserInfo().getUserId());
+        return ServerResponseEntity.success(
+                userService.banOrUnbanUser(userUnbanRequest.getUserId(), userUnbanRequest.getIsUnban(), admin));
+    }
+
+
+
 
     /**
      * 获得脱敏后的用户信息

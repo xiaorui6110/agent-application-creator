@@ -4,10 +4,13 @@ import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.ShearCaptcha;
 import cn.hutool.captcha.generator.RandomGenerator;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.xiaorui.agentapplicationcreator.constants.CrawlerConstant;
+import com.xiaorui.agentapplicationcreator.constants.UserConstant;
 import com.xiaorui.agentapplicationcreator.enums.SysTypeEnum;
 import com.xiaorui.agentapplicationcreator.enums.UserStatusEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
@@ -16,11 +19,11 @@ import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.manager.minio.FileManager;
 import com.xiaorui.agentapplicationcreator.manager.password.PasswordCheckManager;
 import com.xiaorui.agentapplicationcreator.manager.token.TokenStoreManager;
+import com.xiaorui.agentapplicationcreator.mapper.UserMapper;
 import com.xiaorui.agentapplicationcreator.model.bo.UserInfoInTokenBO;
 import com.xiaorui.agentapplicationcreator.model.dto.file.UploadPictureResult;
 import com.xiaorui.agentapplicationcreator.model.dto.user.UserQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
-import com.xiaorui.agentapplicationcreator.mapper.UserMapper;
 import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.service.UserService;
@@ -37,13 +40,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
- * 用户表 服务层实现。 TODO 好像都没有判断该用户是否逻辑删除了 （哭笑）
+ * 用户表 服务层实现。
  *
  * @author xiaorui
  */
@@ -122,7 +124,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             User user = new User();
             user.setNickName(userEmail.substring(0, userEmail.indexOf("@")));
             user.setUserEmail(userEmail);
-            // TODO （暂时作废）先解密再加密存储到数据库（用户输入密码传输到后端的过程中，密码是使用AES加密的，之后先解密再使用BCrypt加密存储）
+            // （暂时作废）先解密再加密存储到数据库（用户输入密码传输到后端的过程中，密码是使用AES加密的，之后先解密再使用BCrypt加密存储）
             // !!! 修改一下密码加密过程：前端暂时使用明文传输，后端加密存储。修改密码加密方式，使用BCrypt加密，
             // Spring Security 5.x 及以上版本: passwordEncoder.encode() 默认使用 BCryptPasswordEncoder
             user.setLoginPassword(passwordEncoder.encode((loginPassword)));
@@ -172,7 +174,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (user == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"用户不存在");
         }
-        // TODO （暂时作废）输入密码先解密再加密，用于登录查询
+        //  （暂时作废）输入密码先解密再加密，用于登录查询
         // 半小时内密码输入错误十次，已限制登录30分钟
         passwordCheckManager.checkPassword(SysTypeEnum.ORDINARY, user.getUserEmail(), loginPassword, user.getLoginPassword());
         log.info("user login success : {}",user.getUserId());
@@ -239,7 +241,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
 
 
     /**
-     * 获取图形验证码（使用HutoolUtil生成）
+     * 获取图形验证码（使用 HutoolUtil 生成）
      * <a href="https://doc.hutool.cn/pages/captcha">...</a>）
      *
      * @return 图形验证码
@@ -258,7 +260,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         byte[] captchaBytes = outputStream.toByteArray();
         String base64Captcha = Base64.getEncoder().encodeToString(captchaBytes);
         String captchaCode = shearCaptcha.getCode();
-        // TODO 使用Hutool的MD5加密（为了检查接口方便，先不加密）
+        //  后续使用Hutool的MD5加密（为了检查接口方便，先不加密！！！）
         //String encryptedCaptcha = DigestUtil.md5Hex(captchaCode);
         // 将加密后的验证码和Base64编码的图片存储到Redis中，设置过期时间为5分钟
         stringRedisTemplate.opsForValue().set("captcha:" + captchaCode, captchaCode, 300, TimeUnit.SECONDS);
@@ -279,7 +281,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
     @Override
     public boolean checkPictureVerifyCode(String verifyCode, String serverVerifyCode) {
         if (verifyCode != null && serverVerifyCode != null) {
-            // TODO 对用户输入的验证码进行MD5加密，然后与服务器存储的验证码进行比较（服务器中的存储的是MD5加密后的验证码）(也是先不加密)
+            //  后续对用户输入的验证码进行MD5加密，然后与服务器存储的验证码进行比较（服务器中的存储的是MD5加密后的验证码）(也是先不加密！！！)
             //String encryptedVerifycode = DigestUtil.md5Hex(verifyCode);
             if (verifyCode.equals(serverVerifyCode)) {
                 return true;
@@ -290,7 +292,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
     }
 
     /**
-     * 获取查询条件（通过userId、nickName查询）(<a href="https://mybatis-flex.com/zh/base/querywrapper.html#querywrapper-%E7%9A%84%E4%BD%BF%E7%94%A8">...</a>)
+     * 获取查询条件（通过userId、nickName查询）
+     * (<a href="https://mybatis-flex.com/zh/base/querywrapper.html#querywrapper-%E7%9A%84%E4%BD%BF%E7%94%A8">...</a>)
      *
      * @param userQueryRequest 用户查询请求
      * @return 查询条件
@@ -345,6 +348,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         UserVO userVO = new UserVO();
         BeanUtil.copyProperties(user, userVO);
         return userVO;
+    }
+
+    /**
+     * 新增：带参重载方法（核心！适配「批量转换」场景）
+     * 作用：接收指定User对象，转换为对应的UserVO，供流式批量处理调用
+     *
+     * @param user 用户对象
+     * @return 用户信息vo
+     */
+    @Override
+    public UserVO getUserInfo(User user) {
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+        }
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user, userVO);
+        return userVO;
+    }
+
+
+    /**
+     * 获得脱敏后的用户信息列表
+     * @param userList 用户列表
+     * @return 脱敏后的用户列表
+     */
+    @Override
+    public List<UserVO> getUserInfoList(List<User> userList) {
+        if (CollUtil.isEmpty(userList)) {
+            return new ArrayList<>();
+        }
+        return userList.stream()
+                .map(this::getUserInfo)
+                .collect(Collectors.toList());
     }
 
 
@@ -431,7 +467,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
         }
-        // TODO（暂时作废）将新密码解密再加密
+        // （暂时作废）将新密码解密再加密，现在是直接前端明文传输后加密
         String encryptPassword = passwordEncoder.encode(newPassword);
         if (passwordEncoder.matches(newPassword,loginUser.getLoginPassword())) {
             // 新密码不能与原密码相同
@@ -488,7 +524,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
         }
-        // （暂时作废）解密并加密密码
+        // （暂时作废）解密并加密密码，现在是直接前端明文传输后加密
         String encryptPassword = passwordEncoder.encode(newPassword);
         // 重置密码
         loginUser.setLoginPassword(encryptPassword);
@@ -505,6 +541,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
 
     /**
      * 修改用户头像（上传本地文件修改头像）
+     *
      * @param multipartFile 文件
      * @return 上传图片的 URL
      */
@@ -527,4 +564,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR,"修改头像失败");
         return uploadPictureResult.getPicUrl();
     }
+
+
+    /**
+     * 封禁或解禁用户
+     *
+     * @param userId 目标用户 id
+     * @param isUnban true - 解禁，false - 封禁
+     * @param admin 执行操作的管理员
+     * @return 封禁或解禁结果
+     */
+    @Override
+    public boolean banOrUnbanUser(String userId, Boolean isUnban, User admin) {
+        // 校验用户输入信息
+        if (userId == null || isUnban == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数不能为空");
+        }
+        // 校验管理员权限
+        if (!UserConstant.ADMIN_ROLE.equals(admin.getUserRole())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "非管理员不能执行此操作");
+        }
+        // 获取用户信息
+        User targetUser = this.getById(userId);
+        if (targetUser == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+        }
+        // 检查当前状态是否需要变更
+        boolean isBanned = CrawlerConstant.BAN_ROLE.equals(targetUser.getUserRole());
+        // 变更用户状态
+        if (isUnban == isBanned) {
+            User updateUser = new User();
+            updateUser.setUserId(userId);
+            updateUser.setUserRole(isUnban ? UserConstant.DEFAULT_ROLE : CrawlerConstant.BAN_ROLE);
+            updateUser.setUpdateTime(LocalDateTime.now());
+            boolean result = this.updateById(updateUser);
+            if (result) {
+                // 记录操作日志
+                log.info("管理员[{}]{}用户[{}]", admin.getUserEmail(), isUnban ? "解封" : "封禁", targetUser.getUserEmail());
+                // 处理 Redis 缓存
+                String banKey = String.format("user:ban:%d", userId);
+                if (isUnban) {
+                    stringRedisTemplate.delete(banKey);
+                } else {
+                    stringRedisTemplate.opsForValue().set(banKey, "1");
+                }
+            }
+            return result;
+        } else {
+            // 状态已经是目标状态
+            String operation = isUnban ? "解封" : "封禁";
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                    String.format("该用户当前%s不需要%s", isUnban ? "未被封禁" : "已被封禁", operation));
+        }
+    }
+
+
+
+
 }

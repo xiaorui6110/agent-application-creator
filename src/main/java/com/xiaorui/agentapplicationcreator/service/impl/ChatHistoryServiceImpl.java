@@ -2,16 +2,23 @@ package com.xiaorui.agentapplicationcreator.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.xiaorui.agentapplicationcreator.constants.UserConstant;
 import com.xiaorui.agentapplicationcreator.enums.ChatHistoryMsgTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.mapper.ChatHistoryMapper;
 import com.xiaorui.agentapplicationcreator.model.dto.chathistory.ChatHistoryQueryRequest;
+import com.xiaorui.agentapplicationcreator.model.entity.App;
 import com.xiaorui.agentapplicationcreator.model.entity.ChatHistory;
+import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
+import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.RedisUtil;
+import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +42,12 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
      * 存储到Redis的key的一部分，采用 yyyy-MM-dd_HH_mm_ss 格式（如 2025-12-30-16_14_31）
      */
     public static final DateTimeFormatter REDIS_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm_ss");
+
+    @Resource
+    private AppService appService;
+
+    @Resource
+    private UserService userService;
 
     /**
      * 保存对话历史（保存到 MySQL 数据库）
@@ -64,7 +77,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     /**
-     * 获取查询条件
+     * 获取查询条件 TODO 设想是使用mongodb 来进行对话历史的查询的，添加个MySQL查询也行
      *
      * @param chatHistoryQueryRequest 对话历史查询请求
      * @return 查询条件
@@ -149,5 +162,46 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             // 加载失败不影响系统运行，只是没有历史上下文
             return 0;
         }
+    }
+
+    /**
+     * 分页查询应用的对话历史
+     *
+     * @param appId 应用id
+     * @param pageSize 每页数量
+     * @param lastCreateTime 上一次查询的时间
+     * @return 对话历史列表
+     */
+    @Override
+    public Page<ChatHistory> listAppChatHistoryByPage(String appId, int pageSize, LocalDateTime lastCreateTime) {
+        // 参数校验
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        ThrowUtil.throwIf(pageSize <= 0 || pageSize > 50, ErrorCode.PARAMS_ERROR, "页面大小必须在1~50之间");
+        App app = appService.getById(appId);
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 判断是否是创建者或者是否为管理员
+        String userId = SecurityUtil.getUserInfo().getUserId();
+        boolean isCreator = app.getUserId().equals(userId);
+        boolean isAdmin = UserConstant.ADMIN_ROLE.equals(userService.getById(userId).getUserRole());
+        ThrowUtil.throwIf(!isAdmin && !isCreator, ErrorCode.NOT_AUTH_ERROR, "无权查看该应用的对话历史");
+        // 构建查询条件
+        ChatHistoryQueryRequest queryRequest = new ChatHistoryQueryRequest();
+        queryRequest.setAppId(appId);
+        queryRequest.setLastCreateTime(lastCreateTime);
+        QueryWrapper queryWrapper = this.getQueryWrapper(queryRequest);
+        // 查询数据
+        return this.page(Page.of(1, pageSize), queryWrapper);
+    }
+
+    /**
+     * 根据应用id删除对话历史（主要是用于关联删除）
+     *
+     * @param appId 应用id
+     * @return true/false
+     */
+    @Override
+    public boolean deleteByAppId(String appId) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        return this.remove(QueryWrapper.create().eq("appId", appId));
     }
 }

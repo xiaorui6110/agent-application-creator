@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.enums;
 
+import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
 /**
@@ -23,6 +24,24 @@ public enum UserStatusEnum {
 
     UserStatusEnum(Integer value) {
         this.value = value;
+    }
+
+    /**
+     * 根据 value 获取枚举
+     *
+     * @param value 枚举值的value
+     * @return 枚举值
+     */
+    public static UserStatusEnum getEnumByValue(int value) {
+        if (ObjUtil.isEmpty(value)) {
+            return null;
+        }
+        for (UserStatusEnum anEnum : UserStatusEnum.values()) {
+            if (anEnum.value == value) {
+                return anEnum;
+            }
+        }
+        return null;
     }
 
 }
