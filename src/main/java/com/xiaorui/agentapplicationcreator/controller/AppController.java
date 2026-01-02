@@ -16,13 +16,18 @@ import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.AppService;
+import com.xiaorui.agentapplicationcreator.service.ProjectDownloadService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static com.xiaorui.agentapplicationcreator.constants.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
  * 应用表 控制层。
@@ -38,6 +43,9 @@ public class AppController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ProjectDownloadService projectDownloadService;
 
     /**
      * 应用创建（用户在主页输入提示词）
@@ -179,6 +187,25 @@ public class AppController {
     public ServerResponseEntity<AppVO> getAppInfoByIdByAdmin(@PathVariable String appId) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
         return ServerResponseEntity.success(appService.getAppInfo(appId));
+    }
+
+    /**
+     *  下载应用代码
+     */
+    @GetMapping("/download/{appId}")
+    public ServerResponseEntity<Boolean> downloadAppCode(@PathVariable String appId, HttpServletResponse response) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        App app = appService.getById(appId);
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
+        if (!app.getUserId().equals(loginUser.getUserId())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "无权限下载该应用代码");
+        }
+        String sourceDirPath = CODE_OUTPUT_ROOT_DIR + File.separator + appId;
+        File sourceDir = new File(sourceDirPath);
+        ThrowUtil.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(),
+                ErrorCode.NOT_FOUND_ERROR, "应用代码不存在，请先生成代码");
+        return ServerResponseEntity.success(projectDownloadService.downloadProjectAsZip(sourceDirPath, appId, response));
     }
 
 }

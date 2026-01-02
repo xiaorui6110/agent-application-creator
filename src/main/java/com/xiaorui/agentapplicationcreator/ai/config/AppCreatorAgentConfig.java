@@ -33,17 +33,15 @@ public class AppCreatorAgentConfig {
     private RedisSaver redisSaver;
 
     /**
-     * 系统提示词 TODO 待指定优化后的文件，先将项目完整流程跑通
+     * 系统提示词
      */
-    private final String SYSTEM_PROMPT = FileUtil.readString("prompt/integrated_system_prompt(gpt).md", StandardCharsets.UTF_8);
+    private final String SYSTEM_PROMPT = FileUtil.readString("prompt/optimized_system_prompt.md", StandardCharsets.UTF_8);
 
     /**
      * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）
-     * TODO 可能需要根据实际测试进行调整（INSTRUCTION）（以下是用在 Cursor 上的 Rules）
+     * 可能需要根据实际测试进行调整（INSTRUCTION）（以下是用在 Cursor 上的 Rules）
      */
     private final String INSTRUCTION = FileUtil.readString("prompt/system_instruction.md",StandardCharsets.UTF_8);
-
-    private final String SYSTEM_PROMPT_FRONT_SINGLE_HTML = FileUtil.readString("prompt/front_single_html_prompt.md", StandardCharsets.UTF_8);
 
 
     /**
@@ -79,8 +77,8 @@ public class AppCreatorAgentConfig {
                 .name("app_creator_agent")
                 // 具体模型（可选）
                 .model(chatModel)
-                // 系统提示词（自定义） TODO 目前还是 Test
-                .systemPrompt(SYSTEM_PROMPT_FRONT_SINGLE_HTML)
+                // 系统提示词（自定义）
+                .systemPrompt(SYSTEM_PROMPT)
                 // 详细指令（自定义）
                 .instruction(INSTRUCTION)
                 // 定义响应格式（可选）

@@ -18,6 +18,7 @@ import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.service.AppService;
+import com.xiaorui.agentapplicationcreator.service.ScreenshotService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import com.xiaorui.agentapplicationcreator.util.SftpFileUtil;
@@ -54,6 +55,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
     @Resource
     private SftpFileUtil sftpFileUtil;
+
+    @Resource
+    private ScreenshotService screenshotService;
 
     /**
      * 创建应用
@@ -110,7 +114,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         return QueryWrapper.create()
                 .eq("app_id", userId)
                 .like("app_name", nickName)
-                // TODO 这个 codeGenType 好像有点问题，现在的 AI 不回复这个类型，一直为 null
+                // TODO 这个 codeGenType 好像有点问题，现在的 AI 不回复这个类型，一直为 null，应该是 prompt的问题
                 .eq("code_gen_type", codeGenType)
                 .orderBy(sortField, "ascend".equals(sortOrder));
     }
@@ -177,7 +181,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         boolean updateResult = this.updateById(updateApp);
         ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 返回可访问的 URL
-        return String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey);
+        String appDeployUrl = String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey);
+        // 异步生成应用截图
+        createAppScreenshotAsync(appId, appDeployUrl);
+        return appDeployUrl;
     }
 
 
@@ -220,14 +227,35 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         Set<String> userIds = appList.stream()
                 .map(App::getUserId)
                 .collect(Collectors.toSet());
-        Map<String, UserVO> userVOMap = userService.listByIds(userIds).stream()
+        Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
                 .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo()));
         return appList.stream().map(app -> {
             AppVO appVO = getAppInfo(app.getAppId());
-            UserVO userVO = userVOMap.get(app.getUserId());
+            UserVO userVO = userInfoMap.get(app.getUserId());
             appVO.setUser(userVO);
             return appVO;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * 异步生成应用截图
+     *
+     * @param appId 应用id
+     * @param appDeploy 应用部署url
+     */
+    @Override
+    public void createAppScreenshotAsync(String appId, String appDeploy) {
+        // 使用虚拟线程异步执行（Java 21 的虚拟线程 Virtual Thread）
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成截图并上传
+            String screenshotUrl = screenshotService.createAndUploadScreenshot(appDeploy);
+            // 更新应用封面字段
+            App updateApp = new App();
+            updateApp.setAppId(appId);
+            updateApp.setAppCover(screenshotUrl);
+            boolean updated = this.updateById(updateApp);
+            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面信息失败");
+        });
     }
 
     /**
