@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.model.response;
+package com.xiaorui.agentapplicationcreator.agent.model.response;
 
 import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import lombok.AllArgsConstructor;

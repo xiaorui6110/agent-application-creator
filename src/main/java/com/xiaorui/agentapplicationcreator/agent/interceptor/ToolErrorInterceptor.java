@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.interceptor;
+package com.xiaorui.agentapplicationcreator.agent.interceptor;
 
 import com.alibaba.cloud.ai.graph.agent.interceptor.ToolCallHandler;
 import com.alibaba.cloud.ai.graph.agent.interceptor.ToolCallRequest;

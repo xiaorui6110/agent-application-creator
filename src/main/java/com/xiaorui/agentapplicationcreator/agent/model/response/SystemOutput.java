@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.model.response;
+package com.xiaorui.agentapplicationcreator.agent.model.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -10,8 +10,8 @@ import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
-import com.xiaorui.agentapplicationcreator.ai.creator.AgentAppCreator;
-import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
+import com.xiaorui.agentapplicationcreator.agent.model.response.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
@@ -138,7 +138,7 @@ public class AgentAppCreatorTest {
     }
 
     /**
-     * 测试流式输出（TODO 通过 Generation 来支持流式输出，并不是正统的 Spring WebFlux 实现）
+     * 测试流式输出（通过 Generation 来支持流式输出，并不是正统的 Spring WebFlux 实现）
      * Generation: <a href="https://springdoc.cn/spring-ai/api/chatmodel.html#Generation">...</a>
      * 流式输出：<a href="https://bailian.console.aliyun.com/tab=doc?tab=doc#/doc/?type=model&url=2866129">...</a>
      */

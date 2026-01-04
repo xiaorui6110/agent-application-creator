@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.config;
+package com.xiaorui.agentapplicationcreator.agent.config;
 
 
 import com.alibaba.cloud.ai.graph.OverAllState;
@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @description:
+ * @description: 智能体状态配置（RedisSaver）
  * @author: xiaorui
  * @date: 2025-12-30 13:51
  **/

@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai;
+package com.xiaorui.agentapplicationcreator.agent;
 
 import org.springframework.stereotype.Service;
 

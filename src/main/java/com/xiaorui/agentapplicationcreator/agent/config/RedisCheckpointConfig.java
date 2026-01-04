@@ -1,9 +1,9 @@
-package com.xiaorui.agentapplicationcreator.ai.config;
+package com.xiaorui.agentapplicationcreator.agent.config;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
 import com.alibaba.cloud.ai.graph.state.AgentStateFactory;
-import com.xiaorui.agentapplicationcreator.ai.memory.CustomRedisSaver;
+import com.xiaorui.agentapplicationcreator.agent.memory.CustomRedisSaver;
 import jakarta.annotation.Resource;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.hook;
+package com.xiaorui.agentapplicationcreator.agent.hook;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.RunnableConfig;

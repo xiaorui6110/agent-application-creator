@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.tool;
+package com.xiaorui.agentapplicationcreator.agent.tool;
 
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.function.BiFunction;
 
 /**
- * @description: 测试用（获取当前北京时间，大语言模型（Large Language Model, LLM）无法直接访问专有知识库或获取实时动态信息）
+ * @description: 测试用（获取当前北京时间，大语言模型是无法直接访问专有知识库或获取实时动态信息） 直接工具（tools）
  * @author: xiaorui
  * @date: 2025-12-12 14:14
  **/

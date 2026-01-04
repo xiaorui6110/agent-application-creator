@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.config;
+package com.xiaorui.agentapplicationcreator.agent.config;
 
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
@@ -6,10 +6,11 @@ import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
 import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
 import com.alibaba.cloud.ai.graph.agent.interceptor.todolist.TodoListInterceptor;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
-import com.xiaorui.agentapplicationcreator.ai.hook.LoggingHook;
-import com.xiaorui.agentapplicationcreator.ai.interceptor.ToolErrorInterceptor;
-import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
-import com.xiaorui.agentapplicationcreator.ai.tool.ExampleTestTool;
+import com.xiaorui.agentapplicationcreator.agent.hook.LoggingHook;
+import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorInterceptor;
+import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.agent.tool.ExampleTestTool;
+import com.xiaorui.agentapplicationcreator.agent.tool.FileOperationTool;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -67,7 +68,8 @@ public class AppCreatorAgentConfig {
                 .description("获取当前北京时间")
                 .inputType(String.class)
                 .build();
-
+        // 创建带有 @Tool 注解方法的工具对象
+        FileOperationTool fileOperationTool = new FileOperationTool();
         // 使用 BeanOutputConverter 生成 outputSchema 结构化输出
         BeanOutputConverter<AgentResponse> outputConverter = new BeanOutputConverter<>(AgentResponse.class);
         String agentResponseFormat = outputConverter.getFormat();
@@ -85,6 +87,7 @@ public class AppCreatorAgentConfig {
                 .outputSchema(agentResponseFormat)
                 // 工具调用（可组合使用）
                 .tools(exampleTestTool)
+                .methodTools(fileOperationTool)
                 // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要，before_*是正的，after_*是反的）
                 .hooks(loggingHook, summarizationHook, ModelCallLimitHook.builder().runLimit(50).build())
                 // 工具错误处理（可组合使用）（嵌套调用（第一个拦截器包装所有其他的））

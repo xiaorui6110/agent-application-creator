@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.creator;
+package com.xiaorui.agentapplicationcreator.agent.creator;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
@@ -14,8 +14,8 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
-import com.xiaorui.agentapplicationcreator.ai.model.response.AgentResponse;
-import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.agent.model.response.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;

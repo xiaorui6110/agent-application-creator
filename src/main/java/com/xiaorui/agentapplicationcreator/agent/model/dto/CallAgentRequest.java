@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.model.dto;
+package com.xiaorui.agentapplicationcreator.agent.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

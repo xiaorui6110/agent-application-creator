@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.config;
+package com.xiaorui.agentapplicationcreator.agent.config;
 
 import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;

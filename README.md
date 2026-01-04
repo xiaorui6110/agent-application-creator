@@ -1,7 +1,7 @@
 # AI 智能体应用生成平台（毕设）
 > 基本上全是参考 Spring AI Alibaba https://github.com/alibaba/spring-ai-alibaba 进行自主学习
 
-# xiaorui-ai-agent-platform
+# AI Intelligent Agent Application Generation Platform
 
 ## 项目简介
 

@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.memory;
+package com.xiaorui.agentapplicationcreator.agent.memory;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;

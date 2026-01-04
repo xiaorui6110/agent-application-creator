@@ -67,7 +67,7 @@ spring:
       port: 27017
       #password: 123456
       uri: mongodb://127.0.0.1:27017
-      database: agent_memory_store  # 自定义数据库
+      database: agent_memory_store
   # AI 配置
   ai:
     dashscope:

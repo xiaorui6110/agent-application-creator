@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.ai.config;
+package com.xiaorui.agentapplicationcreator.agent.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

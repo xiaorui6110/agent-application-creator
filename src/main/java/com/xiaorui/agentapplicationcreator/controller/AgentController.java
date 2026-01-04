@@ -2,9 +2,9 @@ package com.xiaorui.agentapplicationcreator.controller;
 
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
-import com.xiaorui.agentapplicationcreator.ai.creator.AgentAppCreator;
-import com.xiaorui.agentapplicationcreator.ai.model.dto.CallAgentRequest;
-import com.xiaorui.agentapplicationcreator.ai.model.response.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
+import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
+import com.xiaorui.agentapplicationcreator.agent.model.response.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
