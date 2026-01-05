@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
-import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.enums.ChatHistoryMsgTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
@@ -26,8 +26,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.xiaorui.agentapplicationcreator.constants.RedisMemoryConstant.AI_MESSAGE_MEMORY_PREFIX;
-import static com.xiaorui.agentapplicationcreator.constants.RedisMemoryConstant.USER_MESSAGE_MEMORY_PREFIX;
+import static com.xiaorui.agentapplicationcreator.constant.RedisMemoryConstant.AI_MESSAGE_MEMORY_PREFIX;
+import static com.xiaorui.agentapplicationcreator.constant.RedisMemoryConstant.USER_MESSAGE_MEMORY_PREFIX;
 
 /**
  * 对话历史表 服务层实现。

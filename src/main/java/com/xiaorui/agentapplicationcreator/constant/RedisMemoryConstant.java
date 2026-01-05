@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.constants;
+package com.xiaorui.agentapplicationcreator.constant;
 
 /**
  * @description: redis 对话历史信息内存key

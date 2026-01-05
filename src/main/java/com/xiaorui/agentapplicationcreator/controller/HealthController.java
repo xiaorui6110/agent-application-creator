@@ -2,7 +2,7 @@ package com.xiaorui.agentapplicationcreator.controller;
 
 import com.xiaorui.agentapplicationcreator.common.BaseResponse;
 import com.xiaorui.agentapplicationcreator.common.ResultUtil;
-import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -15,7 +15,7 @@ import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
-import com.xiaorui.agentapplicationcreator.agent.model.response.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
@@ -63,42 +63,10 @@ public class AgentAppCreator {
     @Resource
     private AgentChatMemoryService agentChatMemoryService;
 
-
-    /**
-     * 智能体对话（Test）
-     */
-    public SystemOutput chatTest(String userMessage, String threadId) {
-
-        // 构建配置
-        RunnableConfig runnableConfig = buildRunnableConfig(threadId,"user_id_123456");
-        // 提前在外部声明 POJO 变量
-        AssistantMessage response;
-        AgentResponse agentResponse;
-        try {
-            // 调用 Agent
-            response = appCreatorAgent.call(userMessage, runnableConfig);
-            System.out.println("Agent 成功调用");
-            // JSON 转 Bean（主要是为了方便获取代码文件）
-            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
-        }
-        // 构建返回值
-        return SystemOutput.builder()
-                .agentName("app-creator-agent-test")
-                .threadId("threadId_121212")
-                .userId("user_id_123456")
-                .appId("app_id123456")
-                .agentResponse(agentResponse)
-                .fromMemory(false)
-                .timestamp(System.currentTimeMillis())
-                .build();
-    }
-
-
     /**
      * 智能体对话
+     * 1. 用户输入提示词：“创建xxx应用”  -->  agent确认后生成代码应用呈现
+     * 2. 用户再输入修改页面需求  -->  agent使用工具修改应用项目代码
      */
     public SystemOutput chat(String userMessage, String transThreadId, String appId) {
         // 获取当前用户
@@ -115,7 +83,7 @@ public class AgentAppCreator {
         }
         // 输入校验
         validateUserInput(userMessage);
-        // 保存用户输入到 MongoDB 中（底层已校验插入成功与否的错误处理，此处不做追加处理 log）
+        // 保存用户输入到 MongoDB 中（底层已存在校验插入成功与否的错误处理，此处不做追加处理 log）
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
@@ -123,6 +91,7 @@ public class AgentAppCreator {
         AssistantMessage response;
         AgentResponse agentResponse;
         try {
+            // 调用 agent
             response = appCreatorAgent.call(userMessage, runnableConfig);
             // JSON 转 Bean（主要是为了方便获取代码文件）
             agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
@@ -140,6 +109,37 @@ public class AgentAppCreator {
                 .agentName("app-creator-agent")
                 .agentResponse(agentResponse)
                 // TODO 这里后面做缓存时，要进行判断（标志位）
+                .fromMemory(false)
+                .timestamp(System.currentTimeMillis())
+                .build();
+    }
+
+    /**
+     * 智能体对话（Test）
+     */
+    public SystemOutput chatTest(String userMessage, String threadId) {
+
+        // 构建配置
+        RunnableConfig runnableConfig = buildRunnableConfig(threadId,"user_id_123456");
+        // 提前在外部声明 POJO 变量
+        AssistantMessage response;
+        AgentResponse agentResponse;
+        try {
+            // 调用 Agent
+            response = appCreatorAgent.call(userMessage, runnableConfig);
+            // JSON 转 Bean（主要是为了方便获取代码文件）
+            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
+        }
+        // 构建返回值
+        return SystemOutput.builder()
+                .agentName("app-creator-agent-test")
+                .threadId("threadId_121212")
+                .userId("user_id_123456")
+                .appId("app_id123456")
+                .agentResponse(agentResponse)
                 .fromMemory(false)
                 .timestamp(System.currentTimeMillis())
                 .build();

@@ -5,7 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.xiaorui.agentapplicationcreator.common.DeleteRequest;
-import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;

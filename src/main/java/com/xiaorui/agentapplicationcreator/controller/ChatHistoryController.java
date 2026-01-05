@@ -2,7 +2,7 @@ package com.xiaorui.agentapplicationcreator.controller;
 
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
-import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;

@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.xiaorui.agentapplicationcreator.constants.AppConstant.*;
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.*;
 
 /**
  * 应用表 服务层实现。

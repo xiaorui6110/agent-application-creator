@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.constants;
+package com.xiaorui.agentapplicationcreator.constant;
 
 /**
  * @description: 爬虫计数常量

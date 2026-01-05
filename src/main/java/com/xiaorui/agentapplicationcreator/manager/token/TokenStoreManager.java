@@ -4,7 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.xiaorui.agentapplicationcreator.constants.OauthCacheConstant;
+import com.xiaorui.agentapplicationcreator.constant.OauthCacheConstant;
 import com.xiaorui.agentapplicationcreator.enums.SysTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.model.bo.TokenInfoBO;

@@ -11,10 +11,11 @@ import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
-import com.xiaorui.agentapplicationcreator.agent.model.response.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
+import com.xiaorui.agentapplicationcreator.util.CodeFileSaverUtil;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
@@ -23,8 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
+
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
  * @description: agent 调用测试，参考最新官方文档 <a href="https://java2ai.com/docs/frameworks/agent-framework/tutorials/agents">...</a>
@@ -204,53 +212,53 @@ public class AgentAppCreatorTest {
     }
 
 
-    ///**
-    // * 测试 agent 结构化输出（需不断优化，在优化 prompt 时需要优化结构化输出）
-    // */
-    //@Test
-    //public void testAgentOutput() {
-    //
-    //    SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
-    //    System.out.println("Agent Response: -----------" + "\n" + systemOutput);
-    //
-    //    /*
-    //    结构化输出：
-    //
-    //      SystemOutput(
-    //        threadId=threadId_121212,
-    //        userId=user_id_123456,
-    //        messageId=threadId_121212,
-    //        agentName=app-creator-agent,
-    //        agentResponse=AgentResponse(
-    //            reply=我将为您创建一个基于原生 HTML、CSS 和 JavaScript 的番茄计时专注小工具。,
-    //            structuredReply=StructuredReply(
-    //              type=null,
-    //              runnable=true,
-    //              entry=index.html,
-    //              files={index.html=code},
-    //              description=一个使用原生 HTML、CSS 和 JavaScript 实现的番茄计时专注小工具。),
-    //            toolCalls=[],
-    //            intentSummary=用户希望创建一个使用原生HTML、CSS和JavaScript实现的番茄计时专注小工具，具备基本的计时功能和交互性。,
-    //            confidence=0.95,
-    //            metadata={}),
-    //        fromMemory=false,
-    //        timestamp=1766633800831)
-    //
-    //     */
-    //
-    //}
-    //
-    ///**
-    // * 测试写入 agent 回复代码到本地文件夹
-    // */
-    //@Test
-    //public void testAgentHook() throws IOException {
-    //
-    //    SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现");
-    //    CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(),"app_id12121212");
-    //    System.out.println("Agent Response: -----------" + "\n" + systemOutput);
-    //
-    //}
+    /**
+     * 测试 agent 结构化输出（需不断优化，在优化 prompt 时需要优化结构化输出）
+     */
+    @Test
+    public void testAgentOutput() {
+
+        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个番茄计时专注小工具，使用原生HTML实现","threadId_121212");
+        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+
+        /*
+        结构化输出：
+
+          SystemOutput(
+            threadId=threadId_121212,
+            userId=user_id_123456,
+            messageId=threadId_121212,
+            agentName=app-creator-agent,
+            agentResponse=AgentResponse(
+                reply=我将为您创建一个基于原生 HTML、CSS 和 JavaScript 的番茄计时专注小工具。,
+                structuredReply=StructuredReply(
+                  type=null,
+                  runnable=true,
+                  entry=index.html,
+                  files={index.html=code},
+                  description=一个使用原生 HTML、CSS 和 JavaScript 实现的番茄计时专注小工具。),
+                toolCalls=[],
+                intentSummary=用户希望创建一个使用原生HTML、CSS和JavaScript实现的番茄计时专注小工具，具备基本的计时功能和交互性。,
+                confidence=0.95,
+                metadata={}),
+            fromMemory=false,
+            timestamp=1766633800831)
+
+         */
+
+    }
+
+    /**
+     * 测试写入 agent 回复代码到本地文件夹
+     */
+    @Test
+    public void testAgentHook() throws IOException {
+        String threadId = UUID.randomUUID().toString();
+        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个留言板小工具，直接使用原生HTML实现", threadId);
+        CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(),"app_id12121212");
+        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+
+    }
 
 
     /**
@@ -258,8 +266,8 @@ public class AgentAppCreatorTest {
      */
     @Test
     public void testAgentNewMemory() {
-
-        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个todolist待办事件小工具，使用原生HTML实现","thread_id_123");
+        String threadId = UUID.randomUUID().toString();
+        SystemOutput systemOutput = agentAppCreator.chatTest("我想要做一个todolist待办事件小工具，使用原生HTML实现",threadId);
 
         boolean result = chatHistoryService.saveChatHistory(
                 systemOutput.getAppId(),
@@ -284,6 +292,26 @@ public class AgentAppCreatorTest {
         System.out.println(i);
 
     }
+
+    /**
+     * 测试 agent 方法工具 TODO 再测
+     */
+    @Test
+    public void testAgentMethodTools() throws IOException {
+        String dirPath = CODE_OUTPUT_ROOT_DIR + File.separator + "123456" + File.separator + "test.txt";
+        String content = Files.readString(Paths.get(dirPath), StandardCharsets.UTF_8);
+        System.out.println("文件读取结果：\n" + content);
+        System.out.println("读取内容长度：" + content.length());
+        String threadId = UUID.randomUUID().toString();
+        SystemOutput systemOutput = agentAppCreator.chatTest(
+                "帮我修改在 code_output 目录下创建的 123456/test.txt 文件，将其改为 abcd1234", threadId);
+        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
+        String contentAfter = Files.readString(Paths.get(dirPath), StandardCharsets.UTF_8);
+        System.out.println("文件读取结果：\n" + contentAfter);
+        System.out.println("读取内容长度：" + contentAfter.length());
+    }
+
+
 
 
 

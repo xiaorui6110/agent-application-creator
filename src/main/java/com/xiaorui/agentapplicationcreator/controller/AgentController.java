@@ -4,7 +4,7 @@ import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
-import com.xiaorui.agentapplicationcreator.agent.model.response.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
@@ -30,9 +30,8 @@ public class AgentController {
     @Resource
     private AgentAppCreator agentAppCreator;
 
-
     /**
-     * 智能体对话接口 TODO 多轮对话时可能还会有些问题，比如频繁写入文件、多轮对话输出格式。。。
+     * 智能体对话接口 TODO 多轮对话时可能还会有些问题，比如频繁写入文件、多轮对话输出格式。。。，这里对话记忆的功能 chatHistoryService 要考虑加在哪里？
      */
     @PostMapping("/chat")
     public ServerResponseEntity<SystemOutput> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {

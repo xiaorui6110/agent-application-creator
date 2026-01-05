@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.constants;
+package com.xiaorui.agentapplicationcreator.constant;
 
 /**
  * @description: 用户常量

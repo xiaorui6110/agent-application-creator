@@ -54,7 +54,7 @@ public class MinioManager {
      * 2. 上传 File 到 MinIO
      *
      * @param file 本地文件/临时文件
-     * @param objectName MinIO 存储的对象名（如 "test/2025/test.jpg"）
+     * @param objectName MinIO 存储的对象名（如 "test.txt/2025/test.txt.jpg"）
      * @return 临时访问链接
      */
     public String uploadFile(File file, String objectName) {

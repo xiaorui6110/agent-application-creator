@@ -11,8 +11,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
-import static com.xiaorui.agentapplicationcreator.constants.AppConstant.CODE_DEPLOY_ROOT_DIR;
-import static com.xiaorui.agentapplicationcreator.constants.AppConstant.CODE_OUTPUT_ROOT_DIR;
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_DEPLOY_ROOT_DIR;
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
  * @description: 代码文件保存工具类

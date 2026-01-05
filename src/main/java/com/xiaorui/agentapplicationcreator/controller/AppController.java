@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.xiaorui.agentapplicationcreator.common.DeleteRequest;
-import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
@@ -27,7 +27,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.xiaorui.agentapplicationcreator.constants.AppConstant.CODE_OUTPUT_ROOT_DIR;
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
  * 应用表 控制层。

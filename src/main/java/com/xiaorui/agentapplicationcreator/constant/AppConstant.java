@@ -1,4 +1,6 @@
-package com.xiaorui.agentapplicationcreator.constants;
+package com.xiaorui.agentapplicationcreator.constant;
+
+import java.io.File;
 
 /**
  * @description: 应用常量
@@ -19,12 +21,12 @@ public interface AppConstant {
     /**
      * 应用生成目录
      */
-    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") + "\\tmp\\code_output";
+    String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") +  File.separator + "tmp" + File.separator + "code_output";
 
     /**
      * 应用部署目录
      */
-    String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + "\\tmp\\code_deploy";
+    String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "code_deploy";
 
     /**
      * 应用部署域名（TODO 改为自己的 Liunx 服务器地址或本地地址）

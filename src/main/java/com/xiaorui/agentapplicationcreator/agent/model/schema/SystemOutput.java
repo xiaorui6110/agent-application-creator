@@ -1,5 +1,6 @@
-package com.xiaorui.agentapplicationcreator.agent.model.response;
+package com.xiaorui.agentapplicationcreator.agent.model.schema;
 
+import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

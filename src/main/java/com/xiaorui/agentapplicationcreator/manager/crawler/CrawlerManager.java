@@ -1,7 +1,7 @@
 package com.xiaorui.agentapplicationcreator.manager.crawler;
 
-import com.xiaorui.agentapplicationcreator.constants.CrawlerConstant;
-import com.xiaorui.agentapplicationcreator.constants.UserConstant;
+import com.xiaorui.agentapplicationcreator.constant.CrawlerConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.model.entity.User;

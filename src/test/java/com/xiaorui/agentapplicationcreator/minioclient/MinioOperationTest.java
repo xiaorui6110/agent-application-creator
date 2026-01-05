@@ -26,10 +26,10 @@ import java.security.NoSuchAlgorithmException;
 public class MinioOperationTest {
 
     // 测试专用参数
-    private static final String TEST_BUCKET_NAME = "test-minio-bucket";
-    private static final String TEST_OBJECT_NAME = "test-file.txt";
+    private static final String TEST_BUCKET_NAME = "test.txt-minio-bucket";
+    private static final String TEST_OBJECT_NAME = "test.txt-file.txt";
     private static final String TEST_FILE_CONTENT = "Hello MinIO Test!";
-    private static final String DOWNLOAD_FILE_PATH = "./test-download.txt";
+    private static final String DOWNLOAD_FILE_PATH = "./test.txt-download.txt";
 
     @Resource
     private MinioManager minioManager;
@@ -63,7 +63,7 @@ public class MinioOperationTest {
         // 场景1：创建已存在的桶
         minioManager.createBucket(TEST_BUCKET_NAME);
         // 场景2：创建新的临时桶
-        String tempBucket = "temp-test-bucket-" + System.currentTimeMillis();
+        String tempBucket = "temp-test.txt-bucket-" + System.currentTimeMillis();
         minioManager.createBucket(tempBucket);
         // 验证桶是否存在
         try {

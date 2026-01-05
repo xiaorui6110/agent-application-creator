@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.xiaorui.agentapplicationcreator.constants.LogicDeletedConstant.LOGIC_DELETED_NO;
-import static com.xiaorui.agentapplicationcreator.constants.UserConstant.BIND_STATUS_BOUND;
+import static com.xiaorui.agentapplicationcreator.constant.LogicDeletedConstant.LOGIC_DELETED_NO;
+import static com.xiaorui.agentapplicationcreator.constant.UserConstant.BIND_STATUS_BOUND;
 
 /**
  * 用户-智能体会话绑定表 服务层实现。
