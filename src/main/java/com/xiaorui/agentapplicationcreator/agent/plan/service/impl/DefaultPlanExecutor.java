@@ -1,6 +1,6 @@
 package com.xiaorui.agentapplicationcreator.agent.plan.service.impl;
 
-import com.xiaorui.agentapplicationcreator.agent.plan.checker.ExpectedChecker;
+import com.xiaorui.agentapplicationcreator.agent.plan.manager.ExpectedChecker;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.ValidatedOperation;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.ValidatedPlan;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.VerificationPlan;
@@ -18,7 +18,7 @@ import java.util.List;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
- * @description:
+ * @description: 默认计划执行器
  * @author: xiaorui
  * @date: 2026-01-05 21:11
  **/
@@ -54,7 +54,7 @@ public class DefaultPlanExecutor implements PlanExecutor {
     }
 
     /**
-     * 执行操作（真正的文件操作） TODO 后续肯定需要增加操作类型
+     * 执行操作（真正的文件操作） TODO 后续肯定需要增加操作类型（目前有：创建或覆盖、删除、移动  /  后续打算加：移动、重命名、读取、搜索、文件夹操作等等）
      */
     private void executeOperation(ValidatedOperation op) throws IOException {
 

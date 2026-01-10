@@ -66,7 +66,7 @@ public class AgentAppCreator {
     /**
      * 智能体对话
      * 1. 用户输入提示词：“创建xxx应用”  -->  agent确认后生成代码应用呈现
-     * 2. 用户再输入修改页面需求  -->  agent使用工具修改应用项目代码
+     * 2. 用户再输入修改页面需求  -->  agent生成计划来修改应用项目代码
      */
     public SystemOutput chat(String userMessage, String transThreadId, String appId) {
         // 获取当前用户

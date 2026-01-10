@@ -1,4 +1,4 @@
-package com.xiaorui.agentapplicationcreator.agent.plan.checker;
+package com.xiaorui.agentapplicationcreator.agent.plan.manager;
 
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.ExpectedCondition;
 import org.springframework.stereotype.Component;

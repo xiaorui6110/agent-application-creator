@@ -12,6 +12,13 @@ import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.plan.entity.CodeModificationPlan;
+import com.xiaorui.agentapplicationcreator.agent.plan.entity.ValidatedPlan;
+import com.xiaorui.agentapplicationcreator.agent.plan.result.ExecutionResult;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanExecutor;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanValidator;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.impl.DefaultPlanExecutor;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.impl.DefaultPlanValidator;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
@@ -24,15 +31,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @description: agent 调用测试，参考最新官方文档 <a href="https://java2ai.com/docs/frameworks/agent-framework/tutorials/agents">...</a>
@@ -293,22 +301,39 @@ public class AgentAppCreatorTest {
 
     }
 
+    private final PlanValidator validator = new DefaultPlanValidator();
+
+    private final PlanExecutor executor = new DefaultPlanExecutor();
+
     /**
-     * 测试 agent 方法工具 TODO 再测
+     * 测试 agent 间接修改文件内容（GPT生成测试）
      */
     @Test
-    public void testAgentMethodTools() throws IOException {
-        String dirPath = CODE_OUTPUT_ROOT_DIR + File.separator + "123456" + File.separator + "test.txt";
-        String content = Files.readString(Paths.get(dirPath), StandardCharsets.UTF_8);
-        System.out.println("文件读取结果：\n" + content);
-        System.out.println("读取内容长度：" + content.length());
+    public void testAgentMethodFile() throws IOException {
+
+        // ---------- 1. 准备测试文件 ----------
+        Path file = Paths.get(CODE_OUTPUT_ROOT_DIR, "123456/test.txt");
+        //Files.createDirectories(file.getParent());
+        //Files.writeString(file, "123456-origin");
+        // ---------- 2. 调用 Agent ----------
+        String userInput = "帮我修改在 code_output 目录下创建的 123456/test.txt 文件中的内容，将其改为 123456-cover";
         String threadId = UUID.randomUUID().toString();
-        SystemOutput systemOutput = agentAppCreator.chatTest(
-                "帮我修改在 code_output 目录下创建的 123456/test.txt 文件，将其改为 abcd1234", threadId);
-        System.out.println("Agent Response: -----------" + "\n" + systemOutput);
-        String contentAfter = Files.readString(Paths.get(dirPath), StandardCharsets.UTF_8);
-        System.out.println("文件读取结果：\n" + contentAfter);
-        System.out.println("读取内容长度：" + contentAfter.length());
+        SystemOutput systemOutput = agentAppCreator.chatTest(userInput, threadId);
+        System.out.println(systemOutput);
+        // ---------- 3. 获取 Agent 输出的 Plan ----------
+        CodeModificationPlan plan = systemOutput.getAgentResponse().getCodeModificationPlan();
+        // ---------- 4. Validator ----------
+        ValidatedPlan validatedPlan = validator.validate(plan);
+        // ---------- 5. Executor ----------
+        ExecutionResult result = executor.execute(validatedPlan);
+        // ---------- 6. 断言执行成功 ----------
+        assertTrue(result.isSuccess(), "执行失败：" + result.getErrorMessage());
+        assertTrue(result.isVerified(), "验证未通过");
+        // ---------- 7. 断言磁盘真实结果 ----------
+        String actual = Files.readString(file);
+        assertEquals("123456-cover", actual);
+        System.out.println("Agent 修改文件成功，内容：" + actual);
+
     }
 
 

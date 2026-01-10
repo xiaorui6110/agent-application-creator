@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @description: 系统输出
+ * @description: 系统输出（主要信息是 "平台"）
  * @author: xiaorui
  * @date: 2025-12-24 14:59
  **/

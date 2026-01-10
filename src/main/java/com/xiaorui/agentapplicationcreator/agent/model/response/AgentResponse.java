@@ -1,6 +1,7 @@
 package com.xiaorui.agentapplicationcreator.agent.model.response;
 
 import com.xiaorui.agentapplicationcreator.agent.model.schema.StructuredReply;
+import com.xiaorui.agentapplicationcreator.agent.plan.entity.CodeModificationPlan;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,6 +37,11 @@ public class AgentResponse {
      * Agent 在本次对话中调用的工具信息
      */
     private List<ToolCallResponse> toolCalls;
+
+    /**
+     * Agent 执行的代码修改计划（根据用户提示判断生成）
+     */
+    private CodeModificationPlan codeModificationPlan;
 
     /**
      * Agent 对用户意图的理解摘要（非 Chain-of-Thought）

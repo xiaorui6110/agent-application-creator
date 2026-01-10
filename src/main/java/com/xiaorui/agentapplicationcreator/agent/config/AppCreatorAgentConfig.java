@@ -133,9 +133,32 @@ public class AppCreatorAgentConfig {
             五、失败策略
             如果用户的需求不明确，或你无法确定文件的当前状态，
             你必须输出一个空的 operations 数组，并说明 reason 字段。
-            
-            现在，请根据用户输入生成 CodeModificationPlan。
 
+            【重要】CodeModificationPlan 输出示例：
+            
+            {
+              "planType": "CODE_MODIFICATION",
+              "rootDir": "code_output",
+              "operations": [
+                {
+                  "operationType": "OVERWRITE_FILE",
+                  "path": "123456/test.txt",
+                  "expected": {
+                    "type": "CONTENT_EQUALS",
+                    "value": "file_origin_content"
+                  },
+                  "content": "file_cover_content"
+                }
+              ],
+              "verification": {
+                "type": "CONTENT_EQUALS",
+                "path": "123456/test.txt",
+                "value": "file_cover_content"
+              }
+            }
+                        
+            现在，请根据用户输入生成 CodeModificationPlan（ planType 固定为 CODE_MODIFICATION ）。
+              
             """;
 
 

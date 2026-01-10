@@ -34,8 +34,6 @@ public class DefaultPlanValidator implements PlanValidator {
 
     /**
      * 验证计划
-     * @param plan 计划
-     * @return 验证结果
      */
     @Override
     public ValidatedPlan validate(CodeModificationPlan plan) {
@@ -65,6 +63,9 @@ public class DefaultPlanValidator implements PlanValidator {
         );
     }
 
+    /**
+     * 验证操作
+     */
     private ValidatedOperation validateOperation(FileOperationPlan op) {
 
         if (op.getOperationType() == null) {
