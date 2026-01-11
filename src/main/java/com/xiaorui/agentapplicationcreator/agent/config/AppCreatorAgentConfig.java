@@ -5,11 +5,17 @@ import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
 import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
 import com.alibaba.cloud.ai.graph.agent.interceptor.todolist.TodoListInterceptor;
+import com.alibaba.cloud.ai.graph.agent.interceptor.toolretry.ToolRetryInterceptor;
+import com.alibaba.cloud.ai.graph.agent.interceptor.toolselection.ToolSelectionInterceptor;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
 import com.xiaorui.agentapplicationcreator.agent.hook.LoggingHook;
+import com.xiaorui.agentapplicationcreator.agent.hook.MessageTrimmingHook;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorInterceptor;
+import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolMonitoringInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.agent.tool.ExampleTestTool;
+import com.xiaorui.agentapplicationcreator.agent.tool.FileOperationTool;
+import com.xiaorui.agentapplicationcreator.agent.tool.VerifyFileTool;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -22,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 
 
 /**
- * @description: agent 核心配置   TODO 一些 hook、tool、interceptor 等等还需优化实现，消息总结，对话历史操作等等
+ * @description: agent 核心配置
  * @author: xiaorui
  * @date: 2025-12-10 14:57
  **/
@@ -50,17 +56,30 @@ public class AppCreatorAgentConfig {
     @Bean
     public ReactAgent appCreatorAgent(ChatModel chatModel) {
 
-        // 创建 Hooks 和 Interceptors
+        // ========== 创建 Hooks ==========
         LoggingHook loggingHook = new LoggingHook();
-        ToolErrorInterceptor toolErrorInterceptor = new ToolErrorInterceptor();
-
-        // 创建消息压缩 Hook(Spring AI Alibaba 内置实现)
+        MessageTrimmingHook messageTrimmingHook = new MessageTrimmingHook();
+        // 消息压缩总结 (Spring AI Alibaba 内置实现）
         SummarizationHook summarizationHook = SummarizationHook.builder()
                 .model(chatModel)
                 .maxTokensBeforeSummary(5000)
                 .messagesToKeep(10)
                 .build();
+        // 限制模型调用次数为 50 次
+        ModelCallLimitHook modelCallLimitHook = ModelCallLimitHook.builder().runLimit(50).build();
 
+        // ========== 创建 Interceptors ==========
+        ToolErrorInterceptor toolErrorInterceptor = new ToolErrorInterceptor();
+        ToolMonitoringInterceptor toolMonitoringInterceptor = new ToolMonitoringInterceptor();
+        // 工具重试
+        ToolRetryInterceptor toolRetryInterceptor = ToolRetryInterceptor.builder().
+                maxRetries(3).onFailure(ToolRetryInterceptor.OnFailureBehavior.RETURN_MESSAGE).build();
+        // 在执行工具之前强制执行一个规划步骤，以概述 Agent 将要采取的步骤
+        TodoListInterceptor todoListInterceptor = TodoListInterceptor.builder().build();
+        // 使用一个 LLM 来决定在多个可用工具之间选择哪个工具
+        ToolSelectionInterceptor toolSelectionInterceptor = ToolSelectionInterceptor.builder().build();
+
+        // ========== 创建 Tools ==========
         // 在这里创建直接工具回调，避免循环依赖
         ToolCallback exampleTestTool = FunctionToolCallback
                 .builder("ExampleTestTool", new ExampleTestTool())
@@ -68,37 +87,41 @@ public class AppCreatorAgentConfig {
                 .inputType(String.class)
                 .build();
         // 创建带有 @Tool 注解的方法工具对象
-        //FileOperationTool fileOperationTool = new FileOperationTool();
-        //VerifyFileTool verifyFileTool = new VerifyFileTool();
+        FileOperationTool fileOperationTool = new FileOperationTool();
+        VerifyFileTool verifyFileTool = new VerifyFileTool();
+
+        // ========== 结构化输出 ==========
         // 使用 BeanOutputConverter 生成 outputSchema 结构化输出
         BeanOutputConverter<AgentResponse> outputConverter = new BeanOutputConverter<>(AgentResponse.class);
         String agentResponseFormat = outputConverter.getFormat();
-        // 创建 agent
+
+        // ========== 创建 Agent ==========
         return ReactAgent.builder()
-                // 模型名称（自定义）
+                // 模型名称
                 .name("app_creator_agent")
-                // 具体模型（可选）
+                // 具体模型
                 .model(chatModel)
-                // 系统提示词（自定义）
-                .systemPrompt(PROPMT)
-                // 详细指令（自定义）
-                .instruction(INSTRUCTION)
-                // 定义响应格式（可选）
+                // 系统提示词（
+                .systemPrompt(SYSTEM_PROMPT)
+                // 详细指令
+                //.instruction(INSTRUCTION)
+                // 定义响应格式
                 .outputSchema(agentResponseFormat)
-                // 工具调用（可组合使用）
+                // 工具调用
                 //.tools(exampleTestTool)
                 //.methodTools(fileOperationTool, verifyFileTool)
-                // 限制模型调用次数（可组合使用）（使用多个 Hooks 和 Interceptors 时，理解执行顺序很重要，before_*是正的，after_*是反的）
-                .hooks(loggingHook, summarizationHook, ModelCallLimitHook.builder().runLimit(50).build())
-                // 工具错误处理（可组合使用）（嵌套调用（第一个拦截器包装所有其他的））
-                .interceptors(toolErrorInterceptor, TodoListInterceptor.builder().build())
-                // 使用 RedisSaver
+                // 钩子调用（使用多个 Hooks 时，理解执行顺序很重要，before_* 是正的，after_* 是反的）
+                .hooks(loggingHook, messageTrimmingHook, summarizationHook, modelCallLimitHook)
+                // 拦截器调用（嵌套调用，第一个拦截器包装所有其他的）
+                .interceptors(todoListInterceptor, toolSelectionInterceptor,
+                        toolMonitoringInterceptor, toolErrorInterceptor, toolRetryInterceptor)
+                // 记忆存储
                 .saver(redisSaver)
                 .build();
     }
 
 
-    private final String PROPMT = """
+    private final String CODE_PLAN_PROPMT = """
             
             你是一个【代码修改规划器】（Code Modification Planner）。
 

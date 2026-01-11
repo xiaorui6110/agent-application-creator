@@ -19,7 +19,7 @@ public interface AppConstant {
     Integer DEFAULT_APP_PRIORITY = 0;
 
     /**
-     * 应用生成目录
+     * 应用生成目录（动态获取项目运行目录，拼接绝对路径）
      */
     String CODE_OUTPUT_ROOT_DIR = System.getProperty("user.dir") +  File.separator + "tmp" + File.separator + "code_output";
 

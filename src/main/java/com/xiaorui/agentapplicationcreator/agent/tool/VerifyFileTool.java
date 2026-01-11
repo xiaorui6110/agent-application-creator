@@ -3,7 +3,6 @@ package com.xiaorui.agentapplicationcreator.agent.tool;
 import com.xiaorui.agentapplicationcreator.agent.model.response.VerifyResult;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,11 +11,11 @@ import java.nio.file.Paths;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
- * @description:
+ * @description: 文件验证工具
  * @author: xiaorui
  * @date: 2026-01-05 16:45
  **/
-@Component
+//@Component
 public class VerifyFileTool {
 
     // region

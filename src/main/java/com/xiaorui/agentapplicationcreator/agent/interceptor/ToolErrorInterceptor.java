@@ -6,12 +6,18 @@ import com.alibaba.cloud.ai.graph.agent.interceptor.ToolCallResponse;
 import com.alibaba.cloud.ai.graph.agent.interceptor.ToolInterceptor;
 
 /**
- * @description: 最简单的工具异常拦截器（占位用）
+ * @description: 简单的工具异常拦截器
  * @author: xiaorui
  * @date: 2025-12-11 13:00
  **/
 
 public class ToolErrorInterceptor extends ToolInterceptor {
+
+    @Override
+    public String getName() {
+        return "ToolErrorInterceptor";
+    }
+
     @Override
     public ToolCallResponse interceptToolCall(ToolCallRequest request, ToolCallHandler handler) {
         try {
@@ -20,10 +26,5 @@ public class ToolErrorInterceptor extends ToolInterceptor {
             return ToolCallResponse.of(request.getToolCallId(), request.getToolName(),
                     "Tool failed: " + e.getMessage());
         }
-    }
-
-    @Override
-    public String getName() {
-        return "ToolErrorInterceptor";
     }
 }

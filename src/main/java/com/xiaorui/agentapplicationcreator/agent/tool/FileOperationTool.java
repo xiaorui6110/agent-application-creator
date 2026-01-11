@@ -2,7 +2,6 @@ package com.xiaorui.agentapplicationcreator.agent.tool;
 
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -10,11 +9,11 @@ import java.nio.file.*;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
- * @description: 文件操作工具（方法工具 methodTools）（agent 是无法直接操作文件系统的，所以舍弃 tool 实现）
+ * @description: 文件操作工具（方法工具 methodTools） TODO 我相信是可以的，应该是 prompt 没有写好、权限不够等等其他原因导致的
  * @author: xiaorui
  * @date: 2026-01-04 22:04
  **/
-@Component
+//@Component
 public class FileOperationTool {
 
     /**

@@ -58,7 +58,7 @@ public class OllamaApiTest {
         // 模型名称
         requestParams.set("model", "gemma3:4b");
         // 提问内容
-        requestParams.set("prompt", "你好呀，我是 xiaorui ^^");
+        requestParams.set("prompt", "你好呀");
         // 可选：关闭流式返回（默认流式，如需同步返回完整结果可添加）
         // requestParams.put("stream", false);
 
