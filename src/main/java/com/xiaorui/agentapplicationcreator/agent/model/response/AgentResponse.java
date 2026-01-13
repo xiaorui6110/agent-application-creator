@@ -2,6 +2,7 @@ package com.xiaorui.agentapplicationcreator.agent.model.response;
 
 import com.xiaorui.agentapplicationcreator.agent.model.schema.StructuredReply;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.CodeModificationPlan;
+import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationInput;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,6 +43,11 @@ public class AgentResponse {
      * Agent 执行的代码修改计划（根据用户提示判断生成）
      */
     private CodeModificationPlan codeModificationPlan;
+
+    /**
+     * 主 Agent 生成的代码，副 Agent 执行的代码优化输入（根据用户提示判断生成）
+     */
+    private CodeOptimizationInput codeOptimizationInput;
 
     /**
      * Agent 对用户意图的理解摘要（非 Chain-of-Thought）

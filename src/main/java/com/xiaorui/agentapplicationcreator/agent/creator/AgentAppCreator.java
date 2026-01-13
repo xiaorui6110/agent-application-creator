@@ -83,6 +83,9 @@ public class AgentAppCreator {
         }
         // 输入校验
         validateUserInput(userMessage);
+
+        // TODO 拼接 Message，将 appId 传给 agent，便于后续输出
+
         // 保存用户输入到 MongoDB 中（底层已存在校验插入成功与否的错误处理，此处不做追加处理 log）
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 构建配置

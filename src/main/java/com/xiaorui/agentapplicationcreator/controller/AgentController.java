@@ -41,6 +41,11 @@ public class AgentController {
         String appId = callAgentRequest.getAppId();
         SystemOutput systemOutput = agentAppCreator.chat(message, threadId, appId);
         CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
+
+        // TODO 这里异步执行，副 agent 去优化代码并反馈
+
+
+
         return ServerResponseEntity.success(systemOutput);
     }
 

@@ -13,6 +13,8 @@ import com.xiaorui.agentapplicationcreator.agent.hook.MessageTrimmingHook;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolMonitoringInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
+import com.xiaorui.agentapplicationcreator.agent.subagent.prompt.CodeOptimizationPrompt;
 import com.xiaorui.agentapplicationcreator.agent.tool.ExampleTestTool;
 import com.xiaorui.agentapplicationcreator.agent.tool.FileOperationTool;
 import com.xiaorui.agentapplicationcreator.agent.tool.VerifyFileTool;
@@ -39,19 +41,19 @@ public class AppCreatorAgentConfig {
     private RedisSaver redisSaver;
 
     /**
-     * 系统提示词
+     * 系统提示词 TODO 待优化
      */
     private final String SYSTEM_PROMPT = FileUtil.readString("prompt/optimized_system_prompt.md", StandardCharsets.UTF_8);
 
     /**
-     * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）
+     * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）❌
      * 可能需要根据实际测试进行调整（INSTRUCTION）（以下是用在 Cursor 上的 Rules）
      */
     private final String INSTRUCTION = FileUtil.readString("prompt/system_instruction.md",StandardCharsets.UTF_8);
 
 
     /**
-     * 创建 agent
+     * 主: 平台应用生成 agent
      */
     @Bean
     public ReactAgent appCreatorAgent(ChatModel chatModel) {
@@ -119,6 +121,37 @@ public class AppCreatorAgentConfig {
                 .saver(redisSaver)
                 .build();
     }
+
+
+    /**
+     * 副: 应用代码优化 agent
+     */
+    @Bean
+    public ReactAgent codeOptimizationAgent(ChatModel chatModel) {
+
+        // ========== 结构化输出 ==========
+        // 使用 BeanOutputConverter 生成 outputSchema 结构化输出
+        BeanOutputConverter<CodeOptimizationResult> outputConverter =
+                new BeanOutputConverter<>(CodeOptimizationResult.class);
+        String codeOptimizationResultFormat = outputConverter.getFormat();
+
+        // ========== 创建 Agent ==========
+        return ReactAgent.builder()
+                // 模型名称
+                .name("code_optimization_agent")
+                // 具体模型
+                .model(chatModel)
+                // 系统提示词（
+                .systemPrompt(CodeOptimizationPrompt.systemPrompt())
+                // 详细指令
+                //.instruction(INSTRUCTION)
+                // 定义响应格式
+                .outputSchema(codeOptimizationResultFormat)
+                // 记忆存储
+                .saver(redisSaver)
+                .build();
+    }
+
 
 
     private final String CODE_PLAN_PROPMT = """
