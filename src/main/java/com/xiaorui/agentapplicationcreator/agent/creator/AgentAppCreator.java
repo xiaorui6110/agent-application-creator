@@ -39,7 +39,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * @description: 智能体应用生成开发
+ * @description: 智能体应用生成
  * @author: xiaorui
  * @date: 2025-12-10 13:07
  **/
@@ -102,7 +102,7 @@ public class AgentAppCreator {
             agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         } catch (Exception e) {
             log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
-            throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
+            throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 构建返回值
         return SystemOutput.builder()

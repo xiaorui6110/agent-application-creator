@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +20,10 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CodeOptimizationInput {
+public class CodeOptimizationInput implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 3376824323251970444L;
 
     /**
      * 应用id
@@ -51,9 +56,39 @@ public class CodeOptimizationInput {
     private List<CodeChange> recentChanges;
 
     /**
-     * 平台的长期记忆 TODO 落库存储
+     * 平台的长期记忆
      */
     private List<String> platformMemory;
+
+
+    /*
+        {
+          "projectId": "abc123",
+          "techStack": ["Vue3", "Vite", "TypeScript"],
+          "appGoal": "番茄计时专注小工具",
+          "fileTree": [
+            "src/main.ts",
+            "src/App.vue",
+            "src/components/Timer.vue"
+          ],
+          "files": {
+            "src/App.vue": "<template>...</template>",
+            "src/components/Timer.vue": "..."
+          },
+          "recentChanges": [
+            {
+              "path": "src/components/Timer.vue",
+              "type": "modified",
+              "diff": "..."
+            }
+          ],
+          "platformMemory": [
+            "路径容易出错",
+            "Vue 项目建议使用 composables"
+          ]
+        }
+
+     */
 
 }
 

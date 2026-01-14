@@ -2,14 +2,19 @@ package com.xiaorui.agentapplicationcreator.agent.subagent.model.entity;
 
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
- * @description: 代码的问题
+ * @description: 代码问题
  * @author: xiaorui
  * @date: 2026-01-13 16:38
  **/
-
 @Data
-public class Issue {
+public class Issue implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 3054081259061639064L;
 
     /**
      * 问题级别，INFO / WARN / ERROR

@@ -19,7 +19,7 @@ public class MyBatisCodeGenerator {
     /**
      * TODO 需要生成的表名（每次修改表名生成）
      */
-    private static final String[] TABLE_NAMES = {"xr_chat_history"};
+    private static final String[] TABLE_NAMES = {"xr_platform_pattern"};
 
     public static void main(String[] args) {
         // 获取数据源信息（从yml文件中获取）

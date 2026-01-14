@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -18,7 +20,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CodeOptimizationResult {
+public class CodeOptimizationResult implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -431864448331219504L;
 
     /**
      * 优化结果的概要
@@ -44,4 +49,38 @@ public class CodeOptimizationResult {
      * 置信度
      */
     private double confidence;
+
+
+    /*
+        {
+          "summary": "当前项目结构基本合理，但组件与业务逻辑耦合过高",
+          "issues": [
+            {
+              "level": "WARN",
+              "type": "ARCHITECTURE",
+              "path": "src/components/Timer.vue",
+              "message": "计时逻辑与UI混在同一个组件中，不利于复用"
+            }
+          ],
+          "suggestedDiff": [
+            {
+              "path": "src/composables/useTimer.ts",
+              "action": "add",
+              "content": "export function useTimer() { ... }"
+            },
+            {
+              "path": "src/components/Timer.vue",
+              "action": "modify",
+              "content": "<script setup>import {useTimer} ...</script>"
+            }
+          ],
+          "newPatterns": [
+            "Vue 项目中将业务逻辑抽到 composables 提升可维护性"
+          ],
+          "confidence": 0.87
+        }
+
+     */
+
+
 }

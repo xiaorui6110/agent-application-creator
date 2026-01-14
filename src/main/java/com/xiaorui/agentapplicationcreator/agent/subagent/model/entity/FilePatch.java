@@ -2,14 +2,20 @@ package com.xiaorui.agentapplicationcreator.agent.subagent.model.entity;
 
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
- * @description: 文件补丁
+ * @description: 文件修改
  * @author: xiaorui
  * @date: 2026-01-13 16:38
  **/
 
 @Data
-public class FilePatch {
+public class FilePatch implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -2138162405985422472L;
 
     /**
      * 文件路径
@@ -17,7 +23,7 @@ public class FilePatch {
     private String path;
 
     /**
-     * 操作类型， add / modify / delete
+     * 操作类型，add / modify / delete
      */
     private String action;
 
