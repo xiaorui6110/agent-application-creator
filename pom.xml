@@ -220,6 +220,18 @@
             <artifactId>webdrivermanager</artifactId>
             <version>6.3.3</version>
         </dependency>
+        <!-- POI Document Reader 解析 Microsoft Office 文件@https://java2ai.com/integration/rag/document-readers/ -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-document-reader-poi</artifactId>
+            <version>1.1.0.0-RC2</version>
+        </dependency>
+        <!-- Markdown 文档解析 @https://mvnrepository.com/artifact/org.commonmark/commonmark -->
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+            <version>0.27.1</version>
+        </dependency>
     </dependencies>
 
     <build>

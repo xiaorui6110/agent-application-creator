@@ -14,7 +14,7 @@ import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorIntercepto
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolMonitoringInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
-import com.xiaorui.agentapplicationcreator.agent.tool.ExampleTestTool;
+import com.xiaorui.agentapplicationcreator.agent.tool.DocumentSearchTool;
 import com.xiaorui.agentapplicationcreator.agent.tool.FileOperationTool;
 import com.xiaorui.agentapplicationcreator.agent.tool.VerifyFileTool;
 import jakarta.annotation.Resource;
@@ -42,16 +42,16 @@ public class AppCreatorAgentConfig {
     /**
      * 系统提示词（需要不断优化哦）
      */
-    private final String SYSTEM_PROMPT = FileUtil.readString("prompt/optimized_system_prompt.md", StandardCharsets.UTF_8);
+    private final String SYSTEM_PROMPT = FileUtil.readString("prompt/system_prompt_v1.md", StandardCharsets.UTF_8);
 
-    private final String SUB_SYSTEM_PROMPT = FileUtil.readString("prompt/optimized_sub_system_prompt.md", StandardCharsets.UTF_8);
+    private final String SUB_SYSTEM_PROMPT = FileUtil.readString("prompt/sub_system_prompt_v1.md", StandardCharsets.UTF_8);
 
 
     /**
      * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）❌
      * 可能需要根据实际测试进行调整（INSTRUCTION）（以下是用在 Cursor 上的 Rules）
      */
-    private final String INSTRUCTION = FileUtil.readString("prompt/system_instruction.md",StandardCharsets.UTF_8);
+    private final String PLATFORM_RAG_INSTRUCTION = FileUtil.readString("prompt/system_instruction_v1.md",StandardCharsets.UTF_8);
 
 
     /**
@@ -85,11 +85,13 @@ public class AppCreatorAgentConfig {
 
         // ========== 创建 Tools ==========
         // 在这里创建直接工具回调，避免循环依赖
-        ToolCallback exampleTestTool = FunctionToolCallback
-                .builder("ExampleTestTool", new ExampleTestTool())
-                .description("获取当前北京时间")
-                .inputType(String.class)
+        DocumentSearchTool searchTool = new DocumentSearchTool();
+        ToolCallback searchToolCallback = FunctionToolCallback
+                .builder("search_documents", searchTool::search)
+                .description("搜索文档以查找相关工程规范约束信息")
+                .inputType(DocumentSearchTool.Request.class)
                 .build();
+
         // 创建带有 @Tool 注解的方法工具对象
         FileOperationTool fileOperationTool = new FileOperationTool();
         VerifyFileTool verifyFileTool = new VerifyFileTool();
@@ -108,11 +110,11 @@ public class AppCreatorAgentConfig {
                 // 系统提示词（
                 .systemPrompt(SYSTEM_PROMPT)
                 // 详细指令
-                //.instruction(INSTRUCTION)
+                .instruction(PLATFORM_RAG_INSTRUCTION)
                 // 定义响应格式
                 .outputSchema(agentResponseFormat)
                 // 工具调用
-                //.tools(exampleTestTool)
+                .tools(searchToolCallback)
                 //.methodTools(fileOperationTool, verifyFileTool)
                 // 钩子调用（使用多个 Hooks 时，理解执行顺序很重要，before_* 是正的，after_* 是反的）
                 .hooks(loggingHook, messageTrimmingHook, summarizationHook, modelCallLimitHook)

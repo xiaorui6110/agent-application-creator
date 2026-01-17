@@ -60,7 +60,7 @@ public class AgentAppCreator {
 
     private final static Integer MAX_INPUT_LENGTH = 2000;
 
-    private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/front_single_html_prompt.md", StandardCharsets.UTF_8);
+    private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/specs/system_prompt_v1.md", StandardCharsets.UTF_8);
 
     private final PlanValidator validator = new DefaultPlanValidator();
 
