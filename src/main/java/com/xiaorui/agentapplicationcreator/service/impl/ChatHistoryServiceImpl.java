@@ -77,7 +77,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     /**
-     * 获取查询条件 TODO 设想是使用mongodb 来进行对话历史的查询的，添加个MySQL查询也行
+     * 获取查询条件 （设想是使用mongodb 来进行对话历史的查询的，添加个MySQL查询也行）
      *
      * @param chatHistoryQueryRequest 对话历史查询请求
      * @return 查询条件

@@ -31,7 +31,6 @@ public class DashScopeConfig {
     public ChatModel chatModel(DashScopeApi api) {
         return DashScopeChatModel.builder()
                 .dashScopeApi(api)
-                // TODO 后期按需调整设置（ChatModel）
                 .build();
     }
 }

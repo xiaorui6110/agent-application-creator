@@ -16,7 +16,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 代码优化问题清单表 实体类。
+ * 代码优化结果表 实体类。
  *
  * @author xiaorui
  */
@@ -24,17 +24,17 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("xr_code_optimization_issue")
-public class CodeOptimizationIssue implements Serializable {
+@Table("xr_code_optimize_result")
+public class CodeOptimizeResult implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     /**
-     * 问题id
+     * 代码优化历史id
      */
     @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
-    private String issueId;
+    private String codeOptimizeHistoryId;
 
     /**
      * 应用id
@@ -42,24 +42,29 @@ public class CodeOptimizationIssue implements Serializable {
     private String appId;
 
     /**
-     * 问题级别，INFO / WARN / ERROR
+     * 代码优化总结
      */
-    private String level;
+    private String codeOptimizeSummary;
 
     /**
-     * 问题类型，ARCHITECTURE / STYLE / BUG / SMELL
+     * 代码优化问题
      */
-    private String type;
+    private String codeOptimizeIssues;
 
     /**
-     * 问题路径
+     * 代码优化建议
      */
-    private String path;
+    private String codeOptimizeSuggestions;
 
     /**
-     * 问题消息
+     * 平台经验
      */
-    private String message;
+    private String platformExperience;
+
+    /**
+     * Agent 置信度
+     */
+    private Double agentConfidence;
 
     /**
      * 创建时间

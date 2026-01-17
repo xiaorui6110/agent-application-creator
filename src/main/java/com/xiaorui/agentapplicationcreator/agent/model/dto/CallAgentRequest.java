@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * @description: 智能体请求 TODO 适当根据需求添加字段
+ * @description: 智能体请求
  * @author: xiaorui
  * @date: 2025-12-12 15:00
  **/

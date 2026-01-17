@@ -132,7 +132,7 @@ public class WebScreenshotUtil {
             options.addArguments(String.format("--window-size=%d,%d", DEFAULT_WIDTH, DEFAULT_HEIGHT));
             // 禁用扩展
             options.addArguments("--disable-extensions");
-            // 设置用户代理（chrome://version/ 查看）（selenium-java 依赖版本最好最新，与 chrome 浏览器保持一致）
+            // 设置用户代理（chrome://version/ 查看）（selenium-java 依赖版本尽量最新，与 chrome 浏览器保持一致）
             options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36");
             // 创建驱动
             WebDriver driver = new ChromeDriver(options);

@@ -54,27 +54,58 @@ public class DefaultPlanExecutor implements PlanExecutor {
     }
 
     /**
-     * 执行操作（真正的文件操作） TODO 后续肯定需要增加操作类型（目前有：创建或覆盖、删除、移动  /  后续打算加：移动、重命名、读取、搜索、文件夹操作等等）
+     * 执行操作（真正的文件操作）
      */
     private void executeOperation(ValidatedOperation op) throws IOException {
 
         switch (op.getOperationType()) {
-            // 创建文件或覆盖文件
-            case CREATE_FILE, OVERWRITE_FILE -> {
+
+            /* ========== 文件写入类 ========== */
+
+            case CREATE_FILE -> {
                 Files.createDirectories(op.getResolvedPath().getParent());
                 Files.writeString(
                         op.getResolvedPath(),
                         op.getContent(),
-                        StandardOpenOption.CREATE,
+                        StandardOpenOption.CREATE_NEW
+                );
+            }
+
+            case OVERWRITE_FILE -> {
+                Files.writeString(
+                        op.getResolvedPath(),
+                        op.getContent(),
                         StandardOpenOption.TRUNCATE_EXISTING
                 );
             }
-            // 删除文件
+
+            case APPEND_FILE -> {
+                Files.writeString(
+                        op.getResolvedPath(),
+                        op.getContent(),
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.APPEND
+                );
+            }
+
+            /* ========== 文件读取 / 查询类 ========== */
+
+            case READ_FILE -> {
+                // Executor 只执行，不返回内容
+                Files.readString(op.getResolvedPath());
+            }
+
+            case EXISTS -> {
+                Files.exists(op.getResolvedPath());
+            }
+
+            /* ========== 文件结构操作 ========== */
+
             case DELETE_FILE -> {
                 Files.deleteIfExists(op.getResolvedPath());
             }
-            // 移动文件
-            case MOVE_FILE -> {
+
+            case MOVE_FILE, RENAME_FILE -> {
                 Files.createDirectories(op.getResolvedTargetPath().getParent());
                 Files.move(
                         op.getResolvedPath(),
@@ -83,9 +114,26 @@ public class DefaultPlanExecutor implements PlanExecutor {
                 );
             }
 
-            default -> throw new IllegalArgumentException("不支持的操作类型");
+            /* ========== 目录操作 ========== */
+
+            case CREATE_DIRECTORY -> {
+                Files.createDirectories(op.getResolvedPath());
+            }
+
+            case DELETE_EMPTY_DIRECTORY -> {
+                try (DirectoryStream<Path> stream =
+                             Files.newDirectoryStream(op.getResolvedPath())) {
+                    if (stream.iterator().hasNext()) {
+                        throw new IllegalStateException("目录非空，禁止删除");
+                    }
+                }
+                Files.delete(op.getResolvedPath());
+            }
+
+            default -> throw new IllegalArgumentException("不支持的操作类型：" + op.getOperationType());
         }
     }
+
 
     /**
      * 验证 plan

@@ -14,7 +14,6 @@ import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorIntercepto
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolMonitoringInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
-import com.xiaorui.agentapplicationcreator.agent.subagent.prompt.CodeOptimizationPrompt;
 import com.xiaorui.agentapplicationcreator.agent.tool.ExampleTestTool;
 import com.xiaorui.agentapplicationcreator.agent.tool.FileOperationTool;
 import com.xiaorui.agentapplicationcreator.agent.tool.VerifyFileTool;
@@ -41,9 +40,12 @@ public class AppCreatorAgentConfig {
     private RedisSaver redisSaver;
 
     /**
-     * 系统提示词 TODO 待优化
+     * 系统提示词（需要不断优化哦）
      */
     private final String SYSTEM_PROMPT = FileUtil.readString("prompt/optimized_system_prompt.md", StandardCharsets.UTF_8);
+
+    private final String SUB_SYSTEM_PROMPT = FileUtil.readString("prompt/optimized_sub_system_prompt.md", StandardCharsets.UTF_8);
+
 
     /**
      * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）❌
@@ -141,8 +143,8 @@ public class AppCreatorAgentConfig {
                 .name("code_optimization_agent")
                 // 具体模型
                 .model(chatModel)
-                // 系统提示词（
-                .systemPrompt(CodeOptimizationPrompt.systemPrompt())
+                // 系统提示词
+                .systemPrompt(SUB_SYSTEM_PROMPT)
                 // 详细指令
                 //.instruction(INSTRUCTION)
                 // 定义响应格式
@@ -153,7 +155,9 @@ public class AppCreatorAgentConfig {
     }
 
 
-
+    /**
+     * 这个 prompt 是放在主 agent 中的（相当于第二人格）
+     */
     private final String CODE_PLAN_PROPMT = """
             
             你是一个【代码修改规划器】（Code Modification Planner）。

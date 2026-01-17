@@ -1,6 +1,6 @@
 package com.xiaorui.agentapplicationcreator.agent.plan.result;
 
-import com.xiaorui.agentapplicationcreator.agent.enums.OperationTypeEnum;
+import com.xiaorui.agentapplicationcreator.agent.plan.enums.OperationTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

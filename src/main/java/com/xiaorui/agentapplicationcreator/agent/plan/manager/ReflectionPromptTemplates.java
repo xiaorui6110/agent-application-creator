@@ -1,7 +1,7 @@
 package com.xiaorui.agentapplicationcreator.agent.plan.manager;
 
 /**
- * @description: 反思提示模板（系统级 Prompt）
+ * @description: 反思提示模板（系统级 Prompt）（弃用）
  * @author: xiaorui
  * @date: 2026-01-10 14:04
  **/

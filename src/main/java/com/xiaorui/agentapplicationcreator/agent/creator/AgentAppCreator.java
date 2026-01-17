@@ -16,12 +16,22 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.plan.entity.CodeModificationPlan;
+import com.xiaorui.agentapplicationcreator.agent.plan.entity.ValidatedPlan;
+import com.xiaorui.agentapplicationcreator.agent.plan.result.ExecutionResult;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanExecutor;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanValidator;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.impl.DefaultPlanExecutor;
+import com.xiaorui.agentapplicationcreator.agent.plan.service.impl.DefaultPlanValidator;
+import com.xiaorui.agentapplicationcreator.agent.subagent.model.entity.CodeOptimizeResult;
+import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeResultService;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.AgentChatMemoryService;
+import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.service.UserThreadBindService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
@@ -30,6 +40,7 @@ import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +62,10 @@ public class AgentAppCreator {
 
     private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/front_single_html_prompt.md", StandardCharsets.UTF_8);
 
+    private final PlanValidator validator = new DefaultPlanValidator();
+
+    private final PlanExecutor executor = new DefaultPlanExecutor();
+
     @Resource
     private ReactAgent appCreatorAgent;
 
@@ -62,6 +77,12 @@ public class AgentAppCreator {
 
     @Resource
     private AgentChatMemoryService agentChatMemoryService;
+
+    @Resource
+    private CodeOptimizeResultService codeOptimizeResultService;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
 
     /**
      * 智能体对话
@@ -83,11 +104,14 @@ public class AgentAppCreator {
         }
         // 输入校验
         validateUserInput(userMessage);
-
-        // TODO 拼接 Message，将 appId 传给 agent，便于后续输出
-
-        // 保存用户输入到 MongoDB 中（底层已存在校验插入成功与否的错误处理，此处不做追加处理 log）
+        // 保存用户输入（底层已存在校验插入成功与否的错误处理，此处不做追加处理 log）
+        chatHistoryService.saveChatHistory(appId, userId, userMessage, "user");
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
+        // 获取副 agent 的代码优化结果 codeOptimizeResult ，允许为空（第一次调用时肯定为空）
+        CodeOptimizeResult codeOptimizeResult = codeOptimizeResultService.getByAppId(appId);
+        String codeOptimizeResultStr = codeOptimizeResult == null ? "" : codeOptimizeResult.toString();
+        // 同 appId 一起拼接到 Message
+        String finalInputMessage = userMessage + "\n【应用ID：" + appId + "】" + "\n【应用代码优化结果详情】：" + codeOptimizeResultStr;
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
         // 提前在外部声明 POJO 变量
@@ -95,14 +119,23 @@ public class AgentAppCreator {
         AgentResponse agentResponse;
         try {
             // 调用 agent
-            response = appCreatorAgent.call(userMessage, runnableConfig);
-            // JSON 转 Bean（主要是为了方便获取代码文件）
+            response = appCreatorAgent.call(finalInputMessage, runnableConfig);
+            // JSON 转 Bean
             agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
-            // 保存 Agent 回复到 MongoDB 中
-            agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         } catch (Exception e) {
             log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
+        }
+        // 保存 Agent 回复
+        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
+        chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
+        // 如果 AgentResponse 中包含 CodeModificationPlan 代码修改计划，则需要调用执行器来执行文件操作
+        if (agentResponse.getCodeModificationPlan() != null) {
+            CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
+            ValidatedPlan validatedPlan = validator.validate(plan);
+            ExecutionResult result = executor.execute(validatedPlan);
+            ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
+            ThrowUtil.throwIf(!result.isVerified(), ErrorCode.SYSTEM_ERROR, "文件操作验证未通过：" + result.getErrorMessage());
         }
         // 构建返回值
         return SystemOutput.builder()
@@ -150,7 +183,7 @@ public class AgentAppCreator {
 
 
     /**
-     * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，暂时不使用，待优化，比如输出格式、等等）
+     * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，待优化，比如输出格式、等等）
      * <a href="https://bailian.console.aliyun.com/tab=doc?tab=doc#/doc/?type=model&url=2866129">...</a>
      */
     public SystemOutput streamChat(String userMessage, String transThreadId, String appId)
@@ -171,7 +204,7 @@ public class AgentAppCreator {
         }
         // 输入校验
         validateUserInput(userMessage);
-        // TODO 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
+        // 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
         // 通义千问 API 是无状态的，不会保存对话历史。要实现多轮对话，需在每次请求中显式传入历史对话消息（好吧）
         // 保存用户输入到 MongoDB 中（底层已校验插入成功与否的错误处理，此处不做追加处理 log）
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
@@ -179,7 +212,7 @@ public class AgentAppCreator {
         Generation gen = new Generation();
         Message systemMsg = Message.builder()
                 .role(Role.SYSTEM.getValue())
-                // TODO 这里需要对应修改
+                // 这里需要对应修改
                 .content(SINGLE_HTML_PROMPT)
                 .build();
         CountDownLatch latch = new CountDownLatch(1);
@@ -234,7 +267,7 @@ public class AgentAppCreator {
                 );
         // 主线程等待异步任务完成
         latch.await();
-        // TODO 这玩意的 fullContent.toString() 好像不是 JSON 格式的，流式输出 ？ 或者是先流式输出，后结构化
+        // 这玩意的 fullContent.toString() 好像不是 JSON 格式的，流式输出 ？ 或者是先流式输出，后结构化
         AgentResponse agentResponse = JSONUtil.toBean(fullContent.toString(), AgentResponse.class,true);
         // 保存 Agent 回复到 MongoDB 中
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", fullContent.toString()));
@@ -299,6 +332,7 @@ public class AgentAppCreator {
     /**
      * 构建消息实体（MongoDB）
      */
+    @NotNull
     private AgentChatMessage buildMessage(
             String userId,
             String threadId,

@@ -63,7 +63,7 @@ public class CodeOptimizationInput implements Serializable {
 
     /*
         {
-          "projectId": "abc123",
+          "appId": "abc123",
           "techStack": ["Vue3", "Vite", "TypeScript"],
           "appGoal": "番茄计时专注小工具",
           "fileTree": [

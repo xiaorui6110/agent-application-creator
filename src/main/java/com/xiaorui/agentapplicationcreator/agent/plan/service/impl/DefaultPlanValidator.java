@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.agent.plan.service.impl;
 
+import com.xiaorui.agentapplicationcreator.agent.plan.enums.OperationTypeEnum;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.*;
 import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanValidator;
 import lombok.extern.slf4j.Slf4j;
@@ -68,42 +69,78 @@ public class DefaultPlanValidator implements PlanValidator {
      */
     private ValidatedOperation validateOperation(FileOperationPlan op) {
 
-        if (op.getOperationType() == null) {
-            throw new IllegalArgumentException("op 不能为空");
+        OperationTypeEnum type = op.getOperationType();
+
+        if (type == null) {
+            throw new IllegalArgumentException("operationType 不能为空");
         }
+
         if (op.getPath() == null || op.getPath().isBlank()) {
             throw new IllegalArgumentException("path 不能为空");
         }
+
         Path resolvedPath = resolveSafePath(op.getPath());
+        Path resolvedTarget = null;
+
         ExpectedCondition expected = op.getExpected();
         if (expected == null) {
             throw new IllegalArgumentException("expected 条件是必须的");
         }
         validateExpected(expected);
 
-        Path resolvedTarget = null;
+        switch (type) {
 
-        switch (op.getOperationType()) {
-            case CREATE_FILE, OVERWRITE_FILE -> {
+            /* ========== 写入类 ========== */
+
+            case CREATE_FILE, OVERWRITE_FILE, APPEND_FILE -> {
                 if (op.getContent() == null) {
-                    throw new IllegalArgumentException("写入类操作必须包含 content");
+                    throw new IllegalArgumentException(type + " 必须包含 content");
                 }
             }
-            case MOVE_FILE -> {
+
+            /* ========== 读取 / 查询 ========== */
+
+            case READ_FILE, EXISTS -> {
+                // 不需要 content / targetPath
+            }
+
+            /* ========== 移动 / 重命名 ========== */
+
+            case MOVE_FILE, RENAME_FILE -> {
                 if (op.getTargetPath() == null) {
-                    throw new IllegalArgumentException("MOVE_FILE 必须包含 targetPath");
+                    throw new IllegalArgumentException(type + " 必须包含 targetPath");
                 }
                 resolvedTarget = resolveSafePath(op.getTargetPath());
             }
+
+            /* ========== 删除类 ========== */
+
             case DELETE_FILE -> {
-                // 无额外要求
+                // ok
             }
-            default -> throw new IllegalArgumentException("不支持的操作类型：" + op.getOperationType());
+
+            /* ========== 目录类 ========== */
+
+            case CREATE_DIRECTORY, DELETE_EMPTY_DIRECTORY -> {
+                // ok
+            }
+
+            case DELETE_DIRECTORY_RECURSIVE -> {
+                throw new IllegalArgumentException("禁止使用 DELETE_DIRECTORY_RECURSIVE（高危操作）");
+            }
+
+            default -> throw new IllegalArgumentException("未知 operationType：" + type);
         }
 
-        return new ValidatedOperation(op.getOperationType(), resolvedPath, resolvedTarget, expected, op.getContent()
+        return new ValidatedOperation(
+                type,
+                resolvedPath,
+                resolvedTarget,
+                expected,
+                op.getContent()
         );
     }
+
 
     /**
      * 校验预期条件

@@ -5,15 +5,15 @@ import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationInput;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
-import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizationIssueService;
-import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizationPatchService;
-import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizationRunService;
-import com.xiaorui.agentapplicationcreator.agent.subagent.service.PlatformPatternService;
+import com.xiaorui.agentapplicationcreator.agent.subagent.model.entity.CodeOptimizeResult;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.mapper.CodeOptimizeResultMapper;
 import jakarta.annotation.Resource;
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -33,24 +33,15 @@ public class CodeOptimization {
     private ReactAgent codeOptimizationAgent;
 
     @Resource
-    private CodeOptimizationRunService codeOptimizationRunService;
-
-    @Resource
-    private CodeOptimizationIssueService codeOptimizationIssueService;
-
-    @Resource
-    private CodeOptimizationPatchService codeOptimizationPatchService;
-
-    @Resource
-    private PlatformPatternService platformPatternService;
+    private CodeOptimizeResultMapper codeOptimizeResultMapper;
 
     /**
      * 异步执行代码优化
      * 1. 主 agent 生成应用代码后，就可以异步执行代码优化 agent
      * 2. 在下一次调用主 agent 生成代码时，将副 agent 的代码优化等结果添加为输入
      */
-    @Async
-    public void codeOptimizeAsync(CodeOptimizationInput codeOptimizationInput) {
+    @Async("codeOptExecutor")
+    public void codeOptimizeAsync(@NotNull CodeOptimizationInput codeOptimizationInput) {
         // 基础校验
         String input = codeOptimizationInput.toString();
         validateInput(input);
@@ -68,7 +59,6 @@ public class CodeOptimization {
         }
         // 优化结果处理
         handleResult(codeOptimizationInput, codeOptimizationResult);
-
     }
 
     /**
@@ -88,20 +78,22 @@ public class CodeOptimization {
     }
 
     /**
-     * 处理优化结果
+     * 处理优化结果（持久化）
      */
-    private void handleResult(CodeOptimizationInput codeOptimizationInput, CodeOptimizationResult codeOptimizationResult) {
-        // 保存平台级新模式（平台级）
-        if (codeOptimizationResult.getNewPatterns() != null) {
-            platformPatternService.savePlatformPattern(codeOptimizationResult.getNewPatterns().toString());
+    private void handleResult(CodeOptimizationInput codeOptimizationInput, @NotNull CodeOptimizationResult codeOptimizationResult) {
+        ThrowUtil.throwIf(codeOptimizationResult.getNewPatterns() == null, ErrorCode.SYSTEM_ERROR, "代码优化结果为空");
+        CodeOptimizeResult codeOptimizeResult = new CodeOptimizeResult();
+        codeOptimizeResult.setAppId(codeOptimizationInput.getAppId());
+        codeOptimizeResult.setCodeOptimizeSummary(codeOptimizationResult.getSummary());
+        codeOptimizeResult.setCodeOptimizeIssues(codeOptimizationResult.getIssues().toString());
+        codeOptimizeResult.setCodeOptimizeSuggestions(codeOptimizationResult.getSuggestedDiff().toString());
+        codeOptimizeResult.setPlatformExperience(codeOptimizationResult.getNewPatterns().toString());
+        codeOptimizeResult.setAgentConfidence(codeOptimizationResult.getConfidence());
+        int insert = codeOptimizeResultMapper.insert(codeOptimizeResult);
+        if (insert <= 0) {
+            log.error("save code optimize result failed");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存代码优化结果失败");
         }
-        // 保存应用级审计结果（应用级关联数据）
-        codeOptimizationRunService.saveCodeOptimizationRun(codeOptimizationInput, codeOptimizationResult);
-        // 保存代码优化问题清单（应用级关联数据）
-        codeOptimizationIssueService.saveCodeOptimizationIssue(codeOptimizationInput, codeOptimizationResult);
-        // 保存代码优化修改建议（应用级关联数据）
-        codeOptimizationPatchService.saveCodeOptimizationPatch(codeOptimizationInput, codeOptimizationResult);
-
     }
 
 

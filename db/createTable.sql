@@ -73,7 +73,7 @@ CREATE TABLE `xr_app` (
    INDEX idx_create_time (create_time)
 ) COMMENT='应用表';
 
--- 对话历史表（基本上同 AgentChatMessage，mongodb 实体类，只是新增了数据库的实现）
+-- 对话历史表（基本上同 AgentChatMessage，mongodb 实体类，只是新增了 MySQL 数据库的实现）
 drop table if exists `xr_chat_history`;
 CREATE TABLE `xr_chat_history` (
     `chat_history_id`   varchar(36)  not null default ''    comment '对话历史id',
@@ -91,68 +91,23 @@ CREATE TABLE `xr_chat_history` (
     INDEX idx_app_id_create_time (app_id, create_time)
 ) COMMENT='对话历史表';
 
--- 副 Agent: Project 审计层 + Platform 经验层（共 4 个表）
--- 代码优化审计主表
-drop table if exists `xr_code_optimization_run`;
-CREATE TABLE `xr_code_optimization_run` (
-   `run_id`             varchar(36)  not null default ''    comment '运行id',
-   `app_id`             varchar(36)               not null  comment '应用id',
-   `app_goal`           varchar(36)                   null  comment '应用目标',
-   `tech_stack`         varchar(36)                   null  comment '技术栈',
-   `summary`            text                          null  comment '代码优化总结',
-   `create_time`        datetime default CURRENT_TIMESTAMP  comment '创建时间',
-   `is_deleted`         tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
-   PRIMARY KEY (run_id),
+-- 代码优化结果表
+drop table if exists `xr_code_optimize_result`;
+CREATE TABLE `xr_code_optimize_result` (
+   `code_optimize_history_id`   varchar(36)  not null default ''    comment '代码优化历史id',
+   `app_id`                     varchar(36)                not null comment '应用id',
+   `code_optimize_summary`      text                       not null comment '代码优化总结',
+   `code_optimize_issues`       text                       not null comment '代码优化问题',
+   `code_optimize_suggestions`  text                       not null comment '代码优化建议',
+   `platform_experience`        text                       not null comment '平台经验',
+   `agent_confidence`           double                     not null comment 'Agent 置信度',
+   `create_time`                datetime default CURRENT_TIMESTAMP  comment '创建时间',
+   `is_deleted`                 tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
+   PRIMARY KEY (code_optimize_history_id),
    INDEX idx_app_id (app_id),
    INDEX idx_create_time (create_time),
    INDEX idx_app_id_create_time (app_id, create_time)
-) COMMENT='代码优化审计主表';
-
--- 代码优化问题清单表
-drop table if exists `xr_code_optimization_issue`;
-CREATE TABLE `xr_code_optimization_issue` (
-  `issue_id`         varchar(36)  not null default ''    comment '问题id',
-  `app_id`           varchar(36)               not null  comment '应用id',
-  `level`            varchar(36)                   null  comment '问题级别，INFO / WARN / ERROR',
-  `type`             varchar(36)                   null  comment '问题类型，ARCHITECTURE / STYLE / BUG / SMELL',
-  `path`             varchar(255)                  null  comment '问题路径',
-  `message`          text                          null  comment '问题消息',
-  `create_time`      datetime default CURRENT_TIMESTAMP  comment '创建时间',
-  `is_deleted`       tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
-  PRIMARY KEY (issue_id),
-  INDEX idx_app_id (app_id),
-  INDEX idx_create_time (create_time),
-  INDEX idx_app_id_create_time (app_id, create_time)
-) COMMENT='代码优化问题清单表';
-
--- 代码优化修改建议表
-drop table if exists `xr_code_optimization_patch`;
-CREATE TABLE `xr_code_optimization_patch` (
-     `patch_id`         varchar(36)  not null default ''    comment '修改建议id',
-     `app_id`           varchar(36)               not null  comment '应用id',
-     `path`             varchar(255)                  null  comment '文件路径',
-     `action`           varchar(36)                   null  comment '操作类型，add / modify / delete',
-     `content`          varchar(36)                   null  comment '文件内容',
-     `create_time`      datetime default CURRENT_TIMESTAMP  comment '创建时间',
-     `is_deleted`       tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
-     PRIMARY KEY (patch_id),
-     INDEX idx_app_id (app_id),
-     INDEX idx_create_time (create_time),
-     INDEX idx_app_id_create_time (app_id, create_time)
-) COMMENT='代码优化修改建议表';
-
--- 代码优化平台级经验表
-drop table if exists `xr_platform_pattern`;
-CREATE TABLE `xr_platform_pattern` (
-   `pattern_id`       varchar(36)  not null default ''    comment '经验id',
-   `pattern_text`     varchar(512)                  null  comment '经验文本',
-   `hit_count`        int(11)             default 1 null  comment '命中次数',
-   `last_seen_at`     datetime default CURRENT_TIMESTAMP  comment '创建时间',
-   `is_deleted`       tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
-   PRIMARY KEY (pattern_id),
-   UNIQUE KEY uk_pattern_text (pattern_text)
-) COMMENT='代码优化平台级经验表';
-
+) COMMENT='代码优化结果表';
 
 
 

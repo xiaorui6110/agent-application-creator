@@ -17,9 +17,9 @@ import java.util.Map;
 public class MyBatisCodeGenerator {
 
     /**
-     * TODO 需要生成的表名（每次修改表名生成）
+     * ⏰ 需要生成的表名（每次修改表名生成）
      */
-    private static final String[] TABLE_NAMES = {"xr_platform_pattern"};
+    private static final String[] TABLE_NAMES = {"your_table_name"};
 
     public static void main(String[] args) {
         // 获取数据源信息（从yml文件中获取）
@@ -47,11 +47,11 @@ public class MyBatisCodeGenerator {
     public static GlobalConfig createGlobalConfigUseStyle() {
         // 创建配置内容
         GlobalConfig globalConfig = new GlobalConfig();
-        // 设置根包（临时包）
+        // ⏰ 设置根包（临时包）
         globalConfig.getPackageConfig().setBasePackage("com.xiaorui.agentapplicationcreator.temp.genresult");
-        // 设置表前缀和只生成哪些表，setGenerateTable 未配置时，生成所有表
+        // ⏰ 设置表前缀和只生成哪些表，setGenerateTable 未配置时，生成所有表
         globalConfig.getStrategyConfig().setTablePrefix("xr_").setGenerateTable(TABLE_NAMES).setLogicDeleteColumn("isDeleted");
-        // 设置生成 entity 并启用 Lombok
+        // ⏰ 设置生成 entity 并启用 Lombok
         globalConfig.enableEntity().setWithLombok(true).setJdkVersion(21);
         // 设置生成 mapper
         globalConfig.enableMapper();
@@ -61,7 +61,7 @@ public class MyBatisCodeGenerator {
         globalConfig.enableServiceImpl();
         // 设置生成 controller
         globalConfig.enableController();
-        // 设置生成时间和字符串为空，避免多余的代码改动
+        // ⏰ 设置生成时间和字符串为空，避免多余的代码改动
         globalConfig.getJavadocConfig().setAuthor("xiaorui").setSince("");
         return globalConfig;
     }

@@ -255,9 +255,6 @@ public class UserController {
                 userService.banOrUnbanUser(userUnbanRequest.getUserId(), userUnbanRequest.getIsUnban(), admin));
     }
 
-
-
-
     /**
      * 获得脱敏后的用户信息
      */

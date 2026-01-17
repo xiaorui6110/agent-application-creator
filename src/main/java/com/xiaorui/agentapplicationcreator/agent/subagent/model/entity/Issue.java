@@ -1,5 +1,7 @@
 package com.xiaorui.agentapplicationcreator.agent.subagent.model.entity;
 
+import com.xiaorui.agentapplicationcreator.agent.subagent.enums.IssueLevel;
+import com.xiaorui.agentapplicationcreator.agent.subagent.enums.IssueType;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,12 +21,12 @@ public class Issue implements Serializable {
     /**
      * 问题级别，INFO / WARN / ERROR
      */
-    private String level;
+    private IssueLevel level;
 
     /**
      * 问题类型，ARCHITECTURE / STYLE / BUG / SMELL
      */
-    private String type;
+    private IssueType type;
 
     /**
      * 问题路径

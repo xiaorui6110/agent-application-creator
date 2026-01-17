@@ -6,17 +6,16 @@ import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.AgentBehaviorMemory;
 import jakarta.annotation.Resource;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Optional;
 
 /**
- * @description: Agent 行为记忆提取器 TODO 这里先用单 agent 实现，后面要改成多 agent（先简易实现）
+ * @description: Agent 行为记忆提取器（弃用，后续可以完善，但没太大必要）
  * @author: xiaorui
  * @date: 2026-01-10 17:10
  **/
-@Component
+//@Component
 public class AgentMemoryExtractor {
 
     @Resource
@@ -35,14 +34,14 @@ public class AgentMemoryExtractor {
                     .replace("{{planJson}}", objectMapper.writeValueAsString(plan))
                     .replace("{{executionResultJson}}", objectMapper.writeValueAsString(executionResult));
 
-            // TODO 这里只能使用多 agent 方式，单个的 prompt 无法重用!!!  这里先这样，那后面肯定要多智能体了
+            //  这里只能使用多 agent 方式，单个的 prompt 无法重用!!!  这里先这样，那后面肯定要多智能体了
             SystemOutput systemOutput = agent.chatTest(prompt, threadId);
             String resp = systemOutput.getAgentResponse().getReply();
 
             if ("NONE".equalsIgnoreCase(resp)) {
                 return Optional.empty();
             }
-            // TODO 这后面要改成 AgentBehaviorMemory 对象，多 agent
+            //  这后面要改成 AgentBehaviorMemory 对象，多 agent
             JsonNode node = objectMapper.readTree(resp);
             return Optional.of(
                     AgentBehaviorMemory.builder()

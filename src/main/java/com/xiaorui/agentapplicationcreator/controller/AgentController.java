@@ -5,11 +5,13 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.subagent.CodeOptimization;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.util.CodeFileSaverUtil;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +24,7 @@ import java.io.IOException;
  * @author: xiaorui
  * @date: 2025-12-15 15:36
  **/
-
+@Slf4j
 @RestController
 @RequestMapping("/agent")
 public class AgentController {
@@ -30,8 +32,11 @@ public class AgentController {
     @Resource
     private AgentAppCreator agentAppCreator;
 
+    @Resource
+    private CodeOptimization codeOptimization;
+
     /**
-     * 智能体对话接口 TODO 多轮对话时可能还会有些问题，比如频繁写入文件、多轮对话输出格式。。。，这里对话记忆的功能 chatHistoryService 要考虑加在哪里？
+     * 智能体对话接口 TODO 多轮对话时可能还会有些问题，比如频繁写入文件、多轮对话输出格式。。。
      */
     @PostMapping("/chat")
     public ServerResponseEntity<SystemOutput> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {
@@ -41,11 +46,12 @@ public class AgentController {
         String appId = callAgentRequest.getAppId();
         SystemOutput systemOutput = agentAppCreator.chat(message, threadId, appId);
         CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
-
-        // TODO 这里异步执行，副 agent 去优化代码并反馈
-
-
-
+        // 这里异步执行，副 agent 去优化代码并反馈
+        try {
+            codeOptimization.codeOptimizeAsync(systemOutput.getAgentResponse().getCodeOptimizationInput());
+        } catch (Exception e) {
+            log.error("捕获到异步方法异常: {}", e.getCause().getMessage());
+        }
         return ServerResponseEntity.success(systemOutput);
     }
 

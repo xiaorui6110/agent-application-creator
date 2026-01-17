@@ -1,5 +1,8 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
+import com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum;
+import com.xiaorui.agentapplicationcreator.execption.BusinessException;
+import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -14,10 +17,11 @@ import org.springframework.web.reactive.HandlerMapping;
 
 import java.io.File;
 
-import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
+import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.DEPLOY;
+import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.PREVIEW;
 
 /**
- * @description: 静态资源访问控制器 TODO 待使用或实现
+ * @description: 静态资源访问控制器
  * @author: xiaorui
  * @date: 2025-12-25 15:33
  **/
@@ -25,31 +29,59 @@ import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTP
 @RequestMapping("/static")
 public class StaticResourceController {
 
+    /**
+     * 访问预览应用
+     * 提供静态资源访问，支持目录重定向
+     * 访问格式：<a href="http://localhost:8180/api/static/preview/fileName">...</a>
+     */
+    @GetMapping("/preview/{fileName}/**")
+    public ResponseEntity<Resource> serveStaticPreviewResource(@PathVariable String fileName, HttpServletRequest request) {
+        return getResource(StaticVisitTypeEnum.PREVIEW, fileName, request);
+    }
 
     /**
+     * 访问部署好的应用
      * 提供静态资源访问，支持目录重定向
-     * 访问格式：<a href="http://localhost:8123/api/static/">...</a>{deployKey}[/{fileName}]
+     * 访问格式：<a href="http://localhost:8180/api/static/deploy/deployKey">...</a>
      */
-    @GetMapping("/{deployKey}/**")
-    public ResponseEntity<Resource> serveStaticResource(
-            @PathVariable String deployKey,
-            HttpServletRequest request) {
+    @GetMapping("/deploy/{deployKey}/**")
+    public ResponseEntity<Resource> serveStaticDeployResource(@PathVariable String deployKey, HttpServletRequest request) {
+        return getResource(StaticVisitTypeEnum.DEPLOY, deployKey, request);
+    }
+
+    /**
+     * 提供静态资源访问 - (预览/部署)
+     *
+     * @param staticVisitTypeEnum 预览/部署 枚举值
+     * @param fileNameOrDeployKey 预览文件名或部署ID
+     * @param request ServletRequest
+     * @return 请求的资源
+     */
+    private ResponseEntity<Resource> getResource(StaticVisitTypeEnum staticVisitTypeEnum, String fileNameOrDeployKey, HttpServletRequest request) {
+        // 获取资源路径
+        String resourcePath = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        // 预览
+        if (PREVIEW.equals(staticVisitTypeEnum)) {
+            resourcePath = resourcePath.substring(("/static/preview/" + fileNameOrDeployKey).length());
+        } else if (DEPLOY.equals(staticVisitTypeEnum)) {
+            resourcePath = resourcePath.substring(("/static/deploy/" + fileNameOrDeployKey).length());
+        } else {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "未知访问类型");
+        }
+
         try {
-            // 获取资源路径
-            String resourcePath = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-            resourcePath = resourcePath.substring(("/static/" + deployKey).length());
             // 如果是目录访问（不带斜杠），重定向到带斜杠的URL
             if (resourcePath.isEmpty()) {
                 HttpHeaders headers = new HttpHeaders();
-                headers.add("Location", request.getRequestURI() + "/");
+                headers.add(HttpHeaders.LOCATION, request.getRequestURI() + "/");
                 return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
             }
             // 默认返回 index.html
-            if (resourcePath.equals("/")) {
+            if ("/".equals(resourcePath)) {
                 resourcePath = "/index.html";
             }
             // 构建文件路径
-            String filePath = CODE_OUTPUT_ROOT_DIR + "/" + deployKey + resourcePath;
+            String filePath  = staticVisitTypeEnum.getValue() + File.separator + fileNameOrDeployKey + resourcePath;
             File file = new File(filePath);
             // 检查文件是否存在
             if (!file.exists()) {
@@ -58,7 +90,7 @@ public class StaticResourceController {
             // 返回文件资源
             Resource resource = new FileSystemResource(file);
             return ResponseEntity.ok()
-                    .header("Content-Type", getContentTypeWithCharset(filePath))
+                    .header(HttpHeaders.CONTENT_TYPE, getContentTypeWithCharset(filePath))
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -86,5 +118,7 @@ public class StaticResourceController {
         }
         return "application/octet-stream";
     }
+
+
 
 }

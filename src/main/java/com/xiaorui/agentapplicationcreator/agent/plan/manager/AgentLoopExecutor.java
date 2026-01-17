@@ -13,7 +13,6 @@ import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanExecutor;
 import com.xiaorui.agentapplicationcreator.agent.plan.service.PlanValidator;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,12 +20,12 @@ import java.util.Optional;
 import static org.springframework.ai.util.json.JsonParser.toJson;
 
 /**
- * @description: Agent 闭环执行器（agent 反思之前的执行计划）
+ * @description: Agent 闭环执行器（agent 反思之前的执行计划）（不打算使用哩，单个 agent 的压力太大了，多个又会分散注意力和上下文问题等等）
  * @author: xiaorui
  * @date: 2026-01-10 13:54
  **/
 @Slf4j
-@Component
+//@Component
 public class AgentLoopExecutor {
 
     @Resource

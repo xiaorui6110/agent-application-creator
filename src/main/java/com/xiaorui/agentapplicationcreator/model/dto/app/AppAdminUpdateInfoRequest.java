@@ -42,7 +42,7 @@ public class AppAdminUpdateInfoRequest implements Serializable {
     private Integer appPriority;
 
     /**
-     * 代码生成类型（枚举）（TODO 待定，可能可以后续修改，目前未使用）
+     * 代码生成类型（枚举）（待定，可能后续修改，目前未使用）
      */
     private String codeGenType;
 }

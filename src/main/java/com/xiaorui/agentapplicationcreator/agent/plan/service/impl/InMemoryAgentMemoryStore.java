@@ -2,7 +2,6 @@ package com.xiaorui.agentapplicationcreator.agent.plan.service.impl;
 
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.AgentBehaviorMemory;
 import com.xiaorui.agentapplicationcreator.agent.plan.service.AgentMemoryStore;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -11,17 +10,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @description: 内存存储 Agent 行为记忆
+ * @description: 内存存储 Agent 行为记忆（其实并不打算使用，考虑到响应时间、token 消耗等因素）
  * @author: xiaorui
  * @date: 2026-01-10 17:07
  **/
-@Component
+//@Component
 public class InMemoryAgentMemoryStore implements AgentMemoryStore {
 
     private final Map<String, AgentBehaviorMemory> store = new ConcurrentHashMap<>();
 
     /**
-     * 保存或更新 Agent 行为记忆 TODO 先使用内存实现，后续使用 Redis 或数据库实现
+     * 保存或更新 Agent 行为记忆（先使用内存实现，后续使用 Redis 或数据库实现）
      * @param memory Agent 行为记忆
      */
     @Override

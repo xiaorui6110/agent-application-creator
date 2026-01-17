@@ -45,7 +45,7 @@ public class AgentResponse {
     private CodeModificationPlan codeModificationPlan;
 
     /**
-     * 主 Agent 生成的代码，副 Agent 执行的代码优化输入（根据用户提示判断生成）
+     * 主 Agent 生成的应用信息，副 Agent 执行的代码优化输入（根据用户提示判断生成）
      */
     private CodeOptimizationInput codeOptimizationInput;
 
