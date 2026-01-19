@@ -9,7 +9,8 @@ import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @description: 异步配置
@@ -38,6 +39,28 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.initialize();
         return executor;
     }
+
+    @Bean("agentPersistExecutor")
+    public Executor agentPersistExecutor() {
+        return new ThreadPoolExecutor(
+                8,
+                8,
+                30L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(1024),
+                new ThreadFactory() {
+                    private final AtomicInteger threadNum = new AtomicInteger(1);
+                    @Override
+                    public Thread newThread(@NotNull Runnable r) {
+                        Thread thread = new Thread(r);
+                        thread.setName("agent-async-persist-" + threadNum.getAndIncrement());
+                        return thread;
+                    }
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
 
     @NotNull
     @Override

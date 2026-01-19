@@ -24,6 +24,9 @@ public class MinioConfig {
     @Value("${minio.secret-key}")
     private String secretKey;
 
+    @Value("${minio.default-bucket}")
+    private String defaultBucket;
+
     /**
      * 注入 MinioClient 到 Spring 容器（单例）
      */

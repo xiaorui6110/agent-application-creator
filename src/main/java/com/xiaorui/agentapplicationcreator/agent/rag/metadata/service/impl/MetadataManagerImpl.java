@@ -35,7 +35,7 @@ public class MetadataManagerImpl implements MetadataManager {
     private VectorStore documentVectorStore;
 
     @Resource
-    private StringRedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 确保 spec 已写入 Redis + VectorStore
@@ -64,9 +64,9 @@ public class MetadataManagerImpl implements MetadataManager {
             // 3️. 写入 Redis（metadata + content）
             String redisKey = "spec:" + specId;
 
-            redisTemplate.opsForHash().put(redisKey, "metadata", JsonUtils.toJson(metadata));
+            stringRedisTemplate.opsForHash().put(redisKey, "metadata", JsonUtils.toJson(metadata));
 
-            redisTemplate.opsForHash().put(redisKey, "content", content);
+            stringRedisTemplate.opsForHash().put(redisKey, "content", content);
 
             // 4️. 写入 VectorStore（只存 embedding + specId）
             Document vectorDoc = new Document(specId, content, Map.of("specId", specId));
@@ -85,11 +85,11 @@ public class MetadataManagerImpl implements MetadataManager {
     @Override
     public List<String> findCandidateSpecIds(String generationMode, String stage) {
 
-        Set<String> keys = redisTemplate.keys("spec:*");
+        Set<String> keys = stringRedisTemplate.keys("spec:*");
         // 先用 Redis 做 metadata 过滤
         return keys.stream()
                 .filter(key -> {
-                    String metaJson = (String) redisTemplate
+                    String metaJson = (String) stringRedisTemplate
                             .opsForHash()
                             .get(key, "metadata");
 
@@ -113,7 +113,7 @@ public class MetadataManagerImpl implements MetadataManager {
             return null;
         }
 
-        return (String) redisTemplate.opsForHash().get("spec:" + specId, "content");
+        return (String) stringRedisTemplate.opsForHash().get("spec:" + specId, "content");
     }
 
 

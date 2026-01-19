@@ -60,7 +60,7 @@ public class AgentAppCreator {
 
     private final static Integer MAX_INPUT_LENGTH = 2000;
 
-    private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/specs/system_prompt_v1.md", StandardCharsets.UTF_8);
+    private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/system_prompt_v1.md", StandardCharsets.UTF_8);
 
     private final PlanValidator validator = new DefaultPlanValidator();
 
@@ -134,8 +134,8 @@ public class AgentAppCreator {
             CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
             ValidatedPlan validatedPlan = validator.validate(plan);
             ExecutionResult result = executor.execute(validatedPlan);
-            ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
             ThrowUtil.throwIf(!result.isVerified(), ErrorCode.SYSTEM_ERROR, "文件操作验证未通过：" + result.getErrorMessage());
+            ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
         }
         // 构建返回值
         return SystemOutput.builder()

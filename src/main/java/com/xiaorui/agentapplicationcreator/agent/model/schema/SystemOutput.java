@@ -1,6 +1,7 @@
 package com.xiaorui.agentapplicationcreator.agent.model.schema;
 
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +32,16 @@ public class SystemOutput {
      * 应用 ID
      */
     private String appId;
+
+    /**
+     * 任务 ID
+     */
+    private String taskId;
+
+    /**
+     * 任务状态
+     */
+    private AgentTaskStatus taskStatus;
 
     /**
      * Agent 名称 / 标识

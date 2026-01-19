@@ -73,7 +73,6 @@ spring:
     dashscope:
       api-key: sk-b1aea9f904d6478db3fa8bf439a1a460  # 阿里云百炼
       chat:
-        # 这里的配置其实在阿里云百炼的智能体应用控制台中也配置了，看情况是否需要
         options:
           model: "qwen3-coder-plus"  # 这里就使用 通义千问3-Coder-Plus
           stream: true

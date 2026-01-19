@@ -66,7 +66,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
      * @return 应用id
      */
     @Override
-    public String appCreate(String appInitPrompt) {
+    public String createApp(String appInitPrompt) {
         // 获取当前用户信息
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
@@ -82,7 +82,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         app.setAppName(appInitPrompt.substring(0, Math.min(appInitPrompt.length(), 12)));
         app.setUserId(userId);
         app.setAppInitPrompt(appInitPrompt);
-        // 随机获取应用封面 TODO 待优化
+        // 随机获取应用封面 TODO 待优化，使用 ScreenshotService 生成应用截图
         String coverUrl = "https://picsum.photos/1200/600";
         app.setAppCover(coverUrl);
         app.setDeployKey(RandomUtil.randomString(6));
@@ -103,20 +103,18 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
     public QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         // 获取查询参数
-        String userId = appQueryRequest.getAppId();
-        String nickName = appQueryRequest.getAppName();
+        String appId = appQueryRequest.getAppId();
+        String appName = appQueryRequest.getAppName();
         String codeGenType = appQueryRequest.getCodeGenType();
-        ThrowUtil.throwIf(StrUtil.isBlank(userId) && StrUtil.isBlank(nickName) && StrUtil.isBlank(codeGenType),
+        ThrowUtil.throwIf(StrUtil.isBlank(appId) && StrUtil.isBlank(appName) && StrUtil.isBlank(codeGenType),
                 ErrorCode.PARAMS_ERROR, "查询条件为空");
-        String sortField = appQueryRequest.getSortField();
-        String sortOrder = appQueryRequest.getSortOrder();
         // 构造查询条件
         return QueryWrapper.create()
-                .eq("app_id", userId)
-                .like("app_name", nickName)
+                .eq("app_id", appId)
+                .like("app_name", appName)
                 // TODO 这个 codeGenType 好像有点问题，现在的 AI 不回复这个类型，一直为 null，应该是 prompt的问题
                 .eq("code_gen_type", codeGenType)
-                .orderBy(sortField, "ascend".equals(sortOrder));
+                .orderBy("app_name");
     }
 
 
@@ -127,7 +125,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
      * @return 部署结果url
      */
     @Override
-    public String appDeploy(String appId) {
+    public String deployApp(String appId) {
         // 获取当前用户信息
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);

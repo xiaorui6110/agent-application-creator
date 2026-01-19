@@ -6,7 +6,6 @@ import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
 import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
 import com.alibaba.cloud.ai.graph.agent.interceptor.todolist.TodoListInterceptor;
 import com.alibaba.cloud.ai.graph.agent.interceptor.toolretry.ToolRetryInterceptor;
-import com.alibaba.cloud.ai.graph.agent.interceptor.toolselection.ToolSelectionInterceptor;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
 import com.xiaorui.agentapplicationcreator.agent.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.agent.hook.MessageTrimmingHook;
@@ -80,8 +79,6 @@ public class AppCreatorAgentConfig {
                 maxRetries(3).onFailure(ToolRetryInterceptor.OnFailureBehavior.RETURN_MESSAGE).build();
         // 在执行工具之前强制执行一个规划步骤，以概述 Agent 将要采取的步骤
         TodoListInterceptor todoListInterceptor = TodoListInterceptor.builder().build();
-        // 使用一个 LLM 来决定在多个可用工具之间选择哪个工具
-        ToolSelectionInterceptor toolSelectionInterceptor = ToolSelectionInterceptor.builder().build();
 
         // ========== 创建 Tools ==========
         // 在这里创建直接工具回调，避免循环依赖
@@ -119,8 +116,7 @@ public class AppCreatorAgentConfig {
                 // 钩子调用（使用多个 Hooks 时，理解执行顺序很重要，before_* 是正的，after_* 是反的）
                 .hooks(loggingHook, messageTrimmingHook, summarizationHook, modelCallLimitHook)
                 // 拦截器调用（嵌套调用，第一个拦截器包装所有其他的）
-                .interceptors(todoListInterceptor, toolSelectionInterceptor,
-                        toolMonitoringInterceptor, toolErrorInterceptor, toolRetryInterceptor)
+                .interceptors(todoListInterceptor, toolMonitoringInterceptor, toolErrorInterceptor, toolRetryInterceptor)
                 // 记忆存储
                 .saver(redisSaver)
                 .build();

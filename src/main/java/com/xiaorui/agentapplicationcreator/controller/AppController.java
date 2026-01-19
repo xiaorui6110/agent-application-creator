@@ -51,10 +51,10 @@ public class AppController {
      * 应用创建（用户在主页输入提示词）
      */
     @PostMapping("/create")
-    public ServerResponseEntity<String> appCreate(@RequestBody AppCreateRequest appCreateRequest) {
+    public ServerResponseEntity<String> createApp(@RequestBody AppCreateRequest appCreateRequest) {
         ThrowUtil.throwIf(appCreateRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String appInitPrompt = appCreateRequest.getAppInitPrompt();
-        String appId = appService.appCreate(appInitPrompt);
+        String appId = appService.createApp(appInitPrompt);
         return ServerResponseEntity.success(appId);
     }
 
@@ -62,10 +62,10 @@ public class AppController {
      * 应用部署
      */
     @PostMapping("/deploy")
-    public ServerResponseEntity<String> appDeploy(@RequestBody AppDeployRequest appDeployRequest) {
+    public ServerResponseEntity<String> deployApp(@RequestBody AppDeployRequest appDeployRequest) {
         ThrowUtil.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String appId = appDeployRequest.getAppId();
-        String deployUrl = appService.appDeploy(appId);
+        String deployUrl = appService.deployApp(appId);
         return ServerResponseEntity.success(deployUrl);
     }
 

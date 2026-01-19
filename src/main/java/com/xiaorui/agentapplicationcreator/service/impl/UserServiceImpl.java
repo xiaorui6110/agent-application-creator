@@ -44,6 +44,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.xiaorui.agentapplicationcreator.constant.LogicDeletedConstant.LOGIC_DELETED_NO;
+
 /**
  * 用户表 服务层实现。
  *
@@ -305,13 +307,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         String userId = userQueryRequest.getUserId();
         String nickName = userQueryRequest.getNickName();
         ThrowUtil.throwIf(StrUtil.isBlank(userId) && StrUtil.isBlank(nickName), ErrorCode.PARAMS_ERROR, "查询条件为空");
-        String sortField = userQueryRequest.getSortField();
-        String sortOrder = userQueryRequest.getSortOrder();
         // 构造查询条件
         return QueryWrapper.create()
                 .eq("user_id", userId)
                 .like("nick_name", nickName)
-                .orderBy(sortField, "ascend".equals(sortOrder));
+                .eq("is_deleted", LOGIC_DELETED_NO)
+                .orderBy("nick_name") ;
     }
 
     /**

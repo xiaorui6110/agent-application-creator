@@ -5,7 +5,7 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
-import com.xiaorui.agentapplicationcreator.agent.subagent.CodeOptimization;
+import com.xiaorui.agentapplicationcreator.agent.orchestrator.AgentOrchestrator;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
@@ -33,10 +33,10 @@ public class AgentController {
     private AgentAppCreator agentAppCreator;
 
     @Resource
-    private CodeOptimization codeOptimization;
+    private AgentOrchestrator agentOrchestrator;
 
     /**
-     * 智能体对话接口 TODO 多轮对话时可能还会有些问题，比如频繁写入文件、多轮对话输出格式。。。
+     * 智能体对话接口
      */
     @PostMapping("/chat")
     public ServerResponseEntity<SystemOutput> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {
@@ -44,16 +44,12 @@ public class AgentController {
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
         String appId = callAgentRequest.getAppId();
-        SystemOutput systemOutput = agentAppCreator.chat(message, threadId, appId);
-        CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
-        // 这里异步执行，副 agent 去优化代码并反馈
-        try {
-            codeOptimization.codeOptimizeAsync(systemOutput.getAgentResponse().getCodeOptimizationInput());
-        } catch (Exception e) {
-            log.error("捕获到异步方法异常: {}", e.getCause().getMessage());
-        }
+        SystemOutput systemOutput = agentOrchestrator.handleUserMessage(message, threadId, appId);
         return ServerResponseEntity.success(systemOutput);
     }
+
+
+
 
 
     /**

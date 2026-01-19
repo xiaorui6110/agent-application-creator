@@ -136,3 +136,29 @@ create index idx_app_id_create_time
 create index idx_create_time
     on xr_code_optimize_result (create_time);
 
+create table xr_agent_task
+(
+    agent_task_id varchar(36) default ''                not null comment 'agent执行任务id'
+        primary key,
+    task_id       varchar(36)                           not null comment '任务id',
+    thread_id     varchar(64)                           not null comment '对话线程id',
+    app_id        varchar(36)                           not null comment '应用id',
+    task_status   varchar(32)                           not null comment '任务状态',
+    task_result   text                                  not null comment '任务结果',
+    task_error    text                                  not null comment '任务错误信息',
+    create_time   datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time   datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted    tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
+    constraint uk_task_id
+        unique (task_id)
+)
+    comment 'agent执行任务表';
+
+create index idx_app_id
+    on xr_agent_task (task_id);
+
+create index idx_app_id_create_time
+    on xr_agent_task (task_id, create_time);
+
+create index idx_create_time
+    on xr_agent_task (create_time);

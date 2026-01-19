@@ -110,7 +110,25 @@ CREATE TABLE `xr_code_optimize_result` (
 ) COMMENT='代码优化结果表';
 
 
-
+-- agent执行任务表
+drop table if exists `xr_agent_task`;
+CREATE TABLE `xr_agent_task` (
+   `agent_task_id`   varchar(36)  not null default ''    comment 'agent执行任务id',
+   `task_id`         varchar(36)  not null               comment '任务id',
+   `thread_id`       varchar(64)  not null               comment '对话线程id',
+   `app_id`          varchar(36)  not null               comment '应用id',
+   `task_status`     varchar(32)  not null               comment '任务状态',
+   `task_result`     text         not null               comment '任务结果',
+   `task_error`      text         not null               comment '任务错误信息',
+   `create_time`     datetime default CURRENT_TIMESTAMP  comment '创建时间',
+   `update_time`     datetime default CURRENT_TIMESTAMP  on update CURRENT_TIMESTAMP comment '更新时间',
+   `is_deleted`      tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
+   PRIMARY KEY (agent_task_id),
+   UNIQUE KEY uk_task_id (task_id),
+   INDEX idx_app_id (task_id),
+   INDEX idx_create_time (create_time),
+   INDEX idx_app_id_create_time (task_id, create_time)
+) COMMENT='agent执行任务表';
 
 
 

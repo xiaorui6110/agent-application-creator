@@ -59,10 +59,10 @@ public class FileManager {
             // 上传文件
             file = File.createTempFile(uploadPath, null);
             multipartFile.transferTo(file);
-            minioManager.uploadFile(file, uploadPath);
+            String s = minioManager.uploadFile(file, uploadPath);
             // 封装返回结果
             UploadPictureResult uploadPictureResult = new UploadPictureResult();
-            uploadPictureResult.setPicUrl(minioConfig.getEndpoint() + "/" + uploadPath);
+            uploadPictureResult.setPicUrl(minioConfig.getEndpoint() + minioConfig.getDefaultBucket() + "/" + uploadPath);
             uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
             uploadPictureResult.setPicSize(FileUtil.size(file));
             uploadPictureResult.setPicFormat(FileUtil.extName(originalFilename));

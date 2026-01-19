@@ -21,7 +21,7 @@ public interface AppService extends IService<App> {
      * @param appInitPrompt 应用初始化prompt
      * @return 应用id
      */
-    String appCreate(String appInitPrompt);
+    String createApp(String appInitPrompt);
 
     /**
      * 获取查询条件（通过appId、appName和codeGenType查询）
@@ -37,7 +37,7 @@ public interface AppService extends IService<App> {
      * @param appId 应用id
      * @return 部署结果url
      */
-    String appDeploy(String appId);
+    String deployApp(String appId);
 
 
     /**

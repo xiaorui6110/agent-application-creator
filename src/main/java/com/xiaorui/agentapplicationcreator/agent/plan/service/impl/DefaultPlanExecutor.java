@@ -33,7 +33,11 @@ public class DefaultPlanExecutor implements PlanExecutor {
      */
     @Override
     public ExecutionResult execute(ValidatedPlan plan) {
-
+        // plan.getOperations() 第一次对话时为空，所以这里直接返回执行结果
+        if (plan.getOperations() == null || plan.getOperations().isEmpty()) {
+            return new ExecutionResult(true, null, true, null);
+        }
+        // plan.getOperations() 非空
         List<OperationResult> results = new ArrayList<>();
         try {
             for (ValidatedOperation op : plan.getOperations()) {
@@ -48,8 +52,7 @@ public class DefaultPlanExecutor implements PlanExecutor {
             return new ExecutionResult(true, results, verified, null);
 
         } catch (Exception e) {
-            return new ExecutionResult(false, results, false, e.getMessage()
-            );
+            return new ExecutionResult(false, results, false, e.getMessage());
         }
     }
 

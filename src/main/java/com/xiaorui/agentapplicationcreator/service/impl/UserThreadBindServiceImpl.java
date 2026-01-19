@@ -54,7 +54,7 @@ public class UserThreadBindServiceImpl extends ServiceImpl<UserThreadBindMapper,
             userThreadBind.setIsDeleted(LOGIC_DELETED_NO);
             save(userThreadBind);
         } catch (Exception e) {
-            log.error("userBindThread error: {}", e.getMessage());
+            log.error("userBindThread error: 绑定用户与threadId失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "绑定用户与 threadId 失败");
         }
     }

@@ -22,7 +22,7 @@ import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTP
 @Service
 public class DefaultPlanValidator implements PlanValidator {
 
-    private static final int MAX_OPERATIONS = 5;
+    private static final int MAX_OPERATIONS = 150;
 
     private static final String DEFAULT_PLAN_TYPE = "CODE_MODIFICATION";
 
@@ -48,14 +48,15 @@ public class DefaultPlanValidator implements PlanValidator {
         if (!DEFAULT_ROOT_DIR.equals(plan.getRootDir())) {
             throw new IllegalArgumentException("rootDir 只能是 code_output");
         }
+        // 第一次对话时，没有 operations，所以就改为粗略验证，直接返回验证结果
         List<FileOperationPlan> ops = plan.getOperations();
         if (ops == null || ops.isEmpty()) {
-            throw new IllegalArgumentException("operations 不能为空");
+            return new ValidatedPlan(ROOT_DIR, null, plan.getVerification());
         }
         if (ops.size() > MAX_OPERATIONS) {
             throw new IllegalArgumentException("操作数量超过限制：" + MAX_OPERATIONS);
         }
-
+        // operations 非空
         List<ValidatedOperation> validatedOps = new ArrayList<>();
         for (FileOperationPlan op : ops) {
             validatedOps.add(validateOperation(op));
