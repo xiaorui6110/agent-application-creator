@@ -9,6 +9,8 @@ import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.orchestrator.AgentOrchestrator;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimit;
+import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimitTypeEnum;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.util.CodeFileSaverUtil;
 import jakarta.annotation.Resource;
@@ -37,9 +39,10 @@ public class AgentController {
     private AgentOrchestrator agentOrchestrator;
 
     /**
-     * 智能体对话接口
+     * 智能体对话接口（每个用户在 60؜ 秒内最多只能发起 5 次 AI 对话请求）
      */
     @PostMapping("/chat")
+    @RateLimit(limitType = RateLimitTypeEnum.USER, rate = 5, rateInterval = 60, message = "AI 对话请求过于频繁，请稍后再试")
     public ServerResponseEntity<AgentTaskStatus> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
