@@ -5,7 +5,9 @@ import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
 import com.mybatisflex.core.keygen.KeyGenerators;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatus;
+import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
+import com.xiaorui.agentapplicationcreator.enums.AgentFailTypeEnum;
+import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -55,17 +57,33 @@ public class AgentTask implements Serializable {
     /**
      * 任务状态
      */
-    private AgentTaskStatus taskStatus;
+    private AgentTaskStatusEnum taskStatus;
 
     /**
      * 任务结果
      */
-    private String taskResult;
+    private AgentResponse taskResult;
 
     /**
      * 任务错误信息
      */
     private String taskError;
+
+    /**
+     * 重试次数
+     */
+    private int retryCount;
+
+    /**
+     * 失败类型
+     */
+    private AgentFailTypeEnum failType;
+
+    /**
+     * 下次重试时间
+     */
+    @DateTimeFormat(pattern="yyyy-MM-dd")
+    private LocalDateTime nextRetryTime;
 
     /**
      * 创建时间

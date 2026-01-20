@@ -1,7 +1,7 @@
 package com.xiaorui.agentapplicationcreator.agent.model.schema;
 
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatus;
+import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,7 +41,7 @@ public class SystemOutput {
     /**
      * 任务状态
      */
-    private AgentTaskStatus taskStatus;
+    private AgentTaskStatusEnum taskStatus;
 
     /**
      * Agent 名称 / 标识

@@ -3,6 +3,7 @@ package com.xiaorui.agentapplicationcreator.controller;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
+import com.xiaorui.agentapplicationcreator.agent.model.dto.AgentTaskStatus;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.orchestrator.AgentOrchestrator;
@@ -39,21 +40,17 @@ public class AgentController {
      * 智能体对话接口
      */
     @PostMapping("/chat")
-    public ServerResponseEntity<SystemOutput> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {
+    public ServerResponseEntity<AgentTaskStatus> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
         String threadId = callAgentRequest.getThreadId();
         String appId = callAgentRequest.getAppId();
-        SystemOutput systemOutput = agentOrchestrator.handleUserMessage(message, threadId, appId);
-        return ServerResponseEntity.success(systemOutput);
+        AgentTaskStatus agentTaskStatus = agentOrchestrator.handleUserMessage(message, threadId, appId);
+        return ServerResponseEntity.success(agentTaskStatus);
     }
 
-
-
-
-
     /**
-     * 智能体对话接口（流式输出）
+     * 智能体对话接口（流式输出）TODO 要修改好多噢
      */
     @PostMapping("/stream_chat")
     public ServerResponseEntity<SystemOutput> streamChat(@RequestBody CallAgentRequest callAgentRequest) throws NoApiKeyException, InputRequiredException, InterruptedException, IOException {

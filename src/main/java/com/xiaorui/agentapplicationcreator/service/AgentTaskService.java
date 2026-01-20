@@ -2,8 +2,9 @@ package com.xiaorui.agentapplicationcreator.service;
 
 import com.mybatisflex.core.service.IService;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatus;
+import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentTask;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * agent执行任务表 服务层。
@@ -27,7 +28,7 @@ public interface AgentTaskService extends IService<AgentTask> {
      * @param taskId 任务 ID
      * @param status 任务状态
      */
-    void updateStatus(String taskId, AgentTaskStatus status);
+    void updateStatus(String taskId, AgentTaskStatusEnum status);
 
     /**
      * 保存最终输出
@@ -46,12 +47,33 @@ public interface AgentTaskService extends IService<AgentTask> {
     void markFailed(String taskId, Throwable error);
 
     /**
-     * 获取任务状态
+     * 通过任务ID获取任务执行结果
      *
-     * @param taskId 任务 ID
+     * @param taskId 任务ID
+     * @return 任务执行结果
+     */
+    SystemOutput getTask(String taskId);
+
+    /**
+     * 通过任务ID获取任务
+     *
+     * @param taskId 任务ID
      * @return 任务状态
      */
-    AgentTaskStatus getTaskState(String taskId);
+    AgentTask getByTaskId(String taskId);
 
+    /**
+     * 异步保存任务状态
+     * @param state 任务状态
+     */
+    @Async("agentPersistExecutor")
+    void persistAsync(AgentTask state);
+
+    /**
+     * 手动重试任务
+     *
+     * @param taskId 任务ID
+     */
+    void manualRetryTask(String taskId);
 
 }

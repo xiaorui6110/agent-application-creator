@@ -24,12 +24,12 @@ public class AgentTaskExecutor implements DisposableBean {
      * 任务池（AI 并发场景：CPU 密集型任务 + IO 密集型任务）
      */
     private final ExecutorService executor = new ThreadPoolExecutor(
-            16,
-            16,
+            8,
+            8,
             60L,
             TimeUnit.MILLISECONDS,
             // 有界队列，按需调整
-            new LinkedBlockingQueue<>(2048),
+            new LinkedBlockingQueue<>(1024),
             // 自定义线程工厂，线程名带业务标识，日志排查方便
             new ThreadFactory() {
                 private final AtomicInteger threadNum = new AtomicInteger(1);
@@ -77,16 +77,16 @@ public class AgentTaskExecutor implements DisposableBean {
     }
 
     /**
-     * 关闭任务池
+     * 关闭任务池（或者用 @PreDestroy 替代 DisposableBean 的 destroy 方法）
      */
     @Override
     public void destroy() throws Exception {
         // 不再接收新任务，等待队列中任务执行完毕
         executor.shutdown();
-        // 可选：超时强制关闭（5分钟）
-        //if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
-        //    executor.shutdownNow();
-        //}
+        // 可选：超时强制关闭（60秒）
+        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+            executor.shutdownNow();
+        }
     }
 }
 

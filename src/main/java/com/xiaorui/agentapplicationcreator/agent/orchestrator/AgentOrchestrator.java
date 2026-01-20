@@ -1,6 +1,6 @@
 package com.xiaorui.agentapplicationcreator.agent.orchestrator;
 
-import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
+import com.xiaorui.agentapplicationcreator.agent.model.dto.AgentTaskStatus;
 
 import java.io.IOException;
 
@@ -17,9 +17,9 @@ public interface AgentOrchestrator {
      * @param message 用户消息
      * @param threadId 对话线程 ID
      * @param appId 应用 ID
-     * @return 系统输出
+     * @return Agent 任务状态
      * @throws IOException IO 异常
      */
-    SystemOutput handleUserMessage(String message, String threadId, String appId) throws IOException;
+    AgentTaskStatus handleUserMessage(String message, String threadId, String appId) throws IOException;
 
 }

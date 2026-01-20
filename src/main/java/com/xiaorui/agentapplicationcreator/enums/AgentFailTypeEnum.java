@@ -4,26 +4,23 @@ import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
 /**
- * @description: 任务状态枚举
+ * @description: Agent 失败类型枚举
  * @author: xiaorui
- * @date: 2026-01-19 19:44
+ * @date: 2026-01-20 19:52
  **/
 @Getter
-public enum AgentTaskStatus {
+public enum AgentFailTypeEnum {
 
     /**
-     * 代码生成类型枚举
+     * Agent 失败类型枚举
      */
-    INIT("任务初始化中", "init"),
-    QUEUED("任务排队中", "queued"),
-    RUNNING("任务运行中", "running"),
-    SUCCEEDED("任务已完成", "succeeded"),
-    FAILED("任务运行失败", "failed");
+    SYSTEM_RETRYABLE("系统可重试", "system_retryable"),
+    BUSINESS_FATAL("业务失败", "business_fatal");
 
     private final String text;
     private final String value;
 
-    AgentTaskStatus(String text, String value) {
+    AgentFailTypeEnum(String text, String value) {
         this.text = text;
         this.value = value;
     }
@@ -34,11 +31,11 @@ public enum AgentTaskStatus {
      * @param value 枚举值的value
      * @return 枚举值
      */
-    public static AgentTaskStatus getEnumByValue(String value) {
+    public static AgentFailTypeEnum getEnumByValue(String value) {
         if (ObjUtil.isEmpty(value)) {
             return null;
         }
-        for (AgentTaskStatus anEnum : AgentTaskStatus.values()) {
+        for (AgentFailTypeEnum anEnum : AgentFailTypeEnum.values()) {
             if (anEnum.value.equals(value)) {
                 return anEnum;
             }

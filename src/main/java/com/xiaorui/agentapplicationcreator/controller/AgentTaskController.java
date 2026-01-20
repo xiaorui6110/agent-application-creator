@@ -1,7 +1,7 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
 import com.mybatisflex.core.paginate.Page;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatus;
+import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentTask;
@@ -25,12 +25,22 @@ public class AgentTaskController {
     private AgentTaskService agentTaskService;
 
     /**
-     * 获取任务状态
+     * 轮询获取任务结果（前端轮询）
      */
-    @GetMapping("/getTaskState")
-    public ServerResponseEntity<AgentTaskStatus> getTaskState(@RequestParam String taskId) {
+    @GetMapping("/getTask")
+    public ServerResponseEntity<SystemOutput> getTaskState(@RequestParam String taskId) {
         ThrowUtil.throwIf(taskId == null, ErrorCode.PARAMS_ERROR, "任务ID不能为空");
-        return ServerResponseEntity.success(agentTaskService.getTaskState(taskId));
+        return ServerResponseEntity.success(agentTaskService.getTask(taskId));
+    }
+
+    /**
+     * 手动重试任务
+     */
+    @PostMapping("/retry/{taskId}")
+    public ServerResponseEntity<Void> retryTask(@PathVariable String taskId) {
+        ThrowUtil.throwIf(taskId == null, ErrorCode.PARAMS_ERROR, "任务ID不能为空");
+        agentTaskService.manualRetryTask(taskId);
+        return ServerResponseEntity.success();
     }
 
     /**

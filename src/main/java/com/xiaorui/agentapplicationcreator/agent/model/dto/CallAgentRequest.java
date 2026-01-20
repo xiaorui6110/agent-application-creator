@@ -4,13 +4,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * @description: 智能体请求
  * @author: xiaorui
  * @date: 2025-12-12 15:00
  **/
 @Data
-public class CallAgentRequest {
+public class CallAgentRequest implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 5172570689175769832L;
 
     /**
      * 消息

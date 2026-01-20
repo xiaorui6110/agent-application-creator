@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -59,6 +60,8 @@ import java.util.concurrent.CountDownLatch;
 public class AgentAppCreator {
 
     private final static Integer MAX_INPUT_LENGTH = 2000;
+
+    private final static Integer MAX_RESPONSE_TIEM = 300000 ;
 
     private final String SINGLE_HTML_PROMPT = FileUtil.readString("prompt/system_prompt_v1.md", StandardCharsets.UTF_8);
 
@@ -118,8 +121,17 @@ public class AgentAppCreator {
         AssistantMessage response;
         AgentResponse agentResponse;
         try {
+            // 计时器
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             // 调用 agent
             response = appCreatorAgent.call(finalInputMessage, runnableConfig);
+            stopWatch.stop();
+            log.info("agent.call() 执行完成，耗时={}毫秒", stopWatch.getTotalTimeMillis());
+            // 超时 5 分钟，则抛出异常
+            if (stopWatch.getTotalTimeMillis() > MAX_RESPONSE_TIEM) {
+                throw new BusinessException("智能体应用生成 AI 服务响应超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
+            }
             // JSON 转 Bean
             agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
         } catch (Exception e) {
