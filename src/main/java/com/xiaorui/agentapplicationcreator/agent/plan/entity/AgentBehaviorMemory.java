@@ -36,7 +36,7 @@ public class AgentBehaviorMemory {
     /**
      * 出现次数
      */
-    private int frequency;
+    private Integer frequency;
 
     /**
      * 最后一次发生时间

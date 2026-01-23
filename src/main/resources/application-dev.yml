@@ -74,11 +74,22 @@ spring:
       api-key: sk-b1aea9f904d6478db3fa8bf439a1a460  # 阿里云百炼
       chat:
         options:
-          model: "qwen3-coder-plus"  # 这里就使用 通义千问3-Coder-Plus
+          model: "qwen3-coder-plus"  # 这里使用 通义千问3-Coder-Plus
           stream: true
           incremental-output: true  # 开启增量输出
           temperature: 0.1  # 设置在 0.1 至 0.3 之间，以减少生成结果的随机性。
-
+# Sa-Token 权限认证
+sa-token:
+  # token名称 (同时也是cookie名称)
+  token-name: Authorization
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: false
+  # 在多人登录同一账号时，是否共用一个token(不共用，避免登出时导致其他用户也登出)
+  is-share: false
+  # token风格(默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik)
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: false
 # springdoc-openapi（4 版本的 knife4j 接口文档依赖于 springdoc）
 springdoc:
   swagger-ui:
@@ -102,9 +113,18 @@ minio:
   access-key: xiaorui   # minio服务器用户名
   secret-key: 18656412886ty   # minio服务器密码
   default-bucket: agent-app-creator-bucket  # 创建的 bucket 名称
-# sftp 配置
+# sftp 配置（可以不使用）
 sftp:
   host: 172.30.43.12  # Linux服务器IP
   port: 22  # SFTP端口（默认22）
   username: shenrui   # 服务器用户名
   password: 18656412886ty   # 服务器密码
+# Actuator 监控配置，暴露监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always

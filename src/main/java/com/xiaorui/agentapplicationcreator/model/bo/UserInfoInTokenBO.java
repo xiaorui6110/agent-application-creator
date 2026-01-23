@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.bo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -12,26 +13,31 @@ public class UserInfoInTokenBO {
     /**
      * 用户id
      */
+    @Schema(description = "用户id")
     private String userId;
 
     /**
      * 昵称
      */
+    @Schema(description = "昵称")
     private String nickName;
 
     /**
      * 用户角色 user-普通用户 admin-管理员
      */
+    @Schema(description = "用户角色")
     private String userRole;
 
     /**
      * 用户状态 1-正常 2-禁用
      */
+    @Schema(description = "用户状态")
     private Integer userStatus;
 
     /**
      * 其他Id
      */
+    @Schema(description = "其他Id")
     private Long otherId;
 
 }

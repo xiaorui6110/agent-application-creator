@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.app;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,11 +20,13 @@ public class AppUnbanRequest implements Serializable {
     /**
      * 应用id
      */
+    @Schema(description = "应用id", requiredMode = Schema.RequiredMode.REQUIRED)
     private String appId;
 
     /**
      * 操作类型：true-解禁，false-封禁
      */
-    private Boolean isUnban;
+    @Schema(description = "操作类型：true-解禁，false-封禁", requiredMode = Schema.RequiredMode.REQUIRED)
+    private boolean isUnban;
 
 }

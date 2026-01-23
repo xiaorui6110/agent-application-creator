@@ -28,12 +28,11 @@ import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeRe
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContext;
+import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContextHolder;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
-import com.xiaorui.agentapplicationcreator.service.AgentChatMemoryService;
-import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
-import com.xiaorui.agentapplicationcreator.service.UserService;
-import com.xiaorui.agentapplicationcreator.service.UserThreadBindService;
+import com.xiaorui.agentapplicationcreator.service.*;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
@@ -76,6 +75,9 @@ public class AgentAppCreator {
     private UserService userService;
 
     @Resource
+    private AppService appService;
+
+    @Resource
     private UserThreadBindService userThreadBindService;
 
     @Resource
@@ -88,7 +90,7 @@ public class AgentAppCreator {
     private ChatHistoryService chatHistoryService;
 
     /**
-     * 智能体对话
+     * 智能体对话（TODO alibaba 框架的流式输出与 Graph 工作流集成了，所以待学习 Graph Core 之后再做流式输出实现）
      * 1. 用户输入提示词：“创建xxx应用”  -->  agent确认后生成代码应用呈现
      * 2. 用户再输入修改页面需求  -->  agent生成计划来修改应用项目代码
      */
@@ -117,6 +119,8 @@ public class AgentAppCreator {
         String finalInputMessage = userMessage + "\n【应用ID：" + appId + "】" + "\n【应用代码优化结果详情】：" + codeOptimizeResultStr;
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
+        // 设置监控上下文
+        MonitorContextHolder.setContext(MonitorContext.builder().userId(userId).appId(appId).build());
         // 提前在外部声明 POJO 变量
         AssistantMessage response;
         AgentResponse agentResponse;
@@ -128,6 +132,8 @@ public class AgentAppCreator {
             response = appCreatorAgent.call(finalInputMessage, runnableConfig);
             stopWatch.stop();
             log.info("agent.call() 执行完成，耗时={}毫秒", stopWatch.getTotalTimeMillis());
+            // 清除监控上下文（无论成功/失败/取消）
+            MonitorContextHolder.clearContext();
             // 超时 5 分钟，则抛出异常
             if (stopWatch.getTotalTimeMillis() > MAX_RESPONSE_TIEM) {
                 throw new BusinessException("智能体应用生成 AI 服务响应超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
@@ -141,6 +147,8 @@ public class AgentAppCreator {
         // 保存 Agent 回复
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
+        // 异步设置应用名称
+        appService.updateAppNameAsync(appId, agentResponse.getAppName());
         // 如果 AgentResponse 中包含 CodeModificationPlan 代码修改计划，则需要调用执行器来执行文件操作
         if (agentResponse.getCodeModificationPlan() != null) {
             CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
@@ -156,7 +164,6 @@ public class AgentAppCreator {
                 .appId(appId)
                 .agentName("app-creator-agent")
                 .agentResponse(agentResponse)
-                // TODO 这里后面做缓存时，要进行判断（标志位）
                 .fromMemory(false)
                 .timestamp(System.currentTimeMillis())
                 .build();
@@ -197,6 +204,7 @@ public class AgentAppCreator {
     /**
      * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，待优化，比如输出格式、等等）
      * <a href="https://bailian.console.aliyun.com/tab=doc?tab=doc#/doc/?type=model&url=2866129">...</a>
+     * 真正的流式输出是基于 reactor 实现的哟
      */
     public SystemOutput streamChat(String userMessage, String transThreadId, String appId)
             throws NoApiKeyException, InputRequiredException, InterruptedException {
@@ -218,7 +226,6 @@ public class AgentAppCreator {
         validateUserInput(userMessage);
         // 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
         // 通义千问 API 是无状态的，不会保存对话历史。要实现多轮对话，需在每次请求中显式传入历史对话消息（好吧）
-        // 保存用户输入到 MongoDB 中（底层已校验插入成功与否的错误处理，此处不做追加处理 log）
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 初始化 Generation 实例
         Generation gen = new Generation();
@@ -279,7 +286,6 @@ public class AgentAppCreator {
                 );
         // 主线程等待异步任务完成
         latch.await();
-        // 这玩意的 fullContent.toString() 好像不是 JSON 格式的，流式输出 ？ 或者是先流式输出，后结构化
         AgentResponse agentResponse = JSONUtil.toBean(fullContent.toString(), AgentResponse.class,true);
         // 保存 Agent 回复到 MongoDB 中
         agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", fullContent.toString()));

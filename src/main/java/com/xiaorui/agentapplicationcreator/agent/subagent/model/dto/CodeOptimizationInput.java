@@ -1,6 +1,7 @@
 package com.xiaorui.agentapplicationcreator.agent.subagent.model.dto;
 
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.entity.CodeChange;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,36 +29,43 @@ public class CodeOptimizationInput implements Serializable {
     /**
      * 应用id
      */
+    @Schema(description = "应用id")
     private String appId;
 
     /**
      * 应用目标
      */
+    @Schema(description = "应用目标")
     private String appGoal;
 
     /**
      * 技术栈
      */
+    @Schema(description = "技术栈")
     private List<String> techStack;
 
     /**
      * 文件树 e.g. ["src/App.vue", "src/components/Timer.vue"]
      */
+    @Schema(description = "文件树")
     private List<String> fileTree;
 
     /**
      * 文件内容 path -> content
      */
+    @Schema(description = "文件内容")
     private Map<String, String> files;
 
     /**
      * 最近一次用户触发的改动
      */
+    @Schema(description = "最近一次用户触发的改动")
     private List<CodeChange> recentChanges;
 
     /**
      * 平台的长期记忆
      */
+    @Schema(description = "平台的长期记忆")
     private List<String> platformMemory;
 
 

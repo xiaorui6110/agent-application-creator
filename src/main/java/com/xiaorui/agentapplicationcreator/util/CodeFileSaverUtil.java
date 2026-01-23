@@ -1,6 +1,10 @@
 package com.xiaorui.agentapplicationcreator.util;
 
 import cn.hutool.core.io.FileUtil;
+import com.xiaorui.agentapplicationcreator.model.entity.App;
+import com.xiaorui.agentapplicationcreator.service.AppService;
+import jakarta.annotation.Resource;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +23,11 @@ import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTP
  * @author: xiaorui
  * @date: 2025-12-22 14:08
  **/
+@Component
 public class CodeFileSaverUtil {
+
+    @Resource
+    private AppService appService;
 
     /**
      * 将 structuredReply.files 写入本地目录
@@ -57,20 +65,21 @@ public class CodeFileSaverUtil {
 
 
     /**
-     * 将 structuredReply.files 写入服务部署目录
+     * 将 structuredReply.files 写入服务部署目录（但不是静态方法了）
      *
      * @param files key: 相对路径, value: 文件内容
      * @param appId 应用ID
      */
-    public static void writeFilesToWeb(Map<String, String> files, String appId) throws IOException {
+    public void writeFilesToWeb(Map<String, String> files, String appId) throws IOException {
 
         for (Map.Entry<String, String> entry : files.entrySet()) {
 
             String relativePath = entry.getKey();
             String content = entry.getValue();
-
-            // TODO （改）构建唯一目录路径：tmp/code_deploy/{deployKey}
-            Path uniqueDirName = Paths.get(appId);
+            App app = appService.getById(appId);
+            String deployKey = app.getDeployKey();
+            // 构建唯一目录路径：tmp/code_deploy/{deployKey}
+            Path uniqueDirName = Paths.get(deployKey);
             String dirPath = CODE_DEPLOY_ROOT_DIR + File.separator + uniqueDirName;
             // 创建应用存放文件夹
             FileUtil.mkdir(dirPath);

@@ -78,11 +78,11 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         validateUserInput(appInitPrompt);
         // 构造入库对象
         App app = new App();
-        // 应用名称暂时为 appInitPrompt 前 12 位 TODO 后期由 AI 进行描述生成
+        // 应用名称先暂时为 appInitPrompt 前 12 位，之后系统会异步设置 AI 生成的应用名称
         app.setAppName(appInitPrompt.substring(0, Math.min(appInitPrompt.length(), 12)));
         app.setUserId(userId);
         app.setAppInitPrompt(appInitPrompt);
-        // 随机获取应用封面 TODO 待优化，使用 ScreenshotService 生成应用截图
+        // 随机获取应用封面 TODO 待优化，目前使用的是部署应用后，ScreenshotService 生成应用截图
         String coverUrl = "https://picsum.photos/1200/600";
         app.setAppCover(coverUrl);
         app.setDeployKey(RandomUtil.randomString(6));
@@ -105,14 +105,13 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 获取查询参数
         String appId = appQueryRequest.getAppId();
         String appName = appQueryRequest.getAppName();
-        String codeGenType = appQueryRequest.getCodeGenType();
+        String codeGenType = appQueryRequest.getCodeGenType().getValue();
         ThrowUtil.throwIf(StrUtil.isBlank(appId) && StrUtil.isBlank(appName) && StrUtil.isBlank(codeGenType),
                 ErrorCode.PARAMS_ERROR, "查询条件为空");
         // 构造查询条件
         return QueryWrapper.create()
                 .eq("app_id", appId)
                 .like("app_name", appName)
-                // TODO 这个 codeGenType 好像有点问题，现在的 AI 不回复这个类型，一直为 null，应该是 prompt的问题
                 .eq("code_gen_type", codeGenType)
                 .orderBy("app_name");
     }
@@ -154,14 +153,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用代码不存在，请先生成代码");
         }
-        // 复制文件到本都部署文件保存目录(code_deploy) TODO 后面可能会改为使用本地目录部署（linux服务器有点不方便）
+        // 复制文件到本地部署文件保存目录(code_deploy)
         String deployDirPath = CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
         try {
             FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制本地文件到部署文件夹失败：" + e.getMessage());
         }
-        // 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署
+        // 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署 TODO 后面可能会改为使用直接放在本地目录完成部署
         String deployToLinuxDirPath = REMOTE_DEPLOY_DIR + File.separator + deployKey;
         try {
             sftpFileUtil.uploadDirToLinux(deployDirPath, deployToLinuxDirPath);
@@ -257,6 +256,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
     }
 
     /**
+     * 异步更新应用名称
+     *
+     * @param appId 应用id
+     * @param appName 应用名称
+     */
+    @Override
+    public void updateAppNameAsync(String appId, String appName) {
+        // 使用虚拟线程异步执行（Java 21 的虚拟线程 Virtual Thread）
+        Thread.startVirtualThread(() -> {
+            try {
+                // 更新应用名称
+                App updateApp = new App();
+                updateApp.setAppId(appId);
+                updateApp.setAppName(appName);
+                boolean updated = this.updateById(updateApp);
+                ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用名称失败");
+            } catch (Exception e) {
+                // 记录异常日志，避免任务失败无感知
+                log.error("虚拟线程更新应用名称失败，appId:{}", appId, e);
+            }
+        });
+    }
+
+    /**
      * 用户输入校验：敏感词检测 ...
      */
     private void validateUserInput(String input) {
@@ -271,7 +294,5 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
             throw new BusinessException("输入包含不适宜内容", ErrorCode.PARAMS_ERROR);
         }
     }
-
-
 
 }

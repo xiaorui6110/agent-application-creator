@@ -10,6 +10,9 @@ import com.xiaorui.agentapplicationcreator.model.dto.chathistory.ChatHistoryQuer
 import com.xiaorui.agentapplicationcreator.model.entity.ChatHistory;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +23,7 @@ import java.time.LocalDateTime;
  *
  * @author xiaorui
  */
+@Tag(name = "对话历史接口")
 @RestController
 @RequestMapping("/chatHistory")
 public class ChatHistoryController {
@@ -31,6 +35,8 @@ public class ChatHistoryController {
      * 分页查询某个应用的对话历史（游标查询）
      */
     @GetMapping("/app/{appId}")
+    @Operation(summary = "分页查询某个应用的对话历史" , description = "分页查询某个应用的对话历史")
+    @Parameter(name = "chatHistoryQueryRequest", description = "对话历史查询请求参数")
     public ServerResponseEntity<Page<ChatHistory>> listAppChatHistory(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
         ThrowUtil.throwIf(chatHistoryQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String appId = chatHistoryQueryRequest.getAppId();
@@ -45,6 +51,8 @@ public class ChatHistoryController {
      */
     @PostMapping("/admin/list/page/vo")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员分页查询所有对话历史" , description = "管理员分页查询所有对话历史")
+    @Parameter(name = "chatHistoryQueryRequest", description = "对话历史查询请求参数")
     public ServerResponseEntity<Page<ChatHistory>> listAllChatHistoryByPageForAdmin(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
         ThrowUtil.throwIf(chatHistoryQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         int current = chatHistoryQueryRequest.getCurrent();
@@ -52,6 +60,4 @@ public class ChatHistoryController {
         QueryWrapper queryWrapper = chatHistoryService.getQueryWrapper(chatHistoryQueryRequest);
         return ServerResponseEntity.success(chatHistoryService.page(Page.of(current, pageSize), queryWrapper));
     }
-
-
 }

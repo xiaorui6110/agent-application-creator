@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,16 +20,19 @@ public class UserChangePasswordRequest implements Serializable {
     /**
      * 原密码
      */
+    @Schema(description = "原密码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String oldPassword;
 
     /**
      * 新密码
      */
+    @Schema(description = "新密码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String newPassword;
 
     /**
      * 确认密码
      */
+    @Schema(description = "确认密码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String checkPassword;
 
 }

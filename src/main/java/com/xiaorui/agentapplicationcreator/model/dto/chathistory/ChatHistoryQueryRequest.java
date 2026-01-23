@@ -1,6 +1,8 @@
 package com.xiaorui.agentapplicationcreator.model.dto.chathistory;
 
 import com.xiaorui.agentapplicationcreator.common.PageRequest;
+import com.xiaorui.agentapplicationcreator.enums.ChatHistoryMsgTypeEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -23,32 +25,38 @@ public class ChatHistoryQueryRequest extends PageRequest implements Serializable
     /**
      * 对话历史id（雪花算法）
      */
+    @Schema(description = "对话历史id（雪花算法）", requiredMode = Schema.RequiredMode.REQUIRED)
     private String chatHistoryId;
 
     /**
      * 对话消息
      */
+    @Schema(description = "对话消息")
     private String chatMessage;
 
     /**
      * 消息类型：user/ai
      */
-    private String chatMessageType;
+    @Schema(description = "消息类型：user/ai")
+    private ChatHistoryMsgTypeEnum chatMessageType;
 
     /**
      * 应用id
      */
+    @Schema(description = "应用id")
     private String appId;
 
     /**
      * 创建用户id
      */
+    @Schema(description = "创建用户id")
     private String userId;
 
     /**
      * 游标查询 - 最后一条记录的创建时间
      * 用于分页查询，获取早于此时间的记录
      */
+    @Schema(description = "游标查询 - 最后一条记录的创建时间")
     private LocalDateTime lastCreateTime;
 
 }

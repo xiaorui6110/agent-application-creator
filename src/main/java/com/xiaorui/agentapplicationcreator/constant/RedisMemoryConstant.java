@@ -17,5 +17,4 @@ public interface RedisMemoryConstant {
      */
     String AI_MESSAGE_MEMORY_PREFIX = "xiaorui_ai_memory:";
 
-
 }

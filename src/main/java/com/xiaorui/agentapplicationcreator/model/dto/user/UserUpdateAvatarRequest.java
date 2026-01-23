@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +21,7 @@ public class UserUpdateAvatarRequest implements Serializable {
     /**
      * 用户头像文件
      */
+    @Schema(description = "用户头像文件", requiredMode = Schema.RequiredMode.REQUIRED)
     private MultipartFile multipartFile;
 
 }

@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.app;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,6 +20,7 @@ public class AppDeployRequest implements Serializable {
     /**
      * 应用id
      */
+    @Schema(description = "应用id", requiredMode = Schema.RequiredMode.REQUIRED)
     private String appId;
 
 }

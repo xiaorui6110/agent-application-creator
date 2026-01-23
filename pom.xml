@@ -232,6 +232,16 @@
             <artifactId>commonmark</artifactId>
             <version>0.27.1</version>
         </dependency>
+        <!-- Prometheus + Grafana 业务监控 @https://grafana.com/docs/grafana/latest/fundamentals/getting-started/first-dashboards/
+                                          @https://prometheus.io/docs/tutorials/getting_started/ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

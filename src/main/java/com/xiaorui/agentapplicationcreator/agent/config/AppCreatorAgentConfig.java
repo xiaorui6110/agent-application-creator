@@ -154,7 +154,7 @@ public class AppCreatorAgentConfig {
 
 
     /**
-     * 这个 prompt 是放在主 agent 中的（相当于第二人格）
+     * 这个 prompt 是放在主 agent 中的（相当于第二人格）（已整合完成）
      */
     private final String CODE_PLAN_PROPMT = """
             

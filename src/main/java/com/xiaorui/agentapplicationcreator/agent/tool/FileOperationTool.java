@@ -9,7 +9,7 @@ import java.nio.file.*;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
 /**
- * @description: 文件操作工具（方法工具 methodTools） TODO 我相信是可以的，应该是 prompt 没有写好、权限不够、路径问题之类的等等其他原因导致的
+ * @description: 文件操作工具（方法工具 methodTools） TODO 我相信是可以的，应该是 prompt 没有写好、权限不够、路径问题之类的等等其他原因导致的，但其实允许 agent 直接操作文件系统也有些风险
  * @author: xiaorui
  * @date: 2026-01-04 22:04
  **/

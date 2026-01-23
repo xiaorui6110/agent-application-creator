@@ -90,7 +90,7 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         String appId = chatHistoryQueryRequest.getAppId();
         String userId = chatHistoryQueryRequest.getUserId();
         String chatMessage = chatHistoryQueryRequest.getChatMessage();
-        String chatMessageType = chatHistoryQueryRequest.getChatMessageType();
+        String chatMessageType = chatHistoryQueryRequest.getChatMessageType().getValue();
         LocalDateTime lastCreateTime = chatHistoryQueryRequest.getLastCreateTime();
         String sortField = chatHistoryQueryRequest.getSortField();
         String sortOrder = chatHistoryQueryRequest.getSortOrder();

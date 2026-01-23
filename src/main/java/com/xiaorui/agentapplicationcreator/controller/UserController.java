@@ -17,6 +17,9 @@ import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
  *
  * @author xiaorui
  */
+@Tag(name = "用户接口")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -45,6 +49,8 @@ public class UserController {
      * 用户注册（邮箱验证码注册）
      */
     @PostMapping("/register")
+    @Operation(summary = "用户注册" , description = "用户使用邮箱验证码注册")
+    @Parameter(name = "userRegisterRequest", description = "用户注册请求参数")
     public ServerResponseEntity<String> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtil.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userRegisterRequest.getUserEmail();
@@ -59,6 +65,8 @@ public class UserController {
      * 用户登录（邮箱 + 密码）
      */
     @PostMapping("/login")
+    @Operation(summary = "用户登录" , description = "用户使用邮箱 + 密码登录")
+    @Parameter(name = "userLoginRequest", description = "用户登录请求参数")
     public ServerResponseEntity<TokenInfoVO> userLogin(@RequestBody UserLoginRequest userLoginRequest) {
         ThrowUtil.throwIf(userLoginRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userLoginRequest.getUserEmail();
@@ -75,6 +83,8 @@ public class UserController {
      * 发送邮箱验证码（点击向目标邮箱发送验证码）
      */
     @PostMapping("/sendEmailCode")
+    @Operation(summary = "发送邮箱验证码" , description = "向目标邮箱发送验证码")
+    @Parameter(name = "userSendEmailCodeRequest", description = "发送邮箱验证码请求参数")
     public ServerResponseEntity<String> sendEmailCode(@RequestBody UserSendEmailCodeRequest userSendEmailCodeRequest,
                                                       HttpServletRequest request ) {
         ThrowUtil.throwIf(userSendEmailCodeRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
@@ -88,6 +98,7 @@ public class UserController {
      * 获取图形验证码（直接展示在前端）
      */
     @GetMapping("/getPictureVerifyCode")
+    @Operation(summary = "获取图形验证码" , description = "获取图形验证码")
     public ServerResponseEntity<Map<String, String>> getPictureVerifyCode() {
         return ServerResponseEntity.success(userService.getPictureVerifyCode());
     }
@@ -96,14 +107,16 @@ public class UserController {
      * 获取用户信息（只能查看自己的个人信息）
      */
     @GetMapping("/getInfo")
+    @Operation(summary = "获取用户信息" , description = "获取当前用户信息")
     public ServerResponseEntity<UserVO> getUserInfo() {
         return ServerResponseEntity.success(userService.getUserInfo());
     }
 
     /**
-     * 用户登出（退出登录） TODO 这里 logout 有问题
+     * 用户登出（退出登录）
      */
     @PostMapping("/logout")
+    @Operation(summary = "用户登出" , description = "当前用户登出")
     public ServerResponseEntity<Boolean> userLogout(HttpServletRequest request) {
         return ServerResponseEntity.success(userService.userLogout(request));
     }
@@ -112,6 +125,8 @@ public class UserController {
      * 修改用户邮箱
      */
     @PostMapping("/change/email")
+    @Operation(summary = "修改用户邮箱" , description = "修改当前用户邮箱")
+    @Parameter(name = "userChangeEmailRequest", description = "修改用户邮箱请求参数")
     public ServerResponseEntity<Boolean> changUserEmail(@RequestBody UserChangeEmailRequest userChangeEmailRequest) {
         ThrowUtil.throwIf(userChangeEmailRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String newEmail = userChangeEmailRequest.getNewEmail();
@@ -123,6 +138,8 @@ public class UserController {
      * 修改用户密码
      */
     @PostMapping("/change/password")
+    @Operation(summary = "修改用户密码" , description = "修改当前用户密码")
+    @Parameter(name = "userChangePasswordRequest", description = "修改用户密码请求参数")
     public ServerResponseEntity<Boolean> changeUserPassword(@RequestBody UserChangePasswordRequest userChangePasswordRequest) {
         ThrowUtil.throwIf(userChangePasswordRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String oldPassword = userChangePasswordRequest.getOldPassword();
@@ -135,6 +152,8 @@ public class UserController {
      * 重置用户密码（用户忘记密码的情况下）
      */
     @PostMapping("/reset/password")
+    @Operation(summary = "重置用户密码" , description = "重置当前用户密码")
+    @Parameter(name = "userResetPasswordRequest", description = "重置用户密码请求参数")
     public ServerResponseEntity<Boolean> resetUserPassword(@RequestBody UserResetPasswordRequest userResetPasswordRequest) {
         ThrowUtil.throwIf(userResetPasswordRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userResetPasswordRequest.getUserEmail();
@@ -149,6 +168,8 @@ public class UserController {
      * 更新用户信息（只能更新自己的信息）
      */
     @PostMapping("/update/info")
+    @Operation(summary = "更新用户信息" , description = "更新当前用户信息")
+    @Parameter(name = "userUpdateInfoRequest", description = "更新用户信息请求参数")
     public ServerResponseEntity<Boolean> updateUserInfo(@RequestBody UserUpdateInfoRequest userUpdateInfoRequest) {
         ThrowUtil.throwIf(userUpdateInfoRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userId = SecurityUtil.getUserInfo().getUserId();
@@ -165,6 +186,8 @@ public class UserController {
      * 用户查询请求（根据用户id、昵称查询，分页获取）
      */
     @PostMapping("/getInfoList")
+    @Operation(summary = "用户查询" , description = "用户根据用户id、昵称，分页获取查询用户信息")
+    @Parameter(name = "userQueryRequest", description = "用户查询请求参数")
     public ServerResponseEntity<Page<UserVO>> getUserInfoByIdOrName(@RequestBody UserQueryRequest userQueryRequest) {
         ThrowUtil.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         int current = userQueryRequest.getCurrent();
@@ -181,6 +204,8 @@ public class UserController {
      * 更新用户头像（本地文件上传）
      */
     @PostMapping("/update/avatar")
+    @Operation(summary = "更新用户头像" , description = "更新当前用户头像")
+    @Parameter(name = "userUpdateAvatarRequest", description = "更新用户头像请求参数")
     public ServerResponseEntity<String> updateUserAvatar(@RequestBody UserUpdateAvatarRequest userUpdateAvatarRequest) {
         ThrowUtil.throwIf(userUpdateAvatarRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         MultipartFile multipartFile = userUpdateAvatarRequest.getMultipartFile();
@@ -192,6 +217,8 @@ public class UserController {
      */
     @PostMapping("/list/page/info")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "分页查询用户信息" , description = "管理员分页查询用户信息")
+    @Parameter(name = "userQueryRequest", description = "用户查询请求参数")
     public ServerResponseEntity<Page<UserVO>> listUserInfoByPage(@RequestBody UserQueryRequest userQueryRequest) {
         ThrowUtil.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         long current = userQueryRequest.getCurrent();
@@ -210,6 +237,8 @@ public class UserController {
      */
     @GetMapping("/get/{userId}")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "根据 id 获取用户信息" , description = "管理员根据 id 获取用户信息")
+    @Parameter(name = "userId", description = "用户id")
     public ServerResponseEntity<User> getUserById(@PathVariable String userId) {
         ThrowUtil.throwIf(userId == null, ErrorCode.PARAMS_ERROR);
         User user = userService.getById(userId);
@@ -224,6 +253,8 @@ public class UserController {
      */
     @PostMapping("/delete")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "删除用户" , description = "管理员删除指定用户")
+    @Parameter(name = "deleteRequest", description = "删除请求参数")
     public ServerResponseEntity<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
         ThrowUtil.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         ThrowUtil.throwIf(StrUtil.isBlank(deleteRequest.getId()), ErrorCode.PARAMS_ERROR, "用户id不能为空");
@@ -235,6 +266,8 @@ public class UserController {
      */
     @PostMapping("/delete/batch")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "批量删除用户" , description = "管理员批量删除用户")
+    @Parameter(name = "deleteRequestList", description = "批量删除请求参数")
     public ServerResponseEntity<Boolean> deleteBatchUser(@RequestBody List<DeleteRequest> deleteRequestList) {
         ThrowUtil.throwIf(CollUtil.isEmpty(deleteRequestList), ErrorCode.PARAMS_ERROR, "参数不能为空");
         List<String> idList = deleteRequestList.stream()
@@ -248,6 +281,8 @@ public class UserController {
      */
     @PostMapping("/ban")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "封禁或解封用户" , description = "管理员封禁或解封用户")
+    @Parameter(name = "userUnbanRequest", description = "封禁或解封用户请求参数")
     public ServerResponseEntity<Boolean> banOrUnbanUser(@RequestBody UserUnbanRequest userUnbanRequest) {
         ThrowUtil.throwIf(userUnbanRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         User admin = userService.getById(SecurityUtil.getUserInfo().getUserId());

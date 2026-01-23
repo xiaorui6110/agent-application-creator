@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,11 +20,13 @@ public class UserChangeEmailRequest implements Serializable {
     /**
      * 新邮箱
      */
+    @Schema(description = "新邮箱", requiredMode = Schema.RequiredMode.REQUIRED)
     private String newEmail;
 
     /**
      * 验证码（邮箱验证码）
      */
+    @Schema(description = "验证码（邮箱验证码）", requiredMode = Schema.RequiredMode.REQUIRED)
     private String emailVerifyCode;
 
 }

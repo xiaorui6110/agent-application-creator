@@ -17,7 +17,7 @@ import java.util.Map;
 public class MyBatisCodeGenerator {
 
     /**
-     * ⏰ 需要生成的表名（每次修改表名生成）
+     * ⏰ 需要生成的表名（每次修改表名生成，并修改自定义生成风格的信息）
      */
     private static final String[] TABLE_NAMES = {"your_table_name"};
 

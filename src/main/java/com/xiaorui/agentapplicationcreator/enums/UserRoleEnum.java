@@ -17,7 +17,6 @@ public enum UserRoleEnum {
     ADMIN("管理员", "admin");
 
     private final String text;
-
     private final String value;
 
     UserRoleEnum(String text, String value) {

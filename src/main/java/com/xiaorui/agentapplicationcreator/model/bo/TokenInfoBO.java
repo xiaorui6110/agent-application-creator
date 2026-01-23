@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.bo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,21 +20,25 @@ public class TokenInfoBO implements Serializable {
     /**
      * 保存在token信息里面的用户信息
      */
+    @Schema(description = "保存在token信息里面的用户信息")
     private UserInfoInTokenBO userInfoInToken;
 
     /**
      * 访问token
      */
+    @Schema(description = "访问token")
     private String accessToken;
 
     /**
      * 刷新token
      */
+    @Schema(description = "刷新token")
     private String refreshToken;
 
     /**
      * 过期时间
      */
+    @Schema(description = "过期时间")
     private Integer expiresTime;
 
 }

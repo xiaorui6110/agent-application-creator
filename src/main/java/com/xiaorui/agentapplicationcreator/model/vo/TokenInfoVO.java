@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,15 +20,18 @@ public class TokenInfoVO implements Serializable {
     /**
      * 访问token
      */
+    @Schema(description = "accessToken" )
     private String accessToken;
 
     /**
      * 刷新token
      */
+    @Schema(description = "refreshToken" )
     private String refreshToken;
 
     /**
      * 过期时间
      */
+    @Schema(description = "expiresTime" )
     private Integer expiresTime;
 }

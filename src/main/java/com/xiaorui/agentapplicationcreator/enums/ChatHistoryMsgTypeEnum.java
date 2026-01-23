@@ -14,11 +14,10 @@ public enum ChatHistoryMsgTypeEnum {
     /**
      * 对话信息类型枚举
      */
-    USER("用户", "user"),
+    USER("USER", "user"),
     AI("AI", "ai");
 
     private final String text;
-
     private final String value;
 
     ChatHistoryMsgTypeEnum(String text, String value) {

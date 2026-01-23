@@ -7,12 +7,17 @@ import com.xiaorui.agentapplicationcreator.agent.model.dto.AgentTaskStatus;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.orchestrator.AgentOrchestrator;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
 import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimit;
 import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimitTypeEnum;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.util.CodeFileSaverUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +32,7 @@ import java.io.IOException;
  * @author: xiaorui
  * @date: 2025-12-15 15:36
  **/
+@Tag(name = "智能体对话接口")
 @Slf4j
 @RestController
 @RequestMapping("/agent")
@@ -39,10 +45,12 @@ public class AgentController {
     private AgentOrchestrator agentOrchestrator;
 
     /**
-     * 智能体对话接口（每个用户在 60؜ 秒内最多只能发起 5 次 AI 对话请求）
+     * 智能体对话接口（每个用户在 60؜ 秒内最多只能发起 5 次智能体对话请求）
      */
     @PostMapping("/chat")
-    @RateLimit(limitType = RateLimitTypeEnum.USER, rate = 5, rateInterval = 60, message = "AI 对话请求过于频繁，请稍后再试")
+    @Operation(summary = "智能体对话接口" , description = "每个用户在 60؜ 秒内最多只能发起 5 次智能体对话请求")
+    @Parameter(name = "callAgentRequest", description = "智能体对话请求参数")
+    @RateLimit(limitType = RateLimitTypeEnum.USER, rate = 5, rateInterval = 60, message = "智能体对话请求过于频繁，请稍后再试")
     public ServerResponseEntity<AgentTaskStatus> chat(@RequestBody CallAgentRequest callAgentRequest) throws IOException {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
@@ -53,9 +61,12 @@ public class AgentController {
     }
 
     /**
-     * 智能体对话接口（流式输出）TODO 要修改好多噢
+     * 智能体对话接口（流式输出）TODO 要修改好多噢，暂时只能管理员使用
      */
     @PostMapping("/stream_chat")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "智能体对话接口（流式输出）" , description = "流式输出")
+    @Parameter(name = "callAgentRequest", description = "智能体对话请求参数")
     public ServerResponseEntity<SystemOutput> streamChat(@RequestBody CallAgentRequest callAgentRequest) throws NoApiKeyException, InputRequiredException, InterruptedException, IOException {
         ThrowUtil.throwIf(callAgentRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
         String message = callAgentRequest.getMessage();
@@ -65,6 +76,5 @@ public class AgentController {
         CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
         return ServerResponseEntity.success(systemOutput);
     }
-
 
 }

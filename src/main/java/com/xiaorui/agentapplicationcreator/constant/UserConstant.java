@@ -26,5 +26,4 @@ public interface UserConstant {
      */
     int BIND_STATUS_BOUND = 1;
 
-
 }

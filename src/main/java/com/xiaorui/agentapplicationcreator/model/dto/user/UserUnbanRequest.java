@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,10 +20,12 @@ public class UserUnbanRequest implements Serializable {
     /**
      * 用户id
      */
+    @Schema(description = "用户id", requiredMode = Schema.RequiredMode.REQUIRED)
     private String userId;
 
     /**
      * 操作类型：true-解禁，false-封禁
      */
-    private Boolean isUnban;
+    @Schema(description = "操作类型：true-解禁，false-封禁", requiredMode = Schema.RequiredMode.REQUIRED)
+    private boolean isUnban;
 }

@@ -64,5 +64,13 @@ public interface AppService extends IService<App> {
      */
     void createAppScreenshotAsync(String appId, String appDeploy);
 
+    /**
+     * 更新应用名称
+     *
+     * @param appId 应用id
+     * @param appName 应用名称
+     */
+    void updateAppNameAsync(String appId, String appName);
+
 
 }

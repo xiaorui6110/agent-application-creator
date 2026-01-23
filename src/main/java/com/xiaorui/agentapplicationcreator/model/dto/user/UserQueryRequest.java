@@ -1,6 +1,7 @@
 package com.xiaorui.agentapplicationcreator.model.dto.user;
 
 import com.xiaorui.agentapplicationcreator.common.PageRequest;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -22,11 +23,13 @@ public class UserQueryRequest extends PageRequest implements Serializable {
     /**
      * 用户id
      */
+    @Schema(description = "用户id")
     private String userId;
 
     /**
      * 用户昵称
      */
+    @Schema(description = "用户昵称")
     private String nickName;
 
 }

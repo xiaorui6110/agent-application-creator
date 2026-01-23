@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.agent.plan.result;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,21 +18,25 @@ public class ExecutionResult {
     /**
      * 是否全部执行成功
      */
+    @Schema(description = "是否全部执行成功")
     private boolean success;
 
     /**
      * 每个操作的执行结果
      */
+    @Schema(description = "每个操作的执行结果")
     private List<OperationResult> operationResults;
 
     /**
      * 是否通过最终验证
      */
+    @Schema(description = "是否通过最终验证")
     private boolean verified;
 
     /**
      * 错误信息
      */
+    @Schema(description = "错误信息")
     private String errorMessage;
 }
 

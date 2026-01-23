@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -20,41 +21,49 @@ public class ChatHistoryVO implements Serializable {
     /**
      * 对话历史id（雪花算法）
      */
+    @Schema(description = "对话历史id（雪花算法）")
     private String chatHistoryId;
 
     /**
      * 对话消息
      */
+    @Schema(description = "对话消息")
     private String chatMessage;
 
     /**
      * 消息类型：user/ai
      */
+    @Schema(description = "消息类型：user/ai")
     private String chatMessageType;
 
     /**
      * 应用id
      */
+    @Schema(description = "应用id")
     private String appId;
 
     /**
      * 创建用户id
      */
+    @Schema(description = "创建用户id")
     private String userId;
 
     /**
      * 父消息id（用于上下文关联）
      */
+    @Schema(description = "父消息id（用于上下文关联）")
     private String parentId;
 
     /**
      * 创建时间
      */
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
+    @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 
 }

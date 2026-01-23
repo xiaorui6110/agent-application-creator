@@ -3,6 +3,9 @@ package com.xiaorui.agentapplicationcreator.controller;
 import com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -25,6 +28,7 @@ import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.PREV
  * @author: xiaorui
  * @date: 2025-12-25 15:33
  **/
+@Tag(name = "静态资源访问接口")
 @RestController
 @RequestMapping("/static")
 public class StaticResourceController {
@@ -35,6 +39,8 @@ public class StaticResourceController {
      * 访问格式：<a href="http://localhost:8180/api/static/preview/fileName">...</a>
      */
     @GetMapping("/preview/{fileName}/**")
+    @Operation(summary = "访问预览应用" , description = "访问预览应用")
+    @Parameter(name = "fileName", description = "预览文件名")
     public ResponseEntity<Resource> serveStaticPreviewResource(@PathVariable String fileName, HttpServletRequest request) {
         return getResource(StaticVisitTypeEnum.PREVIEW, fileName, request);
     }
@@ -45,6 +51,8 @@ public class StaticResourceController {
      * 访问格式：<a href="http://localhost:8180/api/static/deploy/deployKey">...</a>
      */
     @GetMapping("/deploy/{deployKey}/**")
+    @Operation(summary = "访问部署好的应用" , description = "访问部署好的应用")
+    @Parameter(name = "deployKey", description = "部署key")
     public ResponseEntity<Resource> serveStaticDeployResource(@PathVariable String deployKey, HttpServletRequest request) {
         return getResource(StaticVisitTypeEnum.DEPLOY, deployKey, request);
     }

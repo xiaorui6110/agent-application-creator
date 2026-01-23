@@ -1,6 +1,8 @@
 package com.xiaorui.agentapplicationcreator.model.dto.app;
 
 import com.xiaorui.agentapplicationcreator.common.PageRequest;
+import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -22,17 +24,25 @@ public class AppQueryRequest extends PageRequest implements Serializable {
     /**
      * 应用id
      */
+    @Schema(description = "应用id")
     private String appId;
 
     /**
      * 应用名称
      */
+    @Schema(description = "应用名称")
     private String appName;
 
     /**
      * 代码生成类型（枚举）
      */
-    private String codeGenType;
+    @Schema(description = "代码生成类型（枚举）")
+    private CodeGenTypeEnum codeGenType;
 
+    /**
+     * 应用排序优先级
+     */
+    @Schema(description = "应用排序优先级")
+    private Integer appPriority;
 
 }

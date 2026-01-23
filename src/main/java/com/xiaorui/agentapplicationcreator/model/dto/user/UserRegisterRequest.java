@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,21 +20,25 @@ public class UserRegisterRequest implements Serializable {
     /**
      * 用户邮箱
      */
+    @Schema(description = "用户邮箱", requiredMode = Schema.RequiredMode.REQUIRED)
     private String userEmail;
 
     /**
      * 登录密码
      */
+    @Schema(description = "登录密码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String loginPassword;
 
     /**
      * 确认密码
      */
+    @Schema(description = "确认密码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String checkPassword;
 
     /**
      * 验证码（邮箱验证码）
      */
+    @Schema(description = "验证码（邮箱验证码）", requiredMode = Schema.RequiredMode.REQUIRED)
     private String emailVerifyCode;
 
 }
