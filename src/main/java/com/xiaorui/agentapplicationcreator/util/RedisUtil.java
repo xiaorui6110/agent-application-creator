@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @description: Redis 工具类（重写 Redis 的常见方法）
+ * @description: Redis 工具类（重写 RedisTemplate<String, Object> 的常见方法）
  * @author: xiaorui
  * @date: 2025-11-30 14:21
  **/

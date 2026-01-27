@@ -119,7 +119,7 @@ sftp:
   port: 22  # SFTP端口（默认22）
   username: shenrui   # 服务器用户名
   password: 18656412886ty   # 服务器密码
-# Actuator 监控配置，暴露监控端点
+# Actuator 监控配置，暴露监控端点（暂时未使用）
 management:
   endpoints:
     web:

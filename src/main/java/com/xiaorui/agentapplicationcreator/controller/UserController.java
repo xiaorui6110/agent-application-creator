@@ -10,6 +10,8 @@ import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
+import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimit;
+import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimitTypeEnum;
 import com.xiaorui.agentapplicationcreator.model.dto.user.*;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
@@ -76,15 +78,17 @@ public class UserController {
         // 校验图形数字验证码（从登录逻辑中抽离出来了）
         boolean result = userService.checkPictureVerifyCode(verifyCode, serverVerifyCode);
         ThrowUtil.throwIf(!result, ErrorCode.PARAMS_ERROR, "验证码错误");
+        // 内置的 PasswordCheckManager 是半小时内最多错误 10 次，之后锁定账号
         return ServerResponseEntity.success(userService.userLogin(userEmail, loginPassword));
     }
 
     /**
-     * 发送邮箱验证码（点击向目标邮箱发送验证码）
+     * 发送邮箱验证码（点击向目标邮箱发送验证码）（用户在 60؜ 秒内最多只能发起 3 发送邮箱请求）（未登录则降级为IP）
      */
     @PostMapping("/sendEmailCode")
     @Operation(summary = "发送邮箱验证码" , description = "向目标邮箱发送验证码")
     @Parameter(name = "userSendEmailCodeRequest", description = "发送邮箱验证码请求参数")
+    @RateLimit(limitType = RateLimitTypeEnum.USER, rate = 3, rateInterval = 60, message = "发送邮箱请求过于频繁，请稍后再试")
     public ServerResponseEntity<String> sendEmailCode(@RequestBody UserSendEmailCodeRequest userSendEmailCodeRequest,
                                                       HttpServletRequest request ) {
         ThrowUtil.throwIf(userSendEmailCodeRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");

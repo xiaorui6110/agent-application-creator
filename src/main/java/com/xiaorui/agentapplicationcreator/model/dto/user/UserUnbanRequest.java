@@ -27,5 +27,6 @@ public class UserUnbanRequest implements Serializable {
      * 操作类型：true-解禁，false-封禁
      */
     @Schema(description = "操作类型：true-解禁，false-封禁", requiredMode = Schema.RequiredMode.REQUIRED)
-    private boolean isUnban;
+    private Boolean isUnban;
+
 }

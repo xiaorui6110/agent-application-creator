@@ -45,13 +45,10 @@ public class AppCreatorAgentConfig {
 
     private final String SUB_SYSTEM_PROMPT = FileUtil.readString("prompt/sub_system_prompt_v1.md", StandardCharsets.UTF_8);
 
-
     /**
-     * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）❌
-     * 可能需要根据实际测试进行调整（INSTRUCTION）（以下是用在 Cursor 上的 Rules）
+     * 更详细的指令（主要是对 AI 的行为进行限制，提高效率）
      */
     private final String PLATFORM_RAG_INSTRUCTION = FileUtil.readString("prompt/system_instruction_v1.md",StandardCharsets.UTF_8);
-
 
     /**
      * 主: 平台应用生成 agent
