@@ -1,6 +1,5 @@
 package com.xiaorui.agentapplicationcreator.agent.model.schema;
 
-import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,10 +20,10 @@ import java.util.Map;
 public class StructuredReply {
 
     /**
-     * 应用生成模式（SINGLE_FILE / MULTI_FILE / VUE_PROJECT）
+     * 应用生成模式（SINGLE_FILE / MULTI_FILE / VUE_PROJECT）（但是这里的定义被我遗漏了，就算了吧，不使用了）
      */
     @Schema(description = "应用生成模式")
-    private CodeGenTypeEnum type;
+    private String type;
 
     /**
      * 是否可直接运行

@@ -1,6 +1,5 @@
 package com.xiaorui.agentapplicationcreator.model.dto.app;
 
-import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -46,6 +45,6 @@ public class AppUpdateInfoRequest implements Serializable {
      * 代码生成类型（枚举）
      */
     @Schema(description = "代码生成类型（枚举）")
-    private CodeGenTypeEnum codeGenType;
+    private String codeGenType;
 
 }

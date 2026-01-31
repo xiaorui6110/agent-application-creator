@@ -1,18 +1,17 @@
 package com.xiaorui.agentapplicationcreator.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
 import com.mybatisflex.core.keygen.KeyGenerators;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
-import com.xiaorui.agentapplicationcreator.enums.AgentFailTypeEnum;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
+import com.xiaorui.agentapplicationcreator.config.JsonTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -57,11 +56,12 @@ public class AgentTask implements Serializable {
     /**
      * 任务状态
      */
-    private AgentTaskStatusEnum taskStatus;
+    private String taskStatus;
 
     /**
      * 任务结果
      */
+    @Column(typeHandler = JsonTypeHandler.class)
     private AgentResponse taskResult;
 
     /**
@@ -77,24 +77,24 @@ public class AgentTask implements Serializable {
     /**
      * 失败类型
      */
-    private AgentFailTypeEnum failType;
+    private String failType;
 
     /**
      * 下次重试时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime nextRetryTime;
 
     /**
      * 创建时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
 
     /**

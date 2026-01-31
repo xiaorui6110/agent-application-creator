@@ -12,7 +12,6 @@ import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +22,7 @@ import java.time.LocalDateTime;
  *
  * @author xiaorui
  */
-@Tag(name = "对话历史接口")
+//@Tag(name = "对话历史接口")
 @RestController
 @RequestMapping("/chatHistory")
 public class ChatHistoryController {
@@ -37,11 +36,9 @@ public class ChatHistoryController {
     @GetMapping("/app/{appId}")
     @Operation(summary = "分页查询某个应用的对话历史" , description = "分页查询某个应用的对话历史")
     @Parameter(name = "chatHistoryQueryRequest", description = "对话历史查询请求参数")
-    public ServerResponseEntity<Page<ChatHistory>> listAppChatHistory(@RequestBody ChatHistoryQueryRequest chatHistoryQueryRequest) {
-        ThrowUtil.throwIf(chatHistoryQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
-        String appId = chatHistoryQueryRequest.getAppId();
-        int pageSize = chatHistoryQueryRequest.getPageSize();
-        LocalDateTime lastCreateTime = chatHistoryQueryRequest.getLastCreateTime();
+    public ServerResponseEntity<Page<ChatHistory>> listAppChatHistory(@PathVariable String appId,
+                                                                      @RequestParam(defaultValue = "10") int pageSize,
+                                                                      @RequestParam(required = false) LocalDateTime lastCreateTime) {
         return ServerResponseEntity.success(chatHistoryService.listAppChatHistoryByPage(appId, pageSize, lastCreateTime));
     }
 
@@ -60,4 +57,7 @@ public class ChatHistoryController {
         QueryWrapper queryWrapper = chatHistoryService.getQueryWrapper(chatHistoryQueryRequest);
         return ServerResponseEntity.success(chatHistoryService.page(Page.of(current, pageSize), queryWrapper));
     }
+
+    // TODO 删除对话历史的接口
+
 }

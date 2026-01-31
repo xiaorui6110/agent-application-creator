@@ -13,19 +13,19 @@
 {
 "specId": "规范的唯一标识",
 "category": "规范所属类别",
-"generationMode": "SINGLE_FILE | MULTI_FILE | VUE_PROJECT",
+"generationMode": "single_file | multi_file | vue_project",
 "appType": "应用类型（如 ENGINEERED_FRONTEND）",
 "techStack": ["相关技术栈"],
 "stage": ["SOLUTION_DESIGN", "CODE_GENERATION"],
 "priority": "数值，表示规范优先级",
 "version": "规范版本号",
-"status": "ACTIVE | DISABLED"
+"status": "active | disabled"
 }
 ```
 其中：
 - generationMode 表示该规范适用的应用生成模式
 - stage 表示该规范允许被使用的阶段
-- status 为 ACTIVE 的规范才是有效规范
+- status 为 active 的规范才是有效规范
 
 ────────────────
 二、工具使用时机（强制）
@@ -38,9 +38,9 @@
    - CODE_GENERATION
 
 2. 当前生成模式已经明确为：
-   - SINGLE_FILE
-   - MULTI_FILE
-   - VUE_PROJECT
+   - single_file
+   - multi_file
+   - vue_project
 
 你【必须】调用 search 工具一次，用于检索匹配的平台规范。
 

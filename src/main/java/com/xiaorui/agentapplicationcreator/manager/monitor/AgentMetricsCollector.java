@@ -5,7 +5,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +16,7 @@ import java.util.concurrent.ConcurrentMap;
  * @date: 2026-01-23 10:28
  **/
 @Slf4j
-@Component
+//@Component
 public class AgentMetricsCollector {
 
     @Resource

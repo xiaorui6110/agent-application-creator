@@ -62,7 +62,7 @@ public class FileManager {
             String s = minioManager.uploadFile(file, uploadPath);
             // 封装返回结果
             UploadPictureResult uploadPictureResult = new UploadPictureResult();
-            uploadPictureResult.setPicUrl(minioConfig.getEndpoint() + minioConfig.getDefaultBucket() + "/" + uploadPath);
+            uploadPictureResult.setPicUrl(minioConfig.getEndpoint() + File.separator + minioConfig.getDefaultBucket() + "/" + uploadPath);
             uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
             uploadPictureResult.setPicSize(FileUtil.size(file));
             uploadPictureResult.setPicFormat(FileUtil.extName(originalFilename));

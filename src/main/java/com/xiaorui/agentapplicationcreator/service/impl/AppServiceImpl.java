@@ -8,6 +8,7 @@ import cn.hutool.core.util.StrUtil;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
@@ -105,9 +106,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 获取查询参数
         String appId = appQueryRequest.getAppId();
         String appName = appQueryRequest.getAppName();
-        String codeGenType = appQueryRequest.getCodeGenType().getValue();
-        ThrowUtil.throwIf(StrUtil.isBlank(appId) && StrUtil.isBlank(appName) && StrUtil.isBlank(codeGenType),
-                ErrorCode.PARAMS_ERROR, "查询条件为空");
+        CodeGenTypeEnum codeGenType = CodeGenTypeEnum
+                .getEnumByValue(appQueryRequest.getCodeGenType());
         // 构造查询条件
         return QueryWrapper.create()
                 .eq("app_id", appId)
@@ -161,7 +161,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制本地文件到部署文件夹失败：" + e.getMessage());
         }
         // 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署 TODO 后面可能会改为使用直接放在本地目录完成部署
-        String deployToLinuxDirPath = REMOTE_DEPLOY_DIR + File.separator + deployKey;
+        // 注意：uploadDirectory 方法会自动在路径后拼接本地目录名，所以这里只传父目录
+        String deployToLinuxDirPath = REMOTE_DEPLOY_DIR;
         try {
             sftpFileUtil.uploadDirToLinux(deployDirPath, deployToLinuxDirPath);
             log.info("upload dir to linux success, deployToLinuxDirPath: {}", deployToLinuxDirPath);
@@ -202,15 +203,17 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 关联查询用户信息
         String userId = app.getUserId();
         if (userId != null) {
-            UserVO userVO = userService.getUserInfo();
-            appVO.setUser(userVO);
+            User user = userService.getById(userId);
+            UserVO userVO = new UserVO();
+            BeanUtil.copyProperties(user, userVO);
+            appVO.setUserVO(userVO);
         }
-
         return appVO;
     }
 
+
     /**
-     * 获取应用信息列表
+     * 获取自己的应用信息列表
      *
      * @param appList 应用列表
      * @return 应用信息列表
@@ -220,16 +223,65 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
+        // 获取当前用户ID
+        String userId = SecurityUtil.getUserInfo().getUserId();
+        
+        // 过滤掉不属于当前用户的应用，只返回自己的应用
+        List<App> filteredApps = appList.stream()
+                .filter(app -> app.getUserId().equals(userId))
+                .collect(Collectors.toList());
+        
+        if (CollUtil.isEmpty(filteredApps)) {
+            return new ArrayList<>();
+        }
+        
         // 批量获取用户信息，避免 N+1 查询问题
-        Set<String> userIds = appList.stream()
+        Set<String> userIds = filteredApps.stream()
                 .map(App::getUserId)
                 .collect(Collectors.toSet());
         Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
-                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo()));
-        return appList.stream().map(app -> {
+                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo(user)));
+        return filteredApps.stream().map(app -> {
             AppVO appVO = getAppInfo(app.getAppId());
             UserVO userVO = userInfoMap.get(app.getUserId());
-            appVO.setUser(userVO);
+            appVO.setUserVO(userVO);
+            return appVO;
+        }).collect(Collectors.toList());
+    }
+
+
+    /**
+     * 获取精选应用信息列表
+     *
+     * @param appList 应用列表
+     * @return 应用信息列表
+     */
+    @Override
+    public List<AppVO> getAppInfoListForGoods(List<App> appList) {
+        if (CollUtil.isEmpty(appList)) {
+            return new ArrayList<>();
+        }
+
+        // 过滤精选应用：appPriority = GOOD_APP_PRIORITY (99)
+        List<App> featuredApps = appList.stream()
+                .filter(app -> GOOD_APP_PRIORITY.equals(app.getAppPriority()))
+                .collect(Collectors.toList());
+
+        if (CollUtil.isEmpty(featuredApps)) {
+            return new ArrayList<>();
+        }
+
+        // 批量获取用户信息，避免 N+1 查询问题
+        Set<String> userIds = featuredApps.stream()
+                .map(App::getUserId)
+                .collect(Collectors.toSet());
+        Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo(user)));
+        
+        return featuredApps.stream().map(app -> {
+            AppVO appVO = getAppInfo(app.getAppId());
+            UserVO userVO = userInfoMap.get(app.getUserId());
+            appVO.setUserVO(userVO);
             return appVO;
         }).collect(Collectors.toList());
     }
@@ -275,6 +327,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
             } catch (Exception e) {
                 // 记录异常日志，避免任务失败无感知
                 log.error("虚拟线程更新应用名称失败，appId:{}", appId, e);
+            }
+        });
+    }
+
+    /**
+     * 更新应用代码生成类型
+     *
+     * @param appId 应用id
+     * @param codeGenType 代码生成类型
+     */
+    @Override
+    public void updateAppCodeGenTypeAsync(String appId, String codeGenType) {
+        // 使用虚拟线程异步执行（Java 21 的虚拟线程 Virtual Thread）
+        Thread.startVirtualThread(() -> {
+            try {
+                // 更新应用名称
+                App updateApp = new App();
+                updateApp.setAppId(appId);
+                updateApp.setCodeGenType(codeGenType);
+                boolean updated = this.updateById(updateApp);
+                ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用代码生成类型失败");
+            } catch (Exception e) {
+                // 记录异常日志，避免任务失败无感知
+                log.error("虚拟线程更新应用代码生成类型失败，appId:{}", appId, e);
             }
         });
     }

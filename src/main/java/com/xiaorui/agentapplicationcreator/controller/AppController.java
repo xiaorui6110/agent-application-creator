@@ -19,18 +19,18 @@ import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.ProjectDownloadService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
+import com.xiaorui.agentapplicationcreator.util.RedisCacheUtil;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
@@ -39,7 +39,7 @@ import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTP
  *
  * @author xiaorui
  */
-@Tag(name = "应用接口")
+//@Tag(name = "应用接口")
 @RestController
 @RequestMapping("/app")
 public class AppController {
@@ -52,6 +52,9 @@ public class AppController {
 
     @Resource
     private ProjectDownloadService projectDownloadService;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
 
     /**
      * 应用创建（用户在主页输入提示词）
@@ -162,17 +165,12 @@ public class AppController {
     }
 
     /**
-     * 分页获取精选应用列表（每访问即进行缓存）
+     * 分页获取精选应用列表（使用手动缓存，避免 Page 反序列化问题）
      *
      * @param appQueryRequest 查询请求
      * @return 精选应用列表
      */
     @PostMapping("/good/list/page/info")
-    @Cacheable(
-            value = "good_app_page",
-            key = "T(com.xiaorui.agentapplicationcreator.util.CacheKeyUtil).generateKey(#appQueryRequest)",
-            condition = "#appQueryRequest.pageSize <= 20"
-    )
     @Operation(summary = "分页获取精选应用列表" , description = "分页获取精选应用列表")
     @Parameter(name = "appQueryRequest", description = "应用查询请求")
     public ServerResponseEntity<Page<AppVO>> listGoodAppInfoByPage(@RequestBody AppQueryRequest appQueryRequest) {
@@ -180,13 +178,47 @@ public class AppController {
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
         ThrowUtil.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "每页最多查询 20 个应用");
-        // 只查询精选的应用
+        
+        // 构造缓存键
+        String cacheKey = "good_app:list:" + current + ":" + pageSize;
+        
+        // 尝试从缓存获取数据
+        List<AppVO> cachedList = redisCacheUtil.get(cacheKey + ":data");
+        Object cachedTotalObj = redisCacheUtil.get(cacheKey + ":total");
+        
+        // 处理缓存的 total（可能是 Integer 或 Long）
+        Long cachedTotal = null;
+        if (cachedTotalObj != null) {
+            if (cachedTotalObj instanceof Integer) {
+                cachedTotal = ((Integer) cachedTotalObj).longValue();
+            } else if (cachedTotalObj instanceof Long) {
+                cachedTotal = (Long) cachedTotalObj;
+            } else if (cachedTotalObj instanceof Number) {
+                cachedTotal = ((Number) cachedTotalObj).longValue();
+            }
+        }
+        
+        if (cachedList != null && cachedTotal != null) {
+            // 缓存命中，构造 Page 对象
+            Page<AppVO> appInfoPage = new Page<>(current, pageSize, cachedTotal);
+            appInfoPage.setRecords(cachedList);
+            return ServerResponseEntity.success(appInfoPage);
+        }
+        
+        // 缓存未命中，查询数据库
         appQueryRequest.setAppPriority(AppConstant.GOOD_APP_PRIORITY);
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
         Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
+        
+        // 数据封装
         Page<AppVO> appInfoPage = new Page<>(current, pageSize, appPage.getTotalRow());
-        List<AppVO> appInfoList = appService.getAppInfoList(appPage.getRecords());
+        List<AppVO> appInfoList = appService.getAppInfoListForGoods(appPage.getRecords());
         appInfoPage.setRecords(appInfoList);
+        
+        // 将数据存入缓存（缓存 5 分钟）
+        redisCacheUtil.set(cacheKey + ":data", appInfoList, 5, TimeUnit.MINUTES);
+        redisCacheUtil.set(cacheKey + ":total", appPage.getTotalRow(), 5, TimeUnit.MINUTES);
+        
         return ServerResponseEntity.success(appInfoPage);
     }
 

@@ -29,6 +29,20 @@ spring:
     url: jdbc:mysql://localhost:3306/xiaorui_app_creator?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
     username: root
     password: 123456
+    # HikariCP 连接池配置
+    hikari:
+      # 最小空闲连接数
+      minimum-idle: 5
+      # 最大连接池大小
+      maximum-pool-size: 20
+      # 连接超时时间（毫秒）
+      connection-timeout: 30000
+      # 空闲连接存活最大时间（毫秒）
+      idle-timeout: 600000
+      # 连接最大存活时间（毫秒）
+      max-lifetime: 1800000
+      # 连接测试查询
+      connection-test-query: SELECT 1
   # Session 配置
   session:
     redis:
@@ -53,13 +67,13 @@ spring:
       database: 3
       # Redis 密码，如果有的话
       #password: 123456
-      timeout: 3000ms
+      timeout: 10000ms
       lettuce:
         pool:
-          max-active: 16
-          max-idle: 16
-          min-idle: 4
-          max-wait: 3000ms
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 10000ms
         shutdown-timeout: 200ms
     # MongoDB 配置
     mongodb:

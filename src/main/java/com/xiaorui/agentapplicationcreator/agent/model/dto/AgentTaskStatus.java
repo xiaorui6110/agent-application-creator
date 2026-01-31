@@ -1,7 +1,5 @@
 package com.xiaorui.agentapplicationcreator.agent.model.dto;
 
-import com.xiaorui.agentapplicationcreator.enums.AgentFailTypeEnum;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,7 +46,7 @@ public class AgentTaskStatus implements Serializable {
      * 任务状态
      */
     @Schema(description = "任务状态")
-    private AgentTaskStatusEnum taskStatus;
+    private String taskStatus;
 
     /**
      * 给用户看的信息
@@ -66,7 +64,7 @@ public class AgentTaskStatus implements Serializable {
      * 失败类型
      */
     @Schema(description = "失败类型")
-    private AgentFailTypeEnum failType;
+    private String failType;
 
     /**
      * 下次重试时间

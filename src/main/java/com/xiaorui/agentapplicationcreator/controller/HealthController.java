@@ -5,7 +5,6 @@ import com.xiaorui.agentapplicationcreator.common.ResultUtil;
 import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author: xiaorui
  * @date: 2025-11-29 10:44
  **/
-@Tag(name = "健康检查接口")
+//@Tag(name = "健康检查接口")
 @RestController
 @RequestMapping("/")
 public class HealthController {

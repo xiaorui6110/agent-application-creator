@@ -1,10 +1,9 @@
 package com.xiaorui.agentapplicationcreator.service;
 
-import com.mybatisflex.core.service.IService;
 import com.mybatisflex.core.query.QueryWrapper;
+import com.mybatisflex.core.service.IService;
 import com.xiaorui.agentapplicationcreator.model.dto.user.UserQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
-import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,9 +33,10 @@ public interface UserService extends IService<User> {
      *
      * @param userEmail  用户邮箱
      * @param loginPassword   登录密码
+     * @param request HTTP请求
      * @return 用户信息vo
      */
-    TokenInfoVO userLogin(String userEmail, String loginPassword);
+    UserVO userLogin(String userEmail, String loginPassword, HttpServletRequest request);
 
     /**
      * 发送邮箱验证码
@@ -44,8 +44,9 @@ public interface UserService extends IService<User> {
      * @param email 邮箱
      * @param type 验证类型
      * @param request HTTP请求
+     * @return 是否成功
      */
-    void sendEmailCode(String email, String type, HttpServletRequest request);
+    boolean sendEmailCode(String email, String type, HttpServletRequest request);
 
     /**
      * 获取图形验证码
@@ -81,7 +82,7 @@ public interface UserService extends IService<User> {
     boolean userLogout(HttpServletRequest request);
 
     /**
-     * 获取用户信息
+     * 获取用户信息（这个方法慎用）
      *
      * @return 用户信息vo
      */
@@ -95,6 +96,15 @@ public interface UserService extends IService<User> {
      * @return 用户信息vo
      */
     UserVO getUserInfo(User user);
+
+    /**
+     * 获取当前登录用户
+     *
+     * @param request HTTP请求
+     * @return 用户信息vo
+     */
+    UserVO getLoginUser(HttpServletRequest request);
+
 
     /**
      * 获得脱敏后的用户信息列表

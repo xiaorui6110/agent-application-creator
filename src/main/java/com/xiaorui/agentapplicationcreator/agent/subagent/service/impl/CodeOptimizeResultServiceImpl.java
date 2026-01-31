@@ -1,10 +1,11 @@
 package com.xiaorui.agentapplicationcreator.agent.subagent.service.impl;
 
-import com.mybatisflex.core.query.QueryWrapper;
+import com.mybatisflex.core.query.QueryChain;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.entity.CodeOptimizeResult;
 import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeResultService;
 import com.xiaorui.agentapplicationcreator.mapper.CodeOptimizeResultMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
  *
  * @author xiaorui
  */
+@Slf4j
 @Service
 public class CodeOptimizeResultServiceImpl extends ServiceImpl<CodeOptimizeResultMapper, CodeOptimizeResult>  implements CodeOptimizeResultService {
 
@@ -24,14 +26,19 @@ public class CodeOptimizeResultServiceImpl extends ServiceImpl<CodeOptimizeResul
      */
     @Override
     public CodeOptimizeResult getByAppId(String appId) {
+        if (appId == null || appId.trim().isEmpty()) {
+            return null;
+        }
         try {
-            QueryWrapper queryWrapper = new QueryWrapper();
-            queryWrapper.eq("app_id", appId)
-                    .eq("is_deleted", 0)
-                    .orderBy("create_time", false)
-                    .limit(1);
-            return getOne(queryWrapper);
+            return QueryChain.of(CodeOptimizeResult.class)
+                    .eq(CodeOptimizeResult::getAppId, appId)
+                    .eq(CodeOptimizeResult::getIsDeleted, 0)
+                    .orderBy(CodeOptimizeResult::getCreateTime, false)
+                    .limit(1)
+                    // MyBatis-Flex 查单个结果用 one()，无数据返回 null，贴合需求
+                    .one();
         } catch (Exception e) {
+            log.error("通过应用ID查询代码优化结果失败，appId：{}", appId, e);
             // 捕获所有查询异常，查询不到数据时，直接返回 null
             return null;
         }

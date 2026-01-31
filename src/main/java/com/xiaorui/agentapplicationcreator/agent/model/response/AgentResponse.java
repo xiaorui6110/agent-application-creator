@@ -62,6 +62,13 @@ public class AgentResponse {
     private String appName;
 
     /**
+     * Agent 根据用户提示判断的应用代码生成类型（根据用户提示判断生成）
+     * ⚠️ codeGenType 仅允许小写 single_file/multi_file/vue_project
+     */
+    @Schema(description = "Agent 根据用户提示判断的代码生成类型")
+    private String codeGenType;
+
+    /**
      * Agent 对用户意图的理解摘要（非 Chain-of-Thought）
      */
     @Schema(description = "Agent 对用户意图的理解摘要")

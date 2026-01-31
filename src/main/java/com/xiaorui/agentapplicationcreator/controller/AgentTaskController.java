@@ -11,7 +11,6 @@ import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.AgentTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +21,7 @@ import java.util.List;
  *
  * @author xiaorui
  */
-@Tag(name = "agent执行任务接口")
+//@Tag(name = "agent执行任务接口")
 @RestController
 @RequestMapping("/agentTask")
 public class AgentTaskController {

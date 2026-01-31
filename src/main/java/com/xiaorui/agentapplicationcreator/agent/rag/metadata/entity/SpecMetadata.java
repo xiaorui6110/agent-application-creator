@@ -24,12 +24,12 @@ public class SpecMetadata implements Serializable {
     String specId;
 
     /**
-     * SINGLE_FILE / MULTI_FILE / VUE_PROJECT
+     * single_file | multi_file | vue_project
      */
     String generationMode;
 
     /**
-     * SINGLE_FILE / MULTI_FILE / VUE_PROJECT
+     * single_file | multi_file | vue_project
      */
     List<String> stage;
 
@@ -49,7 +49,7 @@ public class SpecMetadata implements Serializable {
     String version;
 
     /**
-     * ACTIVE / DISABLED
+     * active / disabled
      */
     String status;
 
@@ -66,7 +66,7 @@ public class SpecMetadata implements Serializable {
         spec.setTechStack((List<String>) metadata.get("techStack"));
         spec.setPriority((Integer) metadata.getOrDefault("priority", 0));
         spec.setVersion((String) metadata.getOrDefault("version", "1.0.0"));
-        spec.setStatus((String) metadata.getOrDefault("status", "ACTIVE"));
+        spec.setStatus((String) metadata.getOrDefault("status", "active"));
 
         return spec;
     }

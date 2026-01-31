@@ -24,7 +24,6 @@ import com.xiaorui.agentapplicationcreator.model.bo.UserInfoInTokenBO;
 import com.xiaorui.agentapplicationcreator.model.dto.file.UploadPictureResult;
 import com.xiaorui.agentapplicationcreator.model.dto.user.UserQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
-import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.EmailSenderUtil;
@@ -45,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.xiaorui.agentapplicationcreator.constant.LogicDeletedConstant.LOGIC_DELETED_NO;
+import static com.xiaorui.agentapplicationcreator.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户表 服务层实现。
@@ -151,10 +151,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      *
      * @param userEmail  用户邮箱
      * @param loginPassword   登录密码
+     * @param request  HTTP请求
      * @return  用户信息vo
      */
     @Override
-    public TokenInfoVO userLogin(String userEmail, String loginPassword) {
+    public UserVO userLogin(String userEmail, String loginPassword, HttpServletRequest request) {
         // 校验数据
         if (StrUtil.hasBlank(userEmail, loginPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数为空");
@@ -187,8 +188,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         userInfoInTokenBO.setUserRole(user.getUserRole());
         userInfoInTokenBO.setUserStatus(user.getUserStatus());
         // 存储token并返回vo
-        TokenInfoVO tokenInfoVO = tokenStoreManager.storeAndGetVo(userInfoInTokenBO);
-        return tokenInfoVO;
+        tokenStoreManager.storeAndGetVo(userInfoInTokenBO);
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user, userVO);
+        // 记录用户的登录态
+        request.getSession().setAttribute(USER_LOGIN_STATE, userVO);
+        return userVO;
     }
 
 
@@ -198,9 +203,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      * @param userEmail 邮箱
      * @param type 验证类型
      * @param request HTTP请求
+     * @return 是否成功
      */
     @Override
-    public void sendEmailCode(String userEmail, String type, HttpServletRequest request) {
+    public boolean sendEmailCode(String userEmail, String type, HttpServletRequest request) {
         if (StrUtil.hasBlank(userEmail, type)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数为空");
         }
@@ -239,6 +245,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         // 将验证码存入Redis，设置5分钟过期
         String verifyCodeKey = String.format("email:code:verify:%s:%s", type, userEmail);
         stringRedisTemplate.opsForValue().set(verifyCodeKey, code, 5, TimeUnit.MINUTES);
+        return true;
     }
 
 
@@ -306,7 +313,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         // 获取查询参数
         String userId = userQueryRequest.getUserId();
         String nickName = userQueryRequest.getNickName();
-        ThrowUtil.throwIf(StrUtil.isBlank(userId) && StrUtil.isBlank(nickName), ErrorCode.PARAMS_ERROR, "查询条件为空");
         // 构造查询条件
         return QueryWrapper.create()
                 .eq("user_id", userId)
@@ -323,6 +329,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      */
     @Override
     public boolean userLogout(HttpServletRequest request) {
+        // 先判断是否已登录
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (userObj == null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
+        }
+        // 移除登录态
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
         String accessToken = request.getHeader("Authorization");
         if (StrUtil.isBlank(accessToken)) {
             return true;
@@ -349,6 +362,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         UserVO userVO = new UserVO();
         BeanUtil.copyProperties(user, userVO);
         return userVO;
+    }
+
+    /**
+     * 获取当前登录用户
+     *
+     * @param request HTTP请求
+     * @return 用户信息vo
+     */
+    @Override
+    public UserVO getLoginUser(HttpServletRequest request) {
+        // 先判断是否已登录
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        UserVO currentUserVO = (UserVO) userObj;
+        if (currentUserVO == null || currentUserVO.getUserId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "未登录");
+        }
+        // 从数据库查询（追求性能的话可以注释，直接返回上述结果）
+        String userId = currentUserVO.getUserId();
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        return getUserInfo(user);
     }
 
     /**

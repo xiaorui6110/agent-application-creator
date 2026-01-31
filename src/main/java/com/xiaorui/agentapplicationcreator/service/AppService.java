@@ -39,7 +39,6 @@ public interface AppService extends IService<App> {
      */
     String deployApp(String appId);
 
-
     /**
      * 获取应用信息
      *
@@ -49,12 +48,20 @@ public interface AppService extends IService<App> {
     AppVO getAppInfo(String appId);
 
     /**
-     * 获取应用信息列表
+     * 获取自己的应用信息列表
      *
      * @param appList 应用列表
      * @return 应用信息列表
      */
     List<AppVO> getAppInfoList(List<App> appList);
+
+    /**
+     * 获取精选应用信息列表
+     *
+     * @param appList 应用列表
+     * @return 应用信息列表
+     */
+    List<AppVO> getAppInfoListForGoods(List<App> appList);
 
     /**
      * 异步生成应用截图
@@ -71,6 +78,15 @@ public interface AppService extends IService<App> {
      * @param appName 应用名称
      */
     void updateAppNameAsync(String appId, String appName);
+
+    /**
+     * 更新应用代码生成类型
+     *
+     * @param appId 应用id
+     * @param codeGenType 代码生成类型
+     */
+    void updateAppCodeGenTypeAsync(String appId, String codeGenType);
+
 
 
 }

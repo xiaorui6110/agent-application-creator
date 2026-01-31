@@ -3,6 +3,8 @@ package com.xiaorui.agentapplicationcreator.enums;
 import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
+import java.io.File;
+
 /**
  * @description: 静态资源访问类型枚举
  * @author: xiaorui
@@ -13,8 +15,8 @@ public enum StaticVisitTypeEnum {
     /**
      * 静态资源访问类型枚举
      */
-    PREVIEW("预览", "preview"),
-    DEPLOY("部署", "deploy");;
+    PREVIEW("预览", "tmp" + File.separator + "code_output"),
+    DEPLOY("部署", "tmp" + File.separator + "code_deploy");;
 
     private final String text;
     private final String value;

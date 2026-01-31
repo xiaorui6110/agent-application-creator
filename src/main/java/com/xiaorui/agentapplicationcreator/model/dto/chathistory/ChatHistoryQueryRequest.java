@@ -1,7 +1,6 @@
 package com.xiaorui.agentapplicationcreator.model.dto.chathistory;
 
 import com.xiaorui.agentapplicationcreator.common.PageRequest;
-import com.xiaorui.agentapplicationcreator.enums.ChatHistoryMsgTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,7 +37,7 @@ public class ChatHistoryQueryRequest extends PageRequest implements Serializable
      * 消息类型：user/ai
      */
     @Schema(description = "消息类型：user/ai")
-    private ChatHistoryMsgTypeEnum chatMessageType;
+    private String chatMessageType;
 
     /**
      * 应用id

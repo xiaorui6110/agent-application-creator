@@ -9,6 +9,16 @@
 
 基于 Spring Boot + Spring AI Alibaba 构建的 AI 智能体应用生成平台，支持用户输入自然语言需求，自动生成可运行的小型应用代码文件等功能。
 
+### 示例页面（AI 生成前端）
+
+![主页](page/主页.png)
+
+![对话页](page/对话页.png)
+
+![用户管理页](page/用户管理页.png)
+
+![应用管理页](page/应用管理页.png)
+
 ### 核心技术栈
 
 | 技术/框架             | 版本/说明      | 用途             |
@@ -79,7 +89,7 @@ mysql -u root -p xiaorui_app_creator < db/create_table.sql
 
 ### 3. 环境配置
 
-修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些）：
+修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些，还有要预先创建 tmp/code_output 和 tmp/code_deploy 文件夹等等）：
 
 ```yaml
 spring:

@@ -2,13 +2,10 @@ package com.xiaorui.agentapplicationcreator.agent.config;
 
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
-import com.alibaba.cloud.ai.graph.agent.hook.modelcalllimit.ModelCallLimitHook;
-import com.alibaba.cloud.ai.graph.agent.hook.summarization.SummarizationHook;
 import com.alibaba.cloud.ai.graph.agent.interceptor.todolist.TodoListInterceptor;
 import com.alibaba.cloud.ai.graph.agent.interceptor.toolretry.ToolRetryInterceptor;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
 import com.xiaorui.agentapplicationcreator.agent.hook.LoggingHook;
-import com.xiaorui.agentapplicationcreator.agent.hook.MessageTrimmingHook;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolMonitoringInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
@@ -58,15 +55,15 @@ public class AppCreatorAgentConfig {
 
         // ========== 创建 Hooks ==========
         LoggingHook loggingHook = new LoggingHook();
-        MessageTrimmingHook messageTrimmingHook = new MessageTrimmingHook();
+        //MessageTrimmingHook messageTrimmingHook = new MessageTrimmingHook();
         // 消息压缩总结 (Spring AI Alibaba 内置实现）
-        SummarizationHook summarizationHook = SummarizationHook.builder()
-                .model(chatModel)
-                .maxTokensBeforeSummary(5000)
-                .messagesToKeep(10)
-                .build();
-        // 限制模型调用次数为 50 次
-        ModelCallLimitHook modelCallLimitHook = ModelCallLimitHook.builder().runLimit(50).build();
+        // 禁用 SummarizationHook，因为存在 "Cannot find safe cutoff point" 问题导致卡顿
+        // SummarizationHook summarizationHook = SummarizationHook.builder()
+        //         .model(chatModel)
+        //         .maxTokensBeforeSummary(2000)
+        //         .messagesToKeep(8)
+        //         .summaryPrompt("请简洁汇总以下历史对话内容，保留核心问题和回复要点，不添加额外信息：")
+        //         .build();
 
         // ========== 创建 Interceptors ==========
         ToolErrorInterceptor toolErrorInterceptor = new ToolErrorInterceptor();
@@ -111,7 +108,7 @@ public class AppCreatorAgentConfig {
                 .tools(searchToolCallback)
                 //.methodTools(fileOperationTool, verifyFileTool)
                 // 钩子调用（使用多个 Hooks 时，理解执行顺序很重要，before_* 是正的，after_* 是反的）
-                .hooks(loggingHook, messageTrimmingHook, summarizationHook, modelCallLimitHook)
+                .hooks(loggingHook)
                 // 拦截器调用（嵌套调用，第一个拦截器包装所有其他的）
                 .interceptors(todoListInterceptor, toolMonitoringInterceptor, toolErrorInterceptor, toolRetryInterceptor)
                 // 记忆存储
@@ -140,8 +137,6 @@ public class AppCreatorAgentConfig {
                 .model(chatModel)
                 // 系统提示词
                 .systemPrompt(SUB_SYSTEM_PROMPT)
-                // 详细指令
-                //.instruction(INSTRUCTION)
                 // 定义响应格式
                 .outputSchema(codeOptimizationResultFormat)
                 // 记忆存储

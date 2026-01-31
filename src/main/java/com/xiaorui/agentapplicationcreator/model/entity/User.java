@@ -1,20 +1,19 @@
 package com.xiaorui.agentapplicationcreator.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
-import java.io.Serial;
-
 import com.mybatisflex.core.keygen.KeyGenerators;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * 用户表 实体类。
@@ -70,7 +69,7 @@ public class User implements Serializable {
     /**
      * 用户生日 yyyy-mm-dd
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private String userBirthday;
 
     /**
@@ -101,7 +100,7 @@ public class User implements Serializable {
     /**
      * 最后登录时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime userLasttime;
 
     /**
@@ -112,13 +111,13 @@ public class User implements Serializable {
     /**
      * 创建时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @DateTimeFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
 
     /**

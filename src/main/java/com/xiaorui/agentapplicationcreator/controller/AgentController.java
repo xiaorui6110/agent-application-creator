@@ -1,23 +1,15 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
-import com.alibaba.dashscope.exception.InputRequiredException;
-import com.alibaba.dashscope.exception.NoApiKeyException;
-import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.AgentTaskStatus;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.CallAgentRequest;
-import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.orchestrator.AgentOrchestrator;
-import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
-import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
 import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimit;
 import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimitTypeEnum;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
-import com.xiaorui.agentapplicationcreator.util.CodeFileSaverUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,14 +24,14 @@ import java.io.IOException;
  * @author: xiaorui
  * @date: 2025-12-15 15:36
  **/
-@Tag(name = "智能体对话接口")
+//@Tag(name = "智能体对话接口")
 @Slf4j
 @RestController
 @RequestMapping("/agent")
 public class AgentController {
 
-    @Resource
-    private AgentAppCreator agentAppCreator;
+    //@Resource
+    //private AgentAppCreator agentAppCreator;
 
     @Resource
     private AgentOrchestrator agentOrchestrator;
@@ -60,9 +52,9 @@ public class AgentController {
         return ServerResponseEntity.success(agentTaskStatus);
     }
 
-    /**
+/*    *//**
      * 智能体对话接口（流式输出）TODO 要修改好多噢，暂时只能管理员使用
-     */
+     *//*
     @PostMapping("/stream_chat")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @Operation(summary = "智能体对话接口（流式输出）" , description = "流式输出")
@@ -75,6 +67,6 @@ public class AgentController {
         SystemOutput systemOutput = agentAppCreator.streamChat(message, threadId, appId);
         CodeFileSaverUtil.writeFilesToLocal(systemOutput.getAgentResponse().getStructuredReply().getFiles(), appId);
         return ServerResponseEntity.success(systemOutput);
-    }
+    }*/
 
 }

@@ -54,7 +54,7 @@ drop table if exists `xr_app`;
 CREATE TABLE `xr_app` (
    `app_id`          varchar(36)  not null default ''    comment '应用id',
    `app_name`        varchar(256) not null default ''    comment '应用名称',
-   `app_cover`       varchar(255)          default null  comment '应用封面',
+   `app_cover`       varchar(1000)          default null  comment '应用封面',
    `app_init_prompt` text                  default null  comment '应用初始化的 prompt',
    `app_description` varchar(500)          default null  comment '应用描述',
    `code_gen_type`   varchar(64)           default null  comment '代码生成类型（枚举）',
@@ -118,8 +118,8 @@ CREATE TABLE `xr_agent_task` (
    `thread_id`       varchar(64)  not null               comment '对话线程id',
    `app_id`          varchar(36)  not null               comment '应用id',
    `task_status`     varchar(32)  not null               comment '任务状态',
-   `task_result`     text         not null               comment '任务结果',
-   `task_error`      text         not null               comment '任务错误信息',
+   `task_result`     text                  default null  comment '任务结果',
+   `task_error`      text                  default null  comment '任务错误信息',
    `retry_count`     int(11)      not null default 0     comment '重试次数',
    `fail_type`       varchar(32)  not null default ''    comment '失败类型',
    `next_retry_time` datetime              default null  comment '下次重试时间',
@@ -128,9 +128,9 @@ CREATE TABLE `xr_agent_task` (
    `is_deleted`      tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
    PRIMARY KEY (agent_task_id),
    UNIQUE KEY uk_task_id (task_id),
-   INDEX idx_app_id (task_id),
+   INDEX idx_task_id (task_id),
    INDEX idx_create_time (create_time),
-   INDEX idx_app_id_create_time (task_id, create_time)
+   INDEX idx_task_id_create_time (task_id, create_time)
 ) COMMENT='agent执行任务表';
 
 

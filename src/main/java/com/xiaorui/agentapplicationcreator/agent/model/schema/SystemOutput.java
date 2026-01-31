@@ -1,7 +1,6 @@
 package com.xiaorui.agentapplicationcreator.agent.model.schema;
 
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
-import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,7 +46,7 @@ public class SystemOutput {
      * 任务状态
      */
     @Schema(description = "任务状态")
-    private AgentTaskStatusEnum taskStatus;
+    private String taskStatus;
 
     /**
      * Agent 名称 / 标识

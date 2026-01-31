@@ -14,14 +14,12 @@ import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimit;
 import com.xiaorui.agentapplicationcreator.manager.ratelimit.RateLimitTypeEnum;
 import com.xiaorui.agentapplicationcreator.model.dto.user.*;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
-import com.xiaorui.agentapplicationcreator.model.vo.TokenInfoVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
@@ -39,7 +37,7 @@ import java.util.stream.Collectors;
  *
  * @author xiaorui
  */
-@Tag(name = "用户接口")
+//@Tag(name = "用户接口")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -69,7 +67,7 @@ public class UserController {
     @PostMapping("/login")
     @Operation(summary = "用户登录" , description = "用户使用邮箱 + 密码登录")
     @Parameter(name = "userLoginRequest", description = "用户登录请求参数")
-    public ServerResponseEntity<TokenInfoVO> userLogin(@RequestBody UserLoginRequest userLoginRequest) {
+    public ServerResponseEntity<UserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
         ThrowUtil.throwIf(userLoginRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userLoginRequest.getUserEmail();
         String loginPassword = userLoginRequest.getLoginPassword();
@@ -79,7 +77,7 @@ public class UserController {
         boolean result = userService.checkPictureVerifyCode(verifyCode, serverVerifyCode);
         ThrowUtil.throwIf(!result, ErrorCode.PARAMS_ERROR, "验证码错误");
         // 内置的 PasswordCheckManager 是半小时内最多错误 10 次，之后锁定账号
-        return ServerResponseEntity.success(userService.userLogin(userEmail, loginPassword));
+        return ServerResponseEntity.success(userService.userLogin(userEmail, loginPassword, request));
     }
 
     /**
@@ -89,13 +87,13 @@ public class UserController {
     @Operation(summary = "发送邮箱验证码" , description = "向目标邮箱发送验证码")
     @Parameter(name = "userSendEmailCodeRequest", description = "发送邮箱验证码请求参数")
     @RateLimit(limitType = RateLimitTypeEnum.USER, rate = 3, rateInterval = 60, message = "发送邮箱请求过于频繁，请稍后再试")
-    public ServerResponseEntity<String> sendEmailCode(@RequestBody UserSendEmailCodeRequest userSendEmailCodeRequest,
-                                                      HttpServletRequest request ) {
+    public ServerResponseEntity<Boolean> sendEmailCode(@RequestBody UserSendEmailCodeRequest userSendEmailCodeRequest,
+                                                       HttpServletRequest request ) {
         ThrowUtil.throwIf(userSendEmailCodeRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
         String userEmail = userSendEmailCodeRequest.getUserEmail();
         String type = userSendEmailCodeRequest.getType();
         userService.sendEmailCode(userEmail, type, request);
-        return ServerResponseEntity.success();
+        return ServerResponseEntity.success(true);
     }
 
     /**
@@ -209,10 +207,9 @@ public class UserController {
      */
     @PostMapping("/update/avatar")
     @Operation(summary = "更新用户头像" , description = "更新当前用户头像")
-    @Parameter(name = "userUpdateAvatarRequest", description = "更新用户头像请求参数")
-    public ServerResponseEntity<String> updateUserAvatar(@RequestBody UserUpdateAvatarRequest userUpdateAvatarRequest) {
-        ThrowUtil.throwIf(userUpdateAvatarRequest == null, ErrorCode.PARAMS_ERROR, "参数不能为空");
-        MultipartFile multipartFile = userUpdateAvatarRequest.getMultipartFile();
+    @Parameter(name = "头像文件", description = "头像文件")
+    public ServerResponseEntity<String> updateUserAvatar(@RequestParam("multipartFile") MultipartFile multipartFile) {
+        ThrowUtil.throwIf(multipartFile == null, ErrorCode.PARAMS_ERROR, "文件不能为空");
         return ServerResponseEntity.success(userService.updateUserAvatar(multipartFile));
     }
 

@@ -53,4 +53,10 @@ public class UserVO implements Serializable {
     @Schema(description = "用户备注")
     private String userProfile;
 
+    /**
+     *  用户角色 user-普通用户 admin-管理员
+     */
+    @Schema(description = "用户角色")
+    private String userRole;
+
 }

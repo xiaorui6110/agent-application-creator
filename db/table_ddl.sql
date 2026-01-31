@@ -43,7 +43,7 @@ create table xr_app
     app_id          varchar(36)  default ''                not null comment '应用id'
         primary key,
     app_name        varchar(256) default ''                not null comment '应用名称',
-    app_cover       varchar(255)                           null comment '应用封面',
+    app_cover       varchar(1000)                          null comment '应用封面',
     app_init_prompt text                                   null comment '应用初始化的 prompt',
     code_gen_type   varchar(64)                            null comment '代码生成类型（枚举）',
     deploy_key      varchar(64)                            null comment '部署唯一标识',
@@ -68,7 +68,6 @@ create index idx_create_time
 
 create index idx_user_id
     on xr_app (user_id);
-
 create table xr_chat_history
 (
     chat_history_id   varchar(36) default ''                not null comment '对话历史id'
@@ -144,8 +143,8 @@ create table xr_agent_task
     thread_id       varchar(64)                           not null comment '对话线程id',
     app_id          varchar(36)                           not null comment '应用id',
     task_status     varchar(32)                           not null comment '任务状态',
-    task_result     text                                  not null comment '任务结果',
-    task_error      text                                  not null comment '任务错误信息',
+    task_result     text                                  null comment '任务结果',
+    task_error      text                                  null comment '任务错误信息',
     create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
     update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
@@ -157,11 +156,11 @@ create table xr_agent_task
 )
     comment 'agent执行任务表';
 
-create index idx_app_id
-    on xr_agent_task (task_id);
-
-create index idx_app_id_create_time
-    on xr_agent_task (task_id, create_time);
-
 create index idx_create_time
     on xr_agent_task (create_time);
+
+create index idx_task_id
+    on xr_agent_task (task_id);
+
+create index idx_task_id_create_time
+    on xr_agent_task (task_id, create_time);

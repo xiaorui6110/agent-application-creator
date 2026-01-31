@@ -1,7 +1,10 @@
 package com.xiaorui.agentapplicationcreator.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.annotation.Resource;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +17,8 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * @description: Redis 缓存管理器配置
@@ -23,6 +28,8 @@ import java.time.Duration;
 @Configuration
 public class RedisCacheManagerConfig {
 
+    private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     @Resource
     private RedisConnectionFactory redisConnectionFactory;
 
@@ -31,7 +38,24 @@ public class RedisCacheManagerConfig {
 
         // 配置 ObjectMapper 支持 Java8 时间类型
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+        
+        // 配置 JavaTimeModule
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        LocalDateTimeSerializer localDateTimeSerializer = new LocalDateTimeSerializer(
+                DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)
+        );
+        LocalDateTimeDeserializer localDateTimeDeserializer = new LocalDateTimeDeserializer(
+                DateTimeFormatter.ofPattern(DATE_TIME_FORMAT)
+        );
+        javaTimeModule.addSerializer(LocalDateTime.class, localDateTimeSerializer);
+        javaTimeModule.addDeserializer(LocalDateTime.class, localDateTimeDeserializer);
+        objectMapper.registerModule(javaTimeModule);
+        
+        // 关闭日期时间以时间戳格式序列化
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        
+        // 忽略未知字段
+        objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         // 默认配置
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()

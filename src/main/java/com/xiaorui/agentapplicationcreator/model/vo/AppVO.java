@@ -56,6 +56,12 @@ public class AppVO implements Serializable {
     private CodeGenTypeEnum codeGenType;
 
     /**
+     * 应用排序优先级
+     */
+    @Schema(description = "应用排序优先级")
+    private Integer appPriority;
+
+    /**
      * 部署访问地址
      */
     @Schema(description = "部署访问地址")
@@ -83,6 +89,6 @@ public class AppVO implements Serializable {
      * 创建用户信息
      */
     @Schema(description = "创建用户信息")
-    private UserVO user;
+    private UserVO userVO;
 
 }

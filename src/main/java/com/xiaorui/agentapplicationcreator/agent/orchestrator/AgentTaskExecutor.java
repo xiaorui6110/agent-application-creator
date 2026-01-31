@@ -25,11 +25,11 @@ public class AgentTaskExecutor implements DisposableBean {
      */
     private final ExecutorService executor = new ThreadPoolExecutor(
             8,
-            8,
+            16,
             60L,
-            TimeUnit.MILLISECONDS,
+            TimeUnit.SECONDS,
             // 有界队列，按需调整
-            new LinkedBlockingQueue<>(1024),
+            new LinkedBlockingQueue<>(200),
             // 自定义线程工厂，线程名带业务标识，日志排查方便
             new ThreadFactory() {
                 private final AtomicInteger threadNum = new AtomicInteger(1);
@@ -37,14 +37,17 @@ public class AgentTaskExecutor implements DisposableBean {
                 public Thread newThread(@NotNull Runnable r) {
                     Thread thread = new Thread(r);
                     thread.setName("agent-async-thread-" + threadNum.getAndIncrement());
+                    // 设置为非守护线程，避免主线程退出时强制终止
+                    thread.setDaemon(false);
                     return thread;
                 }
             },
+            // 拒绝策略：由调用线程执行（避免任务丢失）
             new ThreadPoolExecutor.CallerRunsPolicy()
     );
 
     @Resource
-    private CodeOptimization codeOptimizationAgent;
+    private CodeOptimization codeOptimizationAgentTask;
 
     /**
      * 提交任务（主 Agent）
@@ -54,6 +57,7 @@ public class AgentTaskExecutor implements DisposableBean {
             try {
                 log.info("Agent task started, taskId={}", taskId);
                 task.run();
+                log.info("Agent task completed, taskId={}", taskId);
             } catch (Exception e) {
                 log.error("Agent task failed, taskId={}", taskId, e);
             }
@@ -62,13 +66,18 @@ public class AgentTaskExecutor implements DisposableBean {
 
     /**
      * 提交任务（副 Agent）
+     *
+     * @param input 代码优化输入
+     * @param threadId 对话线程 ID
+     * @param appId 应用 ID
+     * @param userId 用户 ID
      */
-    public void submitOptimizationTask(CodeOptimizationInput input, String threadId, String appId) {
+    public void submitOptimizationTask(CodeOptimizationInput input, String threadId, String appId, String userId) {
         executor.submit(() -> {
             try {
                 log.info("CodeOptimizationAgent started, threadId={}, appId={}", threadId, appId);
 
-                codeOptimizationAgent.codeOptimizeAsync(input);
+                codeOptimizationAgentTask.codeOptimizeAsync(input, userId);
 
             } catch (Exception e) {
                 log.error("Optimization agent failed", e);
@@ -81,12 +90,15 @@ public class AgentTaskExecutor implements DisposableBean {
      */
     @Override
     public void destroy() throws Exception {
+        log.info("Shutting down AgentTaskExecutor...");
         // 不再接收新任务，等待队列中任务执行完毕
         executor.shutdown();
-        // 可选：超时强制关闭（60秒）
-        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        // 超时强制关闭（120秒）
+        if (!executor.awaitTermination(120, TimeUnit.SECONDS)) {
+            log.warn("AgentTaskExecutor shutdown timeout, forcing shutdown...");
             executor.shutdownNow();
         }
+        log.info("AgentTaskExecutor shutdown completed");
     }
 }
 

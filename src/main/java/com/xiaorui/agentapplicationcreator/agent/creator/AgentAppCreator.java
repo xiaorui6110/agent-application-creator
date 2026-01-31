@@ -28,8 +28,6 @@ import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeRe
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
-import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContext;
-import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContextHolder;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.*;
@@ -84,34 +82,19 @@ public class AgentAppCreator {
     private AgentChatMemoryService agentChatMemoryService;
 
     @Resource
-    private CodeOptimizeResultService codeOptimizeResultService;
+    private ChatHistoryService chatHistoryService;
 
     @Resource
-    private ChatHistoryService chatHistoryService;
+    private CodeOptimizeResultService codeOptimizeResultService;
 
     /**
      * 智能体对话（TODO alibaba 框架的流式输出与 Graph 工作流集成了，所以待学习 Graph Core 之后再做流式输出实现）
      * 1. 用户输入提示词：“创建xxx应用”  -->  agent确认后生成代码应用呈现
      * 2. 用户再输入修改页面需求  -->  agent生成计划来修改应用项目代码
      */
-    public SystemOutput chat(String userMessage, String transThreadId, String appId) {
+    public SystemOutput chat(String userMessage, String threadId, String appId) {
         // 获取当前用户
         String userId = SecurityUtil.getUserInfo().getUserId();
-        User loginUser = userService.getById(userId);
-        ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR, "用户不存在");
-        // threadId：非空沿用旧的 / 空的生成新的
-        String threadId = Optional.ofNullable(transThreadId)
-                .filter(StringUtil::isNotBlank)
-                .orElse(UUID.randomUUID().toString());
-        // 强制绑定 userId 与 threadId
-        if (!threadBelongsToUser(userId, threadId)) {
-            throw new BusinessException("非法对话 ID，已阻断访问", ErrorCode.FORBIDDEN_ERROR);
-        }
-        // 输入校验
-        validateUserInput(userMessage);
-        // 保存用户输入（底层已存在校验插入成功与否的错误处理，此处不做追加处理 log）
-        chatHistoryService.saveChatHistory(appId, userId, userMessage, "user");
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 获取副 agent 的代码优化结果 codeOptimizeResult ，允许为空（第一次调用时肯定为空）
         CodeOptimizeResult codeOptimizeResult = codeOptimizeResultService.getByAppId(appId);
         String codeOptimizeResultStr = codeOptimizeResult == null ? "" : codeOptimizeResult.toString();
@@ -120,7 +103,7 @@ public class AgentAppCreator {
         // 构建配置
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
         // 设置监控上下文
-        MonitorContextHolder.setContext(MonitorContext.builder().userId(userId).appId(appId).build());
+        //MonitorContextHolder.setContext(MonitorContext.builder().userId(userId).appId(appId).build());
         // 提前在外部声明 POJO 变量
         AssistantMessage response;
         AgentResponse agentResponse;
@@ -131,9 +114,9 @@ public class AgentAppCreator {
             // 调用 agent
             response = appCreatorAgent.call(finalInputMessage, runnableConfig);
             stopWatch.stop();
-            log.info("agent.call() 执行完成，耗时={}毫秒", stopWatch.getTotalTimeMillis());
+            log.info("agent.call() execution completed，Time taken = {} ms", stopWatch.getTotalTimeMillis());
             // 清除监控上下文（无论成功/失败/取消）
-            MonitorContextHolder.clearContext();
+            //MonitorContextHolder.clearContext();
             // 超时 5 分钟，则抛出异常
             if (stopWatch.getTotalTimeMillis() > MAX_RESPONSE_TIEM) {
                 throw new BusinessException("智能体应用生成 AI 服务响应超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
@@ -145,10 +128,81 @@ public class AgentAppCreator {
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 保存 Agent 回复
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
+        //agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
-        // 异步设置应用名称
+        // 异步设置应用名称和代码生成类型
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
+        appService.updateAppCodeGenTypeAsync(appId, agentResponse.getCodeGenType());
+        // 如果 AgentResponse 中包含 CodeModificationPlan 代码修改计划，则需要调用执行器来执行文件操作
+        if (agentResponse.getCodeModificationPlan() != null) {
+            CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
+            ValidatedPlan validatedPlan = validator.validate(plan);
+            ExecutionResult result = executor.execute(validatedPlan);
+            ThrowUtil.throwIf(!result.isVerified(), ErrorCode.SYSTEM_ERROR, "文件操作验证未通过：" + result.getErrorMessage());
+            ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
+        }
+        // 构建返回值
+        return SystemOutput.builder()
+                .threadId(threadId)
+                .userId(userId)
+                .appId(appId)
+                .agentName("app-creator-agent")
+                .agentResponse(agentResponse)
+                .fromMemory(false)
+                .timestamp(System.currentTimeMillis())
+                .build();
+    }
+
+    /**
+     * 智能体对话（带 userId 参数版本，用于异步线程调用）
+     *
+     * @param userMessage 用户消息
+     * @param threadId 对话线程 ID
+     * @param appId 应用 ID
+     * @param userId 用户 ID（从主线程传递，避免异步线程中 Sa-Token 上下文丢失）
+     * @return 系统输出
+     */
+    public SystemOutput chatWithUserId(String userMessage, String threadId, String appId, String userId) {
+
+        // 获取副 agent 的代码优化结果 codeOptimizeResult ，允许为空（第一次调用时肯定为空）
+        CodeOptimizeResult codeOptimizeResult = codeOptimizeResultService.getByAppId(appId);
+        String codeOptimizeResultStr = codeOptimizeResult == null ? "" : codeOptimizeResult.toString();
+        // 同 appId 一起拼接到 Message
+        String finalInputMessage = userMessage + "【应用ID：" + appId + "】" + "【应用代码优化结果详情】：" + codeOptimizeResultStr;
+        // 构建配置
+        RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
+        // 设置监控上下文
+        //MonitorContextHolder.setContext(MonitorContext.builder().userId(userId).appId(appId).build());
+        // 提前在外部声明 POJO 变量
+        AssistantMessage response;
+        AgentResponse agentResponse;
+        try {
+            // 计时器
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+            log.info("agent.call() execution started");
+            // 调用 agent
+            response = appCreatorAgent.call(finalInputMessage, runnableConfig);
+            stopWatch.stop();
+            log.info("agent.call() execution completed，Time taken = {} ms", stopWatch.getTotalTimeMillis());
+            // 清除监控上下文（无论成功/失败/取消）
+            //MonitorContextHolder.clearContext();
+            // 超时 5 分钟，则抛出异常
+            if (stopWatch.getTotalTimeMillis() > MAX_RESPONSE_TIEM) {
+                throw new BusinessException("智能体应用生成 AI 服务响应超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
+            }
+            // JSON 转 Bean
+            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
+        } catch (Exception e) {
+            log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
+            throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
+        }
+        // 保存 Agent 回复
+        //agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
+        chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
+        // 异步设置应用名称和代码生成类型
+        appService.updateAppNameAsync(appId, agentResponse.getAppName());
+        appService.updateAppCodeGenTypeAsync(appId, agentResponse.getCodeGenType());
         // 如果 AgentResponse 中包含 CodeModificationPlan 代码修改计划，则需要调用执行器来执行文件操作
         if (agentResponse.getCodeModificationPlan() != null) {
             CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
@@ -204,7 +258,6 @@ public class AgentAppCreator {
     /**
      * 智能体对话，流式输出，基于 Server-Sent Events (SSE) 协议（DashScope SDK 实现）（TODO 未解耦，待优化，比如输出格式、等等）
      * <a href="https://bailian.console.aliyun.com/tab=doc?tab=doc#/doc/?type=model&url=2866129">...</a>
-     * 真正的流式输出是基于 reactor 实现的哟
      */
     public SystemOutput streamChat(String userMessage, String transThreadId, String appId)
             throws NoApiKeyException, InputRequiredException, InterruptedException {

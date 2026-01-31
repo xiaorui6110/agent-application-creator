@@ -1,7 +1,9 @@
 package com.xiaorui.agentapplicationcreator.agent.subagent;
 
 import cn.hutool.json.JSONUtil;
+import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
+import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationInput;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
@@ -29,6 +31,8 @@ public class CodeOptimization {
 
     private final static Integer MAX_INPUT_LENGTH = 2000;
 
+    private final static Integer MAX_RESPONSE_TIME = 60000;
+
     @Resource
     private ReactAgent codeOptimizationAgent;
 
@@ -41,7 +45,8 @@ public class CodeOptimization {
      * 2. 在下一次调用主 agent 生成代码时，将副 agent 的代码优化等结果添加为输入
      */
     @Async("codeOptExecutor")
-    public void codeOptimizeAsync(@NotNull CodeOptimizationInput codeOptimizationInput) {
+    public void codeOptimizeAsync(CodeOptimizationInput codeOptimizationInput, String userId) {
+        log.info("Starting code optimization, appId={}", codeOptimizationInput.getAppId());
         // 基础校验
         String input = codeOptimizationInput.toString();
         validateInput(input);
@@ -49,16 +54,36 @@ public class CodeOptimization {
         AssistantMessage response;
         CodeOptimizationResult codeOptimizationResult;
         try {
-            // 调用 agent
-            response = codeOptimizationAgent.call(input);
+            // 构建 RunnableConfig，传递 userId 和 threadId
+            RunnableConfig runnableConfig = RunnableConfig.builder()
+                    .addMetadata("user_id", userId)
+                    .threadId(userId + "_code_opt_" + System.currentTimeMillis())
+                    .build();
+
+            // 使用 Future 设置超时
+            java.util.concurrent.Future<AssistantMessage> future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return codeOptimizationAgent.call(input, runnableConfig);
+                } catch (GraphRunnerException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // 调用 agent，传入 runnableConfig，带超时控制
+            response = future.get(MAX_RESPONSE_TIME, java.util.concurrent.TimeUnit.MILLISECONDS);
+            log.info("code optimization agent call success, appId={}", codeOptimizationInput.getAppId());
             // JSON 转 Bean（主要是为了方便获取代码文件）
             codeOptimizationResult = JSONUtil.toBean(response.getText(), CodeOptimizationResult.class,true);
+        } catch (java.util.concurrent.TimeoutException e) {
+            log.error("code optimization agent timeout, appId={}", codeOptimizationInput.getAppId(), e);
+            throw new BusinessException("代码优化超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
         } catch (Exception e) {
-            log.error("agent call failed, error={}", e.getMessage(), e);
+            log.error("code optimization agent call failed, error={}, appId={}", e.getMessage(), codeOptimizationInput.getAppId(), e);
             throw new BusinessException("平台代码优化 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 优化结果处理
         handleResult(codeOptimizationInput, codeOptimizationResult);
+        log.info("Code optimization completed, appId={}", codeOptimizationInput.getAppId());
     }
 
     /**
