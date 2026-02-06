@@ -55,18 +55,6 @@ npm run lint
 - `/admin/appManage`：应用管理（管理员）
 - `/admin/userManage`：用户管理（管理员）
 
-## 代码生成类型（重要）
-
-前端对 `codeGenType` 的约定：
-
-- 仅使用后端/数据库枚举 `value` 小写：`single_file` / `multi_file` / `vue_project`
-- 展示层允许兼容后端返回的大写值（例如 `MULTI_FILE`），但不会把大写/UNKNOWN 回传给后端
-
-相关实现：
-
-- [codeGenTypes.ts](src/utils/codeGenTypes.ts)
-- [AppChatPage.vue](src/pages/app/AppChatPage.vue)
-
 ## 项目结构
 
 ```

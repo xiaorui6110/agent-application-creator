@@ -21,16 +21,16 @@
 
 ### 核心技术栈
 
-| 技术/框架             | 版本/说明      | 用途             |
-|-------------------|------------|----------------|
-| Spring Boot       | 3.5.6      | 项目核心框架         |
-| Spring AI Alibaba | 1.1.0.0 RC | 阿里通义千问 AI 模型调用 |
-| MyBatis Flex      | 1.8.0      | 数据库操作          |
-| Redis             | 7.4        | 缓存、分布式锁、状态管理   |
-| MinIO             | 25-09-07   | 分布式文件存储        |
-| MySQL             | 8.0+       | 关系型数据库         |
-| JDK               | 21         | 基础开发环境，适配虚拟线程  |
-| Maven             | 3.8.8      | 项目构建工具         |
+| 技术/框架             | 版本/说明    | 用途             |
+|-------------------|----------|----------------|
+| Spring Boot       | 3.5.6    | 项目核心框架         |
+| Spring AI Alibaba | 1.2.1.0  | 阿里通义千问 AI 模型调用 |
+| MyBatis Flex      | 1.8.0    | 数据库操作          |
+| Redis             | 7.4      | 缓存、分布式锁、状态管理   |
+| MinIO             | 25-09-07 | 分布式文件存储        |
+| MySQL             | 8.0+     | 关系型数据库         |
+| JDK               | 21       | 基础开发环境，适配虚拟线程  |
+| Maven             | 3.8.8    | 项目构建工具         |
 
 ### 项目结构
 
@@ -89,7 +89,7 @@ mysql -u root -p xiaorui_app_creator < db/create_table.sql
 
 ### 3. 环境配置
 
-修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些，还有要预先创建 tmp/code_output 和 tmp/code_deploy 文件夹等等）：
+修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些，还有要预先创建 `tmp/code_output` 和 `tmp/code_deploy` 文件夹等等）：
 
 ```yaml
 spring:
