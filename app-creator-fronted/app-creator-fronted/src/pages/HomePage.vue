@@ -6,6 +6,7 @@ import { useLoginUserStore } from '@/stores/loginUser'
 import { createApp as createAppApi, listAppInfoByPage, listGoodAppInfoByPage } from '@/api/appController'
 import AppCard from '@/components/AppCard.vue'
 import { isSuccessResponse } from '@/utils/apiResponse'
+import { resolveTotalCount } from '@/utils/pagination'
 import { ArrowRightOutlined } from '@ant-design/icons-vue'
 
 const router = useRouter()
@@ -30,22 +31,6 @@ const featuredAppsPage = reactive({
   pageSize: 6,
   total: 0,
 })
-
-const resolveTotalCount = (params: {
-  current: number
-  pageSize: number
-  totalRow?: number
-  recordsLength: number
-}) => {
-  const { current, pageSize, totalRow, recordsLength } = params
-  if (recordsLength <= 0) return 0
-
-  if (recordsLength < pageSize) {
-    return (Math.max(current, 1) - 1) * pageSize + recordsLength
-  }
-
-  return totalRow ?? recordsLength
-}
 
 // 设置提示词
 const setPrompt = (prompt: string) => {

@@ -8,9 +8,11 @@ server:
       cookie:
         max-age: 604800
   tomcat:
-    max-connections: 1000
+    max-connections: 8192
     accept-count: 100
     connection-timeout: 20000
+    threads:
+      max: 200
 spring:
   application:
     name: agent-application-creator

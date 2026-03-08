@@ -72,6 +72,7 @@ import { message } from 'ant-design-vue'
 import { listAllChatHistoryByPageForAdmin } from '@/api/chatHistoryController'
 import { formatTime } from '@/utils/time'
 import { isSuccessResponse } from '@/utils/apiResponse'
+import { resolveTotalCount } from '@/utils/pagination'
 import { formatChatMessageType, isUserChatMessage } from '@/utils/chatMessageTypes'
 
 const router = useRouter()
@@ -133,7 +134,12 @@ const fetchData = async () => {
     const res = await listAllChatHistoryByPageForAdmin({}, searchParams)
     if (isSuccessResponse(res.data) && res.data.data) {
       data.value = res.data.data.records ?? []
-      total.value = res.data.data.totalRow ?? 0
+      total.value = resolveTotalCount({
+        current: searchParams.current ?? 1,
+        pageSize: searchParams.pageSize ?? 10,
+        totalRow: res.data.data.totalRow,
+        recordsLength: data.value.length,
+      })
       if (res.data.data.pageNumber) {
         searchParams.current = res.data.data.pageNumber
       }

@@ -170,11 +170,10 @@
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
             <version>1.1.2.1</version>
         </dependency>
-        <!-- HTTP 客户端（ApacheHttpClient）-->
+        <!-- HTTP 客户端（ApacheHttpClient）WebDriverManager 依赖此库下载驱动 -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <scope>test</scope>
         </dependency>
         <!-- 阿里云百炼 DashScope SDK @https://mvnrepository.com/artifact/com.alibaba/dashscope-sdk-java -->
         <dependency>

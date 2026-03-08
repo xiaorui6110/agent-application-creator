@@ -23,12 +23,51 @@
         <p class="app-author">
           {{ app.userVO?.nickName || (featured ? '官方' : '未知用户') }}
         </p>
+        <div class="app-actions">
+          <a-space size="small">
+            <a-button
+              size="small"
+              type="text"
+              :disabled="!appId"
+              :loading="likeLoading"
+              @click="toggleLike"
+            >
+              <template #icon>
+                <HeartFilled v-if="liked" class="active" />
+                <HeartOutlined v-else />
+              </template>
+              {{ likeCount }}
+            </a-button>
+            <a-button
+              size="small"
+              type="text"
+              :disabled="!appId"
+              :loading="shareLoading"
+              @click="toggleShare"
+            >
+              <template #icon>
+                <ShareAltOutlined v-if="shared" class="active" />
+                <ShareAltOutlined v-else />
+              </template>
+              {{ shareCount }}
+            </a-button>
+          </a-space>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
+import { useLoginUserStore } from '@/stores/loginUser'
+import { isSuccessResponse } from '@/utils/apiResponse'
+import { doLike, getLikeStatus } from '@/api/likeRecordController'
+import { doShare, getShareStatus } from '@/api/shareRecordController'
+import { HeartFilled, HeartOutlined, ShareAltOutlined } from '@ant-design/icons-vue'
+
 interface Props {
   app: API.AppVO
   featured?: boolean
@@ -45,6 +84,114 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+const router = useRouter()
+const route = useRoute()
+const loginUserStore = useLoginUserStore()
+
+const appId = computed(() => {
+  if (!props.app.appId) return ''
+  return String(props.app.appId)
+})
+
+const liked = ref(false)
+const shared = ref(false)
+const likeLoading = ref(false)
+const shareLoading = ref(false)
+const likeCount = ref<number>(props.app.likeCount ?? 0)
+const shareCount = ref<number>(props.app.shareCount ?? 0)
+
+watch(
+  () => props.app.likeCount,
+  (v) => {
+    likeCount.value = v ?? 0
+  },
+)
+
+watch(
+  () => props.app.shareCount,
+  (v) => {
+    shareCount.value = v ?? 0
+  },
+)
+
+const requireLogin = async () => {
+  if (loginUserStore.loginUser.userId) return true
+  message.warning('请先登录')
+  await router.push({
+    path: '/user/login',
+    query: {
+      redirect: route.fullPath,
+    },
+  })
+  return false
+}
+
+const refreshStates = async () => {
+  if (!appId.value) return
+  if (!loginUserStore.loginUser.userId) {
+    liked.value = false
+    shared.value = false
+    return
+  }
+
+  const [likeRes, shareRes] = await Promise.all([
+    getLikeStatus({ targetId: appId.value }),
+    getShareStatus({ targetId: appId.value }),
+  ])
+
+  if (isSuccessResponse(likeRes.data)) {
+    liked.value = likeRes.data.data === true
+  }
+  if (isSuccessResponse(shareRes.data)) {
+    shared.value = shareRes.data.data === true
+  }
+}
+
+const toggleLike = async () => {
+  if (!appId.value) return
+  const ok = await requireLogin()
+  if (!ok) return
+
+  likeLoading.value = true
+  try {
+    const next = liked.value ? 0 : 1
+    const res = await doLike({}, { targetId: appId.value, isLiked: next })
+    if (isSuccessResponse(res.data) && res.data.data) {
+      liked.value = !liked.value
+      likeCount.value = Math.max(0, likeCount.value + (next === 1 ? 1 : -1))
+      return
+    }
+    message.error(res.data.msg ?? '操作失败')
+  } finally {
+    likeLoading.value = false
+  }
+}
+
+const toggleShare = async () => {
+  if (!appId.value) return
+  const ok = await requireLogin()
+  if (!ok) return
+
+  shareLoading.value = true
+  try {
+    const next = shared.value ? 0 : 1
+    const body: API.ShareDoRequest & { targetId?: string } = {
+      shareId: appId.value,
+      targetId: appId.value,
+      isShared: next,
+    }
+    const res = await doShare({}, body)
+    if (isSuccessResponse(res.data) && res.data.data) {
+      shared.value = !shared.value
+      shareCount.value = Math.max(0, shareCount.value + (next === 1 ? 1 : -1))
+      return
+    }
+    message.error(res.data.msg ?? '操作失败')
+  } finally {
+    shareLoading.value = false
+  }
+}
+
 const handleViewChat = () => {
   emit('view-chat', props.app.appId)
 }
@@ -52,6 +199,17 @@ const handleViewChat = () => {
 const handleViewWork = () => {
   emit('view-work', props.app)
 }
+
+onMounted(async () => {
+  await refreshStates()
+})
+
+watch(
+  () => loginUserStore.loginUser.userId,
+  async () => {
+    await refreshStates()
+  },
+)
 </script>
 
 <style scoped>
@@ -163,5 +321,15 @@ const handleViewWork = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.app-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.active {
+  color: #f28c28;
 }
 </style>

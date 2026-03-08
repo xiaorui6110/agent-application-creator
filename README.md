@@ -1,5 +1,6 @@
 # AI 智能体应用生成平台（毕设）
-> 基本上全是参考 Spring AI Alibaba https://github.com/alibaba/spring-ai-alibaba 进行自主学习，并持续优化中...
+
+> 基于 Spring Boot + Spring AI Alibaba 构建的 AI 智能体应用生成平台，支持用户输入自然语言需求，自动生成可运行的小型应用代码文件。
 
 **_还有为了提交代码和新增功能方便，一些本地配置 key 等信息就没有忽略提交了，还请不要搞我呢(￣﹃￣)_**
 
@@ -9,59 +10,78 @@
 
 基于 Spring Boot + Spring AI Alibaba 构建的 AI 智能体应用生成平台，支持用户输入自然语言需求，自动生成可运行的小型应用代码文件等功能。
 
-### 示例页面（AI 生成前端）
+### 示例页面（GPT 生成）
 
-![主页](page/主页.png)
+**主页**
+
+![主页](page/主页1.png)
+![主页](page/主页2.png)
+
+**对话页**
 
 ![对话页](page/对话页.png)
 
-![用户管理页](page/用户管理页.png)
+**管理页**
 
+![用户管理页](page/用户管理页.png)
 ![应用管理页](page/应用管理页.png)
+
+**应用评论页**
+
+![评论页](page/评论页.png)
+
+**用户设置页**
+
+![账号设置页](page/账号设置页.png)
+
+**登录注册页**
+
+![登录页](page/登录页.png)
+![注册页](page/注册页.png)
 
 ### 核心技术栈
 
-| 技术/框架             | 版本/说明    | 用途             |
-|-------------------|----------|----------------|
-| Spring Boot       | 3.5.6    | 项目核心框架         |
-| Spring AI Alibaba | 1.2.1.0  | 阿里通义千问 AI 模型调用 |
-| MyBatis Flex      | 1.8.0    | 数据库操作          |
-| Redis             | 7.4      | 缓存、分布式锁、状态管理   |
-| MinIO             | 25-09-07 | 分布式文件存储        |
-| MySQL             | 8.0+     | 关系型数据库         |
-| JDK               | 21       | 基础开发环境，适配虚拟线程  |
-| Maven             | 3.8.8    | 项目构建工具         |
+| 技术/框架             | 版本      | 用途             |
+|-------------------|---------|----------------|
+| Spring Boot       | 3.5.6   | 项目核心框架         |
+| Spring AI Alibaba | 1.1.2.1 | 阿里通义千问 AI 模型调用 |
+| MyBatis Flex      | 1.11.4  | 数据库操作          |
+| Redis             | 7.4     | 缓存、分布式锁、状态管理   |
+| MinIO             | 8.5.9   | 分布式文件存储        |
+| MySQL             | 8.0+    | 关系型数据库         |
+| JDK               | 21      | 基础开发环境，适配虚拟线程  |
+| Maven             | 3.8.8   | 项目构建工具         |
 
 ### 项目结构
 
 ```
 agent-application-creator/
-├── src/
-│   └── main/
-│       ├── java/com/xiaorui/agentapplicationcreator/
-│       │   ├── agent/              # 智能体核心逻辑
-│       │   ├── common/             # 通用组件
-│       │   ├── config/             # 配置类
-│       │   ├── constant/           # 常量定义
-│       │   ├── controller/         # 控制器层
-│       │   ├── enums/              # 枚举类
-│       │   ├── exception/          # 异常处理
-│       │   ├── infrastructure/     # 基础设施层
-│       │   ├── mapper/             # 数据访问层
-│       │   ├── model/              # 数据模型
-│       │   ├── service/            # 业务逻辑层
-│       │   └── utils/              # 工具类
-│       └── resources/
-│           ├── application.yml              # 主配置文件
-│           ├── application-dev.yml          # 开发环境配置
-├── design/                      # 设计文档（图片）
-├── pom.xml                      # Maven项目配置
-└── README.md                    # 项目说明文档
+├── src/main/java/com/xiaorui/agentapplicationcreator/
+│   ├── agent/              # 智能体核心逻辑
+│   ├── common/             # 通用组件
+│   ├── config/             # 配置类
+│   ├── constant/           # 常量定义
+│   ├── controller/         # 控制器层
+│   ├── enums/              # 枚举类
+│   ├── exception/          # 异常处理
+│   ├── infrastructure/     # 基础设施层
+│   ├── mapper/             # 数据访问层
+│   ├── model/              # 数据模型
+│   ├── service/            # 业务逻辑层
+│   └── utils/              # 工具类
+├── src/main/resources/
+│   ├── application.yml     # 主配置文件
+│   └── application-dev.yml # 开发环境配置
+├── db/                     # 数据库脚本
+├── design/                 # 设计文档
+├── doc/                    # 项目文档
+├── page/                   # 页面截图
+└── pom.xml                 # Maven 项目配置
 ```
 
 ## 环境要求
 
-- JDK：21+（**推荐21**，适配虚拟线程）
+- JDK：21+（推荐 21，适配虚拟线程）
 - Maven：3.8.8+
 - Git：任意版本
 - 第三方服务：阿里云百炼 API_KEY 等
@@ -71,7 +91,7 @@ agent-application-creator/
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/xiaorio6110/agent-application-creator.git
+git clone https://github.com/xiaorui6110/agent-application-creator.git
 cd agent-application-creator
 ```
 
@@ -135,40 +155,48 @@ java -jar target/agent-application-creator-0.0.1-SNAPSHOT.jar
 ## 核心功能
 
 ### 1. 用户模块
+
 - 用户注册/登录
 - 个人信息管理
 - 邮箱验证
 - 密码重置
 
 ### 2. 智能体模块
+
 - 自然语言对话交互
 - 多智能体协同
 - 代码生成智能体
 - 代码优化智能体
 
 ### 3. 应用模块
+
 - 应用自动生成
 - 应用部署管理
 - 应用下载
 - 应用监控
+- 应用评论/点赞/分享
 
 ### 4. 对话历史模块
+
 - 对话记录保存
 - 历史对话查询
 - 上下文管理
 
 ### 5. 工程项目生成模块
+
 - Vue 项目自动创建
 - 项目结构生成
 - 代码文件生成
 
 ### 6. RAG 模块
+
 - 文档上传解析
 - 知识库管理
 - 代码规范 RAG
 - 智能检索
 
 ### 7. 扩展功能
+
 - 应用封面自动生成
 - 文件上传下载
 - 敏感词过滤
@@ -179,6 +207,7 @@ java -jar target/agent-application-creator-0.0.1-SNAPSHOT.jar
 项目集成了 Knife4j 接口文档，访问地址：`http://localhost:8123/api/doc.html`
 
 主要接口分类：
+
 - 用户管理：`/api/user/*`
 - 智能体对话：`/api/agent/*`
 - 应用管理：`/api/app/*`
@@ -218,41 +247,37 @@ java -jar target/agent-application-creator-0.0.1-SNAPSHOT.jar
 
 ## 开发计划
 
-### 已完成
-- ✅ 用户注册登录
-- ✅ 智能体对话
-- ✅ 应用代码生成
-- ✅ 对话历史管理
-- ✅ Vue 项目创建
-- ✅ 文件上传下载
-- ✅ MinIO 集成
-- ✅ Redis 缓存
-- ✅ RAG 知识库
+### 已完成 ✅
 
-### 进行中
-- ⏰ 应用评论系统
-- ⏰ 应用分类和排行榜
-- ⏰ 用户社交功能
+- 用户模块（注册/登录、信息管理、邮箱验证、密码重置、管理员功能）
+- 应用模块（自动生成、部署管理、信息管理、下载、监控、评论、点赞分享、管理员功能）
+- 智能体模块（应用代码生成、对话历史、工程项目生成、多智能体协同、RAG 实现）
+- 扩展功能（应用封面生成、文件上传下载、敏感词过滤等）
 
-### 计划中
-- 📚 MCP 模型上下文协议接入
-- 📚 图片搜索集成
-- 📚 网络搜索集成
-- 📚 智能体上下文工程优化
-- 📚 可观测性监控完善
+### 待完善 ⏳
+
+- MCP 模型上下文协议集成
+- 智能体上下文工程优化
+- 智能体记忆管理优化
+- 应用模块扩展完善
+- 可观测性监控完善
 
 ## 常见问题
 
 ### 1. 启动时连接数据库失败
+
 检查数据库配置是否正确，确保 MySQL 服务已启动且端口可访问。
 
 ### 2. Redis 连接超时
+
 确保 Redis 服务已启动，检查 `application-dev.yml` 中的 Redis 配置。
 
 ### 3. MinIO 文件上传失败
+
 检查 MinIO 服务是否正常运行，确认 endpoint、access-key 和 secret-key 配置正确。
 
 ### 4. AI 对话无响应
+
 检查阿里云百炼 API Key 是否正确，确保账户有足够的调用额度。
 
 ## 联系方式

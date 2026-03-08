@@ -39,6 +39,30 @@ function ensureUserUpdateAvatarRequestIsAny(content) {
   return { content: content.replace(block, patchedBlock), changed: true }
 }
 
+function ensureAppVOCodeGenTypeLowercase(content) {
+  const anchor = 'type AppVO = {'
+  const anchorIndex = content.indexOf(anchor)
+  if (anchorIndex < 0) return { content, changed: false }
+
+  const blockStart = anchorIndex + anchor.length
+  const blockEnd = content.indexOf('}', blockStart)
+  if (blockEnd < 0) return { content, changed: false }
+
+  const block = content.slice(anchorIndex, blockEnd + 1)
+  const upperUnion =
+    /codeGenType\?:\s*'SINGLE_FILE'\s*\|\s*'MULTI_FILE'\s*\|\s*'VUE_PROJECT'/
+  const lowerUnion =
+    /codeGenType\?:\s*'single_file'\s*\|\s*'multi_file'\s*\|\s*'vue_project'/
+  if (lowerUnion.test(block)) return { content, changed: false }
+  if (!upperUnion.test(block)) return { content, changed: false }
+
+  const patchedBlock = block.replace(
+    upperUnion,
+    "codeGenType?: 'single_file' | 'multi_file' | 'vue_project'",
+  )
+  return { content: content.replace(block, patchedBlock), changed: true }
+}
+
 function patchUserControllerUpdateUserAvatar(content) {
   const fnAnchor = 'export async function updateUserAvatar('
   const fnIndex = content.indexOf(fnAnchor)
@@ -74,9 +98,10 @@ if (!fs.existsSync(typingsPath)) {
 const raw = fs.readFileSync(typingsPath, 'utf-8')
 const p1 = ensureListAppChatHistoryParamsHasAppId(raw)
 const p2 = ensureUserUpdateAvatarRequestIsAny(p1.content)
+const p3 = ensureAppVOCodeGenTypeLowercase(p2.content)
 
-const patched = p2.content
-const changed = p1.changed || p2.changed
+const patched = p3.content
+const changed = p1.changed || p2.changed || p3.changed
 
 if (changed) {
   fs.writeFileSync(typingsPath, patched, 'utf-8')

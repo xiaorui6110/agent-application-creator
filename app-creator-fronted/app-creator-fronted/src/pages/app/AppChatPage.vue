@@ -9,6 +9,34 @@
         </a-tag>
       </div>
       <div class="header-right">
+        <a-space size="small">
+          <a-button
+            type="default"
+            size="small"
+            :disabled="!appId"
+            :loading="likeLoading"
+            @click="toggleLike"
+          >
+            <template #icon>
+              <HeartFilled v-if="liked" class="active" />
+              <HeartOutlined v-else />
+            </template>
+            {{ appInfo?.likeCount ?? 0 }}
+          </a-button>
+          <a-button
+            type="default"
+            size="small"
+            :disabled="!appId"
+            :loading="shareLoading"
+            @click="toggleShare"
+          >
+            <template #icon>
+              <ShareAltOutlined v-if="shared" class="active" />
+              <ShareAltOutlined v-else />
+            </template>
+            {{ appInfo?.shareCount ?? 0 }}
+          </a-button>
+        </a-space>
         <a-button type="default" @click="showAppDetail">
           <template #icon>
             <InfoCircleOutlined />
@@ -228,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onUnmounted, computed } from 'vue'
+import { ref, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser'
@@ -260,7 +288,12 @@ import {
   InfoCircleOutlined,
   DownloadOutlined,
   EditOutlined,
+  HeartOutlined,
+  HeartFilled,
+  ShareAltOutlined,
 } from '@ant-design/icons-vue'
+import { doLike, getLikeStatus } from '@/api/likeRecordController'
+import { doShare, getShareStatus } from '@/api/shareRecordController'
 
 const route = useRoute()
 const router = useRouter()
@@ -271,6 +304,11 @@ const appInfo = ref<API.AppVO>()
 const appId = ref<string>()
 const threadId = ref<string>()
 let cancelActiveAgentTask: (() => void) | null = null
+
+const liked = ref(false)
+const shared = ref(false)
+const likeLoading = ref(false)
+const shareLoading = ref(false)
 
 // 对话相关
 interface Message {
@@ -339,6 +377,97 @@ const showAppDetail = () => {
   appDetailVisible.value = true
 }
 
+const requireLogin = async () => {
+  if (loginUserStore.loginUser.userId) return true
+  message.warning('请先登录')
+  await router.push({
+    path: '/user/login',
+    query: {
+      redirect: route.fullPath,
+    },
+  })
+  return false
+}
+
+const refreshLikeShareState = async () => {
+  if (!appId.value) return
+  if (!loginUserStore.loginUser.userId) {
+    liked.value = false
+    shared.value = false
+    return
+  }
+
+  const [likeRes, shareRes] = await Promise.all([
+    getLikeStatus({ targetId: String(appId.value) }),
+    getShareStatus({ targetId: String(appId.value) }),
+  ])
+
+  if (isSuccessResponse(likeRes.data)) {
+    liked.value = likeRes.data.data === true
+  }
+  if (isSuccessResponse(shareRes.data)) {
+    shared.value = shareRes.data.data === true
+  }
+}
+
+const toggleLike = async () => {
+  if (!appId.value) return
+  const ok = await requireLogin()
+  if (!ok) return
+
+  likeLoading.value = true
+  try {
+    const next = liked.value ? 0 : 1
+    const res = await doLike({}, { targetId: String(appId.value), isLiked: next })
+    if (isSuccessResponse(res.data) && res.data.data) {
+      liked.value = !liked.value
+      if (appInfo.value) {
+        const base = appInfo.value.likeCount ?? 0
+        appInfo.value.likeCount = Math.max(0, base + (next === 1 ? 1 : -1))
+      }
+      return
+    }
+    message.error(res.data.msg ?? '操作失败')
+  } finally {
+    likeLoading.value = false
+  }
+}
+
+const toggleShare = async () => {
+  if (!appId.value) return
+  const ok = await requireLogin()
+  if (!ok) return
+
+  shareLoading.value = true
+  try {
+    const next = shared.value ? 0 : 1
+    const body: API.ShareDoRequest & { targetId?: string } = {
+      shareId: String(appId.value),
+      targetId: String(appId.value),
+      isShared: next,
+    }
+    const res = await doShare({}, body)
+    if (isSuccessResponse(res.data) && res.data.data) {
+      shared.value = !shared.value
+      if (appInfo.value) {
+        const base = appInfo.value.shareCount ?? 0
+        appInfo.value.shareCount = Math.max(0, base + (next === 1 ? 1 : -1))
+      }
+      return
+    }
+    message.error(res.data.msg ?? '操作失败')
+  } finally {
+    shareLoading.value = false
+  }
+}
+
+watch(
+  () => loginUserStore.loginUser.userId,
+  async () => {
+    await refreshLikeShareState()
+  },
+)
+
 // 加载对话历史
 const loadChatHistory = async (isLoadMore = false) => {
   if (!appId.value || loadingHistory.value) return
@@ -406,6 +535,8 @@ const fetchAppInfo = async () => {
     const res = await getAppInfoById({ appId: id })
     if (isSuccessResponse(res.data) && res.data.data) {
       appInfo.value = res.data.data
+
+      await refreshLikeShareState()
 
       // 先加载对话历史
       await loadChatHistory()
@@ -908,6 +1039,10 @@ onUnmounted(() => {
 .header-right {
   display: flex;
   gap: 12px;
+}
+
+.active {
+  color: #f28c28;
 }
 
 /* 主要内容区域 */

@@ -89,6 +89,26 @@ public class App implements Serializable {
     private String userId;
 
     /**
+     * 评论数
+     */
+    private Long commentCount;
+
+    /**
+     * 点赞数
+     */
+    private Long likeCount;
+
+    /**
+     * 分享数
+     */
+    private Long shareCount;
+
+    /**
+     * 浏览量
+     */
+    private Long viewCount;
+
+    /**
      * 创建时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

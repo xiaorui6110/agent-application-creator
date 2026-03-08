@@ -1,13 +1,12 @@
 declare namespace API {
-  type CodeGenType =
-    | 'single_file'
-    | 'multi_file'
-    | 'vue_project'
+  type addCommentParams = {
+    /** 添加评论请求 */
+    appCommentAddRequest?: any
+  }
 
   type AgentResponse = {
     /** Agent 最终给用户的自然语言回复 */
     reply?: string
-    codeGenType?: CodeGenType
     /** 结构化回复 */
     structuredReply?: StructuredReply
     /** Agent 在本次对话中调用的工具信息 */
@@ -18,6 +17,8 @@ declare namespace API {
     codeOptimizationInput?: CodeOptimizationInput
     /** Agent 生成的应用名称 */
     appName?: string
+    /** Agent 根据用户提示判断的代码生成类型 */
+    codeGenType?: string
     /** Agent 对用户意图的理解摘要 */
     intentSummary?: string
     /** Agent 自评置信度 */
@@ -78,6 +79,71 @@ declare namespace API {
     codeGenType?: string
   }
 
+  type AppCommentAddRequest = {
+    userId?: string
+    appId?: string
+    commentContent?: string
+    parentId?: string
+  }
+
+  type AppCommentDeleteRequest = {
+    commentId?: string
+  }
+
+  type AppCommentLikeRequest = {
+    commentId?: string
+    userId?: string
+    likeType?: 'LIKE' | 'CANCEL_LIKE'
+    likeCount?: number
+    dislikeCount?: number
+  }
+
+  type AppCommentQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    appId?: string
+  }
+
+  type AppCommentUserVO = {
+    /** 用户id */
+    userId?: string
+    /** 用户昵称 */
+    nickName?: string
+    /** 用户头像 */
+    userAvatar?: string
+  }
+
+  type AppCommentVO = {
+    /** 评论id */
+    commentId?: string
+    /** 评论用户id */
+    userId?: string
+    /** 被评论应用id */
+    appId?: string
+    /** 被评论应用所属用户id */
+    appUserId?: string
+    /** 评论内容 */
+    commentContent?: string
+    /** 父评论id，null表示顶级评论 */
+    parentId?: string
+    /** 点赞数 */
+    likeCount?: number
+    /** 点踩数 */
+    dislikeCount?: number
+    /** 创建时间 */
+    createTime?: string
+    /** 更新时间 */
+    updateTime?: string
+    /** 子评论列表 */
+    childCommentList?: any
+    /** 评论用户信息 */
+    appCommentUserVO?: AppCommentUserVO
+    /** 被评论应用信息 */
+    appVO?: AppVO
+  }
+
   type AppCreateRequest = {
     /** 应用初始化的 prompt */
     appInitPrompt: string
@@ -128,13 +194,21 @@ declare namespace API {
     /** 应用描述 */
     appDescription?: string
     /** 代码生成类型（枚举） */
-    codeGenType?: CodeGenType
+    codeGenType?: 'single_file' | 'multi_file' | 'vue_project'
     /** 应用排序优先级 */
     appPriority?: number
     /** 部署访问地址 */
     deployUrl?: string
     /** 部署时间 */
     deployedTime?: string
+    /** 评论数 */
+    commentCount?: number
+    /** 点赞数 */
+    likeCount?: number
+    /** 分享数 */
+    shareCount?: number
+    /** 浏览量 */
+    viewCount?: number
     /** 创建时间 */
     createTime?: string
     /** 更新时间 */
@@ -239,6 +313,11 @@ declare namespace API {
     platformMemory?: string[]
   }
 
+  type commentedHistoryParams = {
+    /** 获取评论历史请求 */
+    appCommentQueryRequest?: any
+  }
+
   type createAppParams = {
     /** 应用创建请求 */
     appCreateRequest?: any
@@ -259,6 +338,11 @@ declare namespace API {
     deleteRequestList?: any
   }
 
+  type deleteCommentParams = {
+    /** 删除评论请求 */
+    appCommentDeleteRequest?: any
+  }
+
   type DeleteRequest = {
     id?: string
   }
@@ -271,6 +355,16 @@ declare namespace API {
   type deployAppParams = {
     /** 应用部署请求 */
     appDeployRequest?: any
+  }
+
+  type doLikeParams = {
+    /** 点赞/取消点赞请求 */
+    likeDoRequest?: any
+  }
+
+  type doShareParams = {
+    /** 分享/取消分享请求 */
+    shareDoRequest?: any
   }
 
   type downloadAppCodeParams = {
@@ -323,6 +417,31 @@ declare namespace API {
     taskId?: any
   }
 
+  type getLikeHistoryParams = {
+    /** 获取点赞历史请求 */
+    likeQueryRequest?: any
+  }
+
+  type getLikeStatusParams = {
+    /** 目标ID */
+    targetId: string
+  }
+
+  type getMyLikeHistoryParams = {
+    /** 获取我的点赞历史请求 */
+    likeQueryRequest?: any
+  }
+
+  type getMyShareHistoryParams = {
+    /** 分享历史查询请求 */
+    shareQueryRequest?: any
+  }
+
+  type getShareStatusParams = {
+    /** 目标ID */
+    targetId: string
+  }
+
   type getTaskStateParams = {
     /** 任务ID */
     taskId: string
@@ -336,6 +455,48 @@ declare namespace API {
   type getUserInfoByIdOrNameParams = {
     /** 用户查询请求参数 */
     userQueryRequest?: any
+  }
+
+  type getUserShareHistoryParams = {
+    /** 分享历史查询请求 */
+    shareQueryRequest?: any
+  }
+
+  type likeCommentParams = {
+    /** 点赞评论请求 */
+    appCommentLikeRequest?: any
+  }
+
+  type LikeDoRequest = {
+    targetId?: string
+    isLiked?: number
+  }
+
+  type LikeQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    targetId?: string
+  }
+
+  type LikeRecordVO = {
+    /** 点赞记录id */
+    likeId?: string
+    /** 用户id */
+    userId?: string
+    /** 被点赞内容id */
+    targetId?: string
+    /** 被点赞内容所属用户id */
+    targetUserId?: string
+    /** 是否点赞 0-取消 1-点赞 */
+    isLiked?: number
+    /** 最近一次点赞时间 */
+    lastLikeTime?: string
+    /** 点赞用户信息 */
+    userVO?: UserVO
+    /** 被点赞内容信息 */
+    appVO?: AppVO
   }
 
   type listAllChatHistoryByPageForAdminParams = {
@@ -376,8 +537,22 @@ declare namespace API {
     userQueryRequest?: any
   }
 
+  type myHistoryParams = {
+    /** 获取我的评论历史请求 */
+    appCommentQueryRequest?: any
+  }
+
   type PageAgentTask = {
     records?: AgentTask[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
+  }
+
+  type PageAppCommentVO = {
+    records?: AppCommentVO[]
     pageNumber?: number
     pageSize?: number
     totalPage?: number
@@ -403,9 +578,27 @@ declare namespace API {
     optimizeCountQuery?: boolean
   }
 
+  type PageLikeRecordVO = {
+    records?: LikeRecordVO[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
+  }
+
   type pageParams = {
     /** AgentTask分页对象 */
     page: PageAgentTask
+  }
+
+  type PageShareRecordVO = {
+    records?: ShareRecordVO[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
   }
 
   type PageUserVO = {
@@ -415,6 +608,11 @@ declare namespace API {
     totalPage?: number
     totalRow?: number
     optimizeCountQuery?: boolean
+  }
+
+  type queryCommentParams = {
+    /** 查询评论请求 */
+    appCommentQueryRequest?: any
   }
 
   type resetUserPasswordParams = {
@@ -439,8 +637,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityAppVO = {
@@ -450,8 +648,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityBoolean = {
@@ -461,8 +659,52 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityListAppCommentVO = {
+    code?: string
+    msg?: string
+    data?: AppCommentVO[]
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityListLikeRecordVO = {
+    code?: string
+    msg?: string
+    data?: LikeRecordVO[]
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityListShareRecordVO = {
+    code?: string
+    msg?: string
+    data?: ShareRecordVO[]
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityLong = {
+    code?: string
+    msg?: string
+    data?: number
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityMapStringString = {
@@ -472,8 +714,19 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityPageAppCommentVO = {
+    code?: string
+    msg?: string
+    data?: PageAppCommentVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityPageAppVO = {
@@ -483,8 +736,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityPageChatHistory = {
@@ -494,8 +747,30 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityPageLikeRecordVO = {
+    code?: string
+    msg?: string
+    data?: PageLikeRecordVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityPageShareRecordVO = {
+    code?: string
+    msg?: string
+    data?: PageShareRecordVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityPageUserVO = {
@@ -505,8 +780,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityString = {
@@ -516,8 +791,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntitySystemOutput = {
@@ -527,8 +802,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityUser = {
@@ -538,8 +813,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityUserVO = {
@@ -549,8 +824,8 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
   }
 
   type ServerResponseEntityVoid = {
@@ -560,13 +835,41 @@ declare namespace API {
     version?: string
     timestamp?: number
     sign?: string
-    success?: boolean
     fail?: boolean
+    success?: boolean
+  }
+
+  type ShareDoRequest = {
+    shareId?: string
+    isShared?: number
+  }
+
+  type ShareQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    targetId?: string
+  }
+
+  type ShareRecordVO = {
+    /** 分享记录id */
+    shareId?: string
+    /** 用户id */
+    userId?: string
+    /** 被分享内容id */
+    targetId?: string
+    /** 分享时间 */
+    shareTime?: string
+    /** 分享用户信息 */
+    userVO?: UserVO
+    /** 被分享内容信息 */
+    appVO?: AppVO
   }
 
   type StructuredReply = {
     /** 应用生成模式 */
-    type?: CodeGenType
+    type?: string
     /** 是否可直接运行 */
     runnable?: boolean
     /** 入口文件 */
@@ -630,8 +933,8 @@ declare namespace API {
   }
 
   type updateUserAvatarParams = {
-    /** 更新用户头像请求参数 */
-    userUpdateAvatarRequest?: any
+    /** 头像文件 */
+    头像文件?: any
   }
 
   type updateUserInfoParams = {
@@ -742,11 +1045,6 @@ declare namespace API {
     userId: string
     /** 操作类型：true-解禁，false-封禁 */
     isUnban: boolean
-  }
-
-  type UserUpdateAvatarRequest = {
-    /** 用户头像文件 */
-    multipartFile: any
   }
 
   type UserUpdateInfoRequest = {

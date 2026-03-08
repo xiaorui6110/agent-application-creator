@@ -146,7 +146,7 @@ public class AppController {
     }
 
     /**
-     * 分页获取应用列表
+     * 分页获取我的应用列表
      */
     @PostMapping("/list/page/info")
     @Operation(summary = "分页获取应用列表" , description = "分页获取应用列表")
@@ -159,7 +159,7 @@ public class AppController {
         Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
         // 数据封装
         Page<AppVO> appInfoPage = new Page<>(current, pageSize, appPage.getTotalRow());
-        List<AppVO> appInfoList = appService.getAppInfoList(appPage.getRecords());
+        List<AppVO> appInfoList = appService.getMyAppInfoList(appPage.getRecords());
         appInfoPage.setRecords(appInfoList);
         return ServerResponseEntity.success(appInfoPage);
     }

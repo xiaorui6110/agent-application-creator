@@ -164,3 +164,88 @@ create index idx_task_id
 
 create index idx_task_id_create_time
     on xr_agent_task (task_id, create_time);
+
+create table xr_app_comment
+(
+    comment_id      varchar(36) default ''                not null comment '评论id'
+        primary key,
+    user_id         varchar(36)                           not null comment '评论用户id',
+    app_id          varchar(36)                           not null comment '被评论应用id',
+    app_user_id     varchar(36)                           not null comment '被评论应用所属用户id',
+    comment_content text                                  not null comment '评论内容',
+    parent_id       varchar(36)                           null comment '父评论id，null表示顶级评论',
+    like_count      bigint      default 0                 null comment '点赞数',
+    dislike_count   bigint      default 0                 null comment '点踩数',
+    is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
+    is_read         tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
+    create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
+)
+    comment '应用评论表' charset = utf8mb4;
+
+create index idx_app_id
+    on xr_app_comment (app_id);
+
+create index idx_create_time
+    on xr_app_comment (create_time);
+
+create index idx_like_count
+    on xr_app_comment (like_count);
+
+create index idx_user_id
+    on xr_app_comment (user_id);
+
+create table xr_like_record
+(
+    like_id         varchar(36) default ''                not null comment '点赞记录id'
+        primary key,
+    user_id         varchar(36)                           not null comment '用户id',
+    target_id       varchar(36)                           not null comment '被点赞内容id',
+    target_user_id  varchar(36)                           not null comment '被点赞内容所属用户id',
+    is_liked        tinyint     default 1                 not null comment '是否点赞 0-取消 1-点赞',
+    first_like_time datetime    default CURRENT_TIMESTAMP null comment '第一次点赞时间',
+    last_like_time  datetime    default CURRENT_TIMESTAMP null comment '最近一次点赞时间',
+    is_read         tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
+    create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
+    constraint uk_user_target
+        unique (user_id, target_id)
+)
+    comment '点赞记录表' charset = utf8mb4;
+
+create index idx_target_id
+    on xr_like_record (target_id);
+
+create index idx_target_user_id
+    on xr_like_record (target_user_id);
+
+create index idx_user_id
+    on xr_like_record (user_id);
+
+create table xr_share_record
+(
+    share_id       varchar(36) default ''                not null comment '分享记录id'
+        primary key,
+    user_id        varchar(36)                           not null comment '用户id',
+    target_id      varchar(36)                           not null comment '被分享内容id',
+    target_user_id varchar(36)                           not null comment '被分享内容所属用户id',
+    is_shared      tinyint     default 1                 not null comment '是否分享 0-取消 1-分享',
+    share_time     datetime    default CURRENT_TIMESTAMP null comment '分享时间',
+    is_read        tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
+    create_time    datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time    datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted     tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
+    constraint uk_user_target
+        unique (user_id, target_id)
+)
+    comment '分享记录表' charset = utf8mb4;
+
+create index idx_target_id
+    on xr_share_record (target_id);
+
+create index idx_target_user_id
+    on xr_share_record (target_user_id);
+
+create index idx_user_id
+    on xr_share_record (user_id);

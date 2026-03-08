@@ -213,7 +213,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
 
 
     /**
-     * 获取自己的应用信息列表
+     * 获取应用信息列表
      *
      * @param appList 应用列表
      * @return 应用信息列表
@@ -223,18 +223,13 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
-        // 获取当前用户ID
-        String userId = SecurityUtil.getUserInfo().getUserId();
-        
-        // 过滤掉不属于当前用户的应用，只返回自己的应用
-        List<App> filteredApps = appList.stream()
-                .filter(app -> app.getUserId().equals(userId))
-                .collect(Collectors.toList());
-        
+
+        List<App> filteredApps = new ArrayList<>(appList);
+
         if (CollUtil.isEmpty(filteredApps)) {
             return new ArrayList<>();
         }
-        
+
         // 批量获取用户信息，避免 N+1 查询问题
         Set<String> userIds = filteredApps.stream()
                 .map(App::getUserId)
@@ -249,6 +244,42 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 获取我的应用信息列表
+     *
+     * @param appList 应用列表
+     * @return 应用信息列表
+     */
+    @Override
+    public List<AppVO> getMyAppInfoList(List<App> appList) {
+        if (CollUtil.isEmpty(appList)) {
+            return new ArrayList<>();
+        }
+        // 获取当前用户ID
+        String userId = SecurityUtil.getUserInfo().getUserId();
+
+        // 过滤掉不属于当前用户的应用，只返回自己的应用
+        List<App> filteredApps = appList.stream()
+                .filter(app -> app.getUserId().equals(userId))
+                .collect(Collectors.toList());
+
+        if (CollUtil.isEmpty(filteredApps)) {
+            return new ArrayList<>();
+        }
+
+        // 批量获取用户信息，避免 N+1 查询问题
+        Set<String> userIds = filteredApps.stream()
+                .map(App::getUserId)
+                .collect(Collectors.toSet());
+        Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo(user)));
+        return filteredApps.stream().map(app -> {
+            AppVO appVO = getAppInfo(app.getAppId());
+            UserVO userVO = userInfoMap.get(app.getUserId());
+            appVO.setUserVO(userVO);
+            return appVO;
+        }).collect(Collectors.toList());
+    }
 
     /**
      * 获取精选应用信息列表

@@ -51,27 +51,34 @@ CREATE TABLE `xr_user_thread_bind` (
 
 -- 应用表
 drop table if exists `xr_app`;
-CREATE TABLE `xr_app` (
-   `app_id`          varchar(36)  not null default ''    comment '应用id',
-   `app_name`        varchar(256) not null default ''    comment '应用名称',
-   `app_cover`       varchar(1000)          default null  comment '应用封面',
-   `app_init_prompt` text                  default null  comment '应用初始化的 prompt',
-   `app_description` varchar(500)          default null  comment '应用描述',
-   `code_gen_type`   varchar(64)           default null  comment '代码生成类型（枚举）',
-   `deploy_key`      varchar(64)           default null  comment '部署唯一标识',
-   `deploy_url`      varchar(255)          default null  comment '部署访问地址',
-   `deployed_time`   datetime              default null  comment '部署时间',
-   `app_priority`    int                   default 0     comment '应用排序优先级',
-   `user_id`         varchar(36)               not null  comment '创建用户id',
-   `create_time`     datetime default CURRENT_TIMESTAMP  comment '创建时间',
-   `update_time`     datetime default CURRENT_TIMESTAMP  on update CURRENT_TIMESTAMP comment '更新时间',
-   `is_deleted`      tinyint(4)  default '0'             comment '是否删除 0-未删除 1-已删除',
-   PRIMARY KEY (app_id),
-   UNIQUE KEY uk_deploy_key (deploy_key),
-   INDEX idx_app_name (app_name),
-   INDEX idx_user_id (user_id),
-   INDEX idx_create_time (create_time)
-) COMMENT='应用表';
+create table `xr_app`
+(
+    `app_id`          varchar(36)   not null default ''               comment '应用id',
+    `app_name`        varchar(256)  not null default ''               comment '应用名称',
+    `app_cover`       varchar(1000)          default null             comment '应用封面',
+    `app_init_prompt` text                   default null             comment '应用初始化的 prompt',
+    `app_description` varchar(500)           default null             comment '应用描述',
+    `code_gen_type`   varchar(64)            default null             comment '代码生成类型（枚举）',
+    `deploy_key`      varchar(64)            default null             comment '部署唯一标识',
+    `deploy_url`      varchar(255)           default null             comment '部署访问地址',
+    `deployed_time`   datetime               default null             comment '部署时间',
+    `app_priority`    int                    default 0                comment '应用排序优先级',
+    `user_id`         varchar(36)  not null                          comment '创建用户id',
+    `comment_count`   bigint       default 0                         comment '评论数',
+    `like_count`      bigint       default 0                         comment '点赞数',
+    `share_count`     bigint       default 0                         comment '分享数',
+    `view_count`      bigint       default 0                         comment '浏览量',
+    `create_time`     datetime     default CURRENT_TIMESTAMP         comment '创建时间',
+    `update_time`     datetime     default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted`      tinyint(4)   default '0'                       comment '是否删除 0-未删除 1-已删除',
+    primary key (`app_id`),
+    unique key `uk_deploy_key` (`deploy_key`),
+    index `idx_app_name` (`app_name`),
+    index `idx_user_id` (`user_id`),
+    index `idx_create_time` (`create_time`),
+    index `idx_like_count` (`like_count`),
+    index `idx_view_count` (`view_count`)
+) engine = InnoDB default charset = utf8mb4 comment '应用表';
 
 -- 对话历史表（基本上同 AgentChatMessage，mongodb 实体类，只是新增了 MySQL 数据库的实现）
 drop table if exists `xr_chat_history`;
@@ -132,6 +139,73 @@ CREATE TABLE `xr_agent_task` (
    INDEX idx_create_time (create_time),
    INDEX idx_task_id_create_time (task_id, create_time)
 ) COMMENT='agent执行任务表';
+
+-- 应用评论表
+drop table if exists `xr_app_comment`;
+create table `xr_app_comment`
+(
+    `comment_id`      varchar(36)  not null default ''               comment '评论id',
+    `user_id`         varchar(36)  not null                          comment '评论用户id',
+    `app_id`          varchar(36)  not null                          comment '被评论应用id',
+    `app_user_id`     varchar(36)  not null                          comment '被评论应用所属用户id',
+    `comment_content` text         not null                          comment '评论内容',
+    `parent_id`       varchar(36)           default null             comment '父评论id，null表示顶级评论',
+    `like_count`      bigint       default 0                         comment '点赞数',
+    `dislike_count`   bigint       default 0                         comment '点踩数',
+    `is_deleted`      tinyint(4)   default '0'                       comment '是否删除 0-未删除 1-已删除',
+    `is_read`         tinyint(4)   default '0'                       comment '是否已读 0-未读 1-已读',
+    `create_time`     datetime     default CURRENT_TIMESTAMP         comment '创建时间',
+    `update_time`     datetime     default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    primary key (`comment_id`),
+    index `idx_user_id` (`user_id`),
+    index `idx_app_id` (`app_id`),
+    index `idx_create_time` (`create_time`),
+    index `idx_like_count` (`like_count`)
+) engine = InnoDB default charset = utf8mb4 comment '应用评论表';
+
+-- 点赞记录表
+drop table if exists `xr_like_record`;
+create table `xr_like_record`
+(
+    `like_id`       varchar(36) not null default ''               comment '点赞记录id',
+    `user_id`       varchar(36) not null                          comment '用户id',
+    `target_id`     varchar(36) not null                          comment '被点赞内容id',
+    `target_user_id` varchar(36) not null                         comment '被点赞内容所属用户id',
+    `is_liked`      tinyint(4)  not null default '1'              comment '是否点赞 0-取消 1-点赞',
+    `first_like_time` datetime  default CURRENT_TIMESTAMP         comment '第一次点赞时间',
+    `last_like_time` datetime   default CURRENT_TIMESTAMP         comment '最近一次点赞时间',
+    `is_read`       tinyint(4)  default '0'                       comment '是否已读 0-未读 1-已读',
+    `create_time`   datetime    default CURRENT_TIMESTAMP         comment '创建时间',
+    `update_time`   datetime    default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted`    tinyint(4)  default '0'                       comment '是否删除 0-未删除 1-已删除',
+    primary key (`like_id`),
+    unique key `uk_user_target` (`user_id`, `target_id`),
+    index `idx_target_id` (`target_id`),
+    index `idx_target_user_id` (`target_user_id`),
+    index `idx_user_id` (`user_id`)
+) engine = InnoDB default charset = utf8mb4 comment '点赞记录表';
+
+-- 分享记录表
+drop table if exists `xr_share_record`;
+create table `xr_share_record`
+(
+    `share_id`       varchar(36) not null default ''               comment '分享记录id',
+    `user_id`        varchar(36) not null                          comment '用户id',
+    `target_id`      varchar(36) not null                          comment '被分享内容id',
+    `target_user_id` varchar(36) not null                          comment '被分享内容所属用户id',
+    `is_shared`      tinyint(4)  not null default '1'              comment '是否分享 0-取消 1-分享',
+    `share_time`     datetime    default CURRENT_TIMESTAMP         comment '分享时间',
+    `is_read`        tinyint(4)  default '0'                       comment '是否已读 0-未读 1-已读',
+    `create_time`    datetime    default CURRENT_TIMESTAMP         comment '创建时间',
+    `update_time`    datetime    default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted`     tinyint(4)  default '0'                       comment '是否删除 0-未删除 1-已删除',
+    primary key (`share_id`),
+    unique key `uk_user_target` (`user_id`, `target_id`),
+    index `idx_target_id` (`target_id`),
+    index `idx_target_user_id` (`target_user_id`),
+    index `idx_user_id` (`user_id`)
+) engine = InnoDB default charset = utf8mb4 comment '分享记录表';
+
 
 
 

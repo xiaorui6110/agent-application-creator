@@ -7,6 +7,8 @@ export enum CodeGenTypeEnum {
   VUE_PROJECT = 'vue_project',
 }
 
+export type CodeGenTypeValue = 'single_file' | 'multi_file' | 'vue_project'
+
 /**
  * 代码生成类型配置
  */
@@ -33,7 +35,7 @@ export const CODE_GEN_TYPE_OPTIONS = Object.values(CODE_GEN_TYPE_CONFIG).map((co
   value: config.value,
 }))
 
-export const coerceCodeGenTypeValue = (type: string | undefined): CodeGenTypeEnum | undefined => {
+export const coerceCodeGenTypeValue = (type: string | undefined): CodeGenTypeValue | undefined => {
   const lower = (type ?? '').trim().toLowerCase()
   if (!lower) return undefined
   if (lower === CodeGenTypeEnum.SINGLE_FILE) return CodeGenTypeEnum.SINGLE_FILE
@@ -55,7 +57,7 @@ export const formatCodeGenType = (type: string | undefined): string => {
   return CODE_GEN_TYPE_CONFIG[coerced].label
 }
 
-export const normalizeCodeGenType = (type: string): string => {
+export const normalizeCodeGenType = (type: string): CodeGenTypeValue => {
   return coerceCodeGenTypeValue(type) ?? CodeGenTypeEnum.SINGLE_FILE
 }
 
@@ -70,6 +72,6 @@ export const getAllCodeGenTypes = () => {
  * 检查是否为有效的代码生成类型
  * @param type 待检查的类型
  */
-export const isValidCodeGenType = (type: string): type is CodeGenTypeEnum => {
+export const isValidCodeGenType = (type: string): type is CodeGenTypeValue => {
   return Object.values(CodeGenTypeEnum).includes(type as CodeGenTypeEnum)
 }

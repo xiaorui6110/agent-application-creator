@@ -74,6 +74,30 @@ public class AppVO implements Serializable {
     private LocalDateTime deployedTime;
 
     /**
+     * 评论数
+     */
+    @Schema(description = "评论数")
+    private Long commentCount;
+
+    /**
+     * 点赞数
+     */
+    @Schema(description = "点赞数")
+    private Long likeCount;
+
+    /**
+     * 分享数
+     */
+    @Schema(description = "分享数")
+    private Long shareCount;
+
+    /**
+     * 浏览量
+     */
+    @Schema(description = "浏览量")
+    private Long viewCount;
+
+    /**
      * 创建时间
      */
     @Schema(description = "创建时间")

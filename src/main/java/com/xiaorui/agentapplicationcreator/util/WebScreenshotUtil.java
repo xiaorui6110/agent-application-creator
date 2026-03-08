@@ -7,6 +7,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.JavascriptExecutor;
@@ -31,10 +32,6 @@ public class WebScreenshotUtil {
 
     private static volatile WebDriver webDriver = null;
 
-    /**
-     * 使用相对路径指向 resources 目录下的 ChromeDriver
-     */
-    private static final String CHROME_DRIVER_PATH = System.getProperty("user.dir") + "/src/main/resources/web_drivers/chromedriver.exe";
     /**
      * 默认页面宽高
      */
@@ -111,13 +108,17 @@ public class WebScreenshotUtil {
      */
     private static WebDriver getWebDriver() {
         try {
-            // 检查 ChromeDriver 文件是否存在
-            File driverFile = new File(CHROME_DRIVER_PATH);
-            if (!driverFile.exists()) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "ChromeDriver 未找到，请确保文件存在于: " + CHROME_DRIVER_PATH);
-            }
-            // 设置本地 ChromeDriver 路径
-            System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_PATH);
+            // 使用 WebDriverManager 自动下载并配置与本地 Chrome 版本匹配的驱动（因为电脑的 Chrome 自动更新，所以使用这种方法）
+            WebDriverManager.chromedriver().setup();
+
+            //// 检查 ChromeDriver 文件是否存在
+            //File driverFile = new File(CHROME_DRIVER_PATH);
+            //if (!driverFile.exists()) {
+            //    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "ChromeDriver 未找到，请确保文件存在于: " + CHROME_DRIVER_PATH);
+            //}
+            //// 设置本地 ChromeDriver 路径
+            //System.setProperty("webdriver.chrome.driver", CHROME_DRIVER_PATH);
+
             // 配置 Chrome 选项
             ChromeOptions options = new ChromeOptions();
             // 无头模式（新版Chrome推荐使用 --headless=new 替代旧的 --headless）

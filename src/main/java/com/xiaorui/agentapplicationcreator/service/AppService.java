@@ -48,12 +48,21 @@ public interface AppService extends IService<App> {
     AppVO getAppInfo(String appId);
 
     /**
-     * 获取自己的应用信息列表
+     * 获取应用信息列表
      *
      * @param appList 应用列表
      * @return 应用信息列表
      */
     List<AppVO> getAppInfoList(List<App> appList);
+
+
+    /**
+     * 获取我的应用信息列表
+     *
+     * @param appList 应用列表
+     * @return 应用信息列表
+     */
+    List<AppVO> getMyAppInfoList(List<App> appList);
 
     /**
      * 获取精选应用信息列表

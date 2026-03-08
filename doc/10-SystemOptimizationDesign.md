@@ -44,7 +44,7 @@
 - Agent 级：
     - 单任务最大思考轮次
 
-> 最终项目中使用的 Redisson 的 RateLimiter 来实现的接口、用户和 API 级别的限流。
+> 最终项目中使用的 Redisson 的 RateLimiter 来实现的接口、用户和 IP 级别的限流。
 
 ## 稳定性优化
 

@@ -27,8 +27,8 @@ public class AsyncConfig implements AsyncConfigurer {
     @Bean("codeOptExecutor")
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(10);
-        executor.setMaxPoolSize(50);
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(8);
         executor.setQueueCapacity(200);
         // 设置拒绝策略
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
@@ -40,27 +40,36 @@ public class AsyncConfig implements AsyncConfigurer {
         return executor;
     }
 
+    /**
+     * 虚拟线程执行器 - 用于异步持久化任务
+     * 适用场景：I/O 密集型任务（数据库写入）
+     * 优势：按需创建、内存占用小、高并发不阻塞
+     */
     @Bean("agentPersistExecutor")
     public Executor agentPersistExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+    @Bean("appLikeOrShareExecutor")
+    public Executor appLikeExecutor() {
         return new ThreadPoolExecutor(
+                4,
                 8,
-                8,
-                30L,
+                15L,
                 TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(1024),
+                new LinkedBlockingQueue<>(256),
                 new ThreadFactory() {
                     private final AtomicInteger threadNum = new AtomicInteger(1);
                     @Override
                     public Thread newThread(@NotNull Runnable r) {
                         Thread thread = new Thread(r);
-                        thread.setName("agent-async-persist-" + threadNum.getAndIncrement());
+                        thread.setName("app-async-like" + threadNum.getAndIncrement());
                         return thread;
                     }
                 },
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
-
 
     @NotNull
     @Override
