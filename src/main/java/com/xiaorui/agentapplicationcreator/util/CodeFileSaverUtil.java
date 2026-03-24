@@ -1,102 +1,63 @@
 package com.xiaorui.agentapplicationcreator.util;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
 import com.xiaorui.agentapplicationcreator.service.AppService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_DEPLOY_ROOT_DIR;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
 
-/**
- * @description: 代码文件保存工具类
- * @author: xiaorui
- * @date: 2025-12-22 14:08
- **/
 @Component
 public class CodeFileSaverUtil {
 
     @Resource
     private AppService appService;
 
-    /**
-     * 将 structuredReply.files 写入本地目录
-     *
-     * @param files key: 相对路径, value: 文件内容
-     * @param appId 应用ID
-     */
     public static void writeFilesToLocal(Map<String, String> files, String appId) throws IOException {
-
-        for (Map.Entry<String, String> entry : files.entrySet()) {
-
-            String relativePath = entry.getKey();
-            String content = entry.getValue();
-
-            // 构建唯一目录路径：tmp/code_output/{appId}
-            Path uniqueDirName = Paths.get(appId);
-            String dirPath = CODE_OUTPUT_ROOT_DIR + File.separator + uniqueDirName;
-            // 创建应用存放文件夹
-            FileUtil.mkdir(dirPath);
-
-            Path baseDir = Path.of(dirPath);
-            Path targetPath = baseDir.resolve(relativePath);
-
-            // 写文件（会覆盖已写入文件的内容）
-            Files.writeString(
-                    targetPath,
-                    content,
-                    StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING
-            );
-
-        }
+        writeFiles(files, Path.of(CODE_OUTPUT_ROOT_DIR, appId));
     }
 
-
-    /**
-     * 将 structuredReply.files 写入服务部署目录（但不是静态方法了）
-     *
-     * @param files key: 相对路径, value: 文件内容
-     * @param appId 应用ID
-     */
     public void writeFilesToWeb(Map<String, String> files, String appId) throws IOException {
+        App app = appService.getById(appId);
+        String deployKey = app.getDeployKey();
+        writeFiles(files, Path.of(CODE_DEPLOY_ROOT_DIR, deployKey));
+    }
 
+    private static void writeFiles(Map<String, String> files, Path rootDir) throws IOException {
+        if (files == null || files.isEmpty()) {
+            throw new IOException("生成文件为空，无法落盘");
+        }
+        FileUtil.mkdir(rootDir.toFile());
         for (Map.Entry<String, String> entry : files.entrySet()) {
-
             String relativePath = entry.getKey();
-            String content = entry.getValue();
-            App app = appService.getById(appId);
-            String deployKey = app.getDeployKey();
-            // 构建唯一目录路径：tmp/code_deploy/{deployKey}
-            Path uniqueDirName = Paths.get(deployKey);
-            String dirPath = CODE_DEPLOY_ROOT_DIR + File.separator + uniqueDirName;
-            // 创建应用存放文件夹
-            FileUtil.mkdir(dirPath);
-
-            Path baseDir = Path.of(dirPath);
-            Path targetPath = baseDir.resolve(relativePath);
-
-            // 写文件（会覆盖已写入文件的内容）
+            if (StrUtil.isBlank(relativePath)) {
+                throw new IOException("存在空文件路径，无法落盘");
+            }
+            Path normalizedPath = rootDir.resolve(relativePath).normalize();
+            if (!normalizedPath.startsWith(rootDir)) {
+                throw new IOException("非法文件路径: " + relativePath);
+            }
+            Path parent = normalizedPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
             Files.writeString(
-                    targetPath,
-                    content,
+                    normalizedPath,
+                    entry.getValue() == null ? "" : entry.getValue(),
                     StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING
             );
-
         }
     }
 }
-

@@ -351,6 +351,25 @@ const deployUrl = ref('')
 // 下载相关
 const downloading = ref(false)
 
+const normalizeTaskStatus = (status?: string) => {
+  const upper = String(status ?? '').trim().toUpperCase()
+  if (!upper || upper === 'INIT' || upper === 'QUEUED') {
+    return 'WAITING'
+  }
+  return upper
+}
+
+const getTaskStatusText = (status?: string, taskMessage?: string) => {
+  if (taskMessage) return taskMessage
+  const normalizedStatus = normalizeTaskStatus(status)
+  if (normalizedStatus === 'WAITING') return '等待执行中'
+  if (normalizedStatus === 'RUNNING') return '执行中'
+  if (normalizedStatus === 'RETRY_WAITING') return '等待系统重试'
+  if (normalizedStatus === 'FAILED') return '执行失败'
+  if (normalizedStatus === 'SUCCEEDED') return '执行成功'
+  return normalizedStatus || '任务处理中'
+}
+
 // 可视化编辑相关
 const isEditMode = ref(false)
 const selectedElementInfo = ref<ElementInfo | null>(null)
@@ -691,7 +710,7 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
           appInfo.value.codeGenType = undefined
         }
       }
-      const status = output.taskStatus
+      const status = normalizeTaskStatus(output.taskStatus)
 
       if (output.agentResponse?.reply) {
         messages.value[aiMessageIndex].content = output.agentResponse.reply
@@ -790,7 +809,7 @@ const buildPreviewSrcDoc = (html: string, baseHref: string) => {
   return `${baseTag}${html}`
 }
 
-const loadPreviewSrcDoc = async (entryUrl: string, baseHref: string) => {
+const loadPreviewSrcDoc = async (entryUrl: string) => {
   const res = await fetch(entryUrl, {
     method: 'GET',
     credentials: 'include',
@@ -800,6 +819,10 @@ const loadPreviewSrcDoc = async (entryUrl: string, baseHref: string) => {
     throw new Error(String(res.status))
   }
   const html = await res.text()
+  const finalUrl = res.url || entryUrl
+  const baseHref = finalUrl.endsWith('/')
+    ? finalUrl
+    : finalUrl.slice(0, finalUrl.lastIndexOf('/') + 1)
   return buildPreviewSrcDoc(html, baseHref)
 }
 
@@ -816,14 +839,10 @@ const updatePreview = async () => {
     currentBase === basePreviewUrl ? `${basePreviewUrl}?t=${Date.now()}` : basePreviewUrl
   previewUrl.value = effectivePreviewUrl
 
-  const baseHref = basePreviewUrl.endsWith('index.html')
-    ? basePreviewUrl.slice(0, basePreviewUrl.lastIndexOf('/') + 1)
-    : basePreviewUrl
-
   const reason = await inspectPreviewEmbeddable(effectivePreviewUrl)
   if (reason) {
     try {
-      previewSrcDoc.value = await loadPreviewSrcDoc(effectivePreviewUrl, baseHref)
+      previewSrcDoc.value = await loadPreviewSrcDoc(effectivePreviewUrl)
     } catch {
       previewError.value = reason
     }

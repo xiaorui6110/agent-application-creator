@@ -3,16 +3,11 @@ package com.xiaorui.agentapplicationcreator.enums;
 import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
-/**
- * @description: 任务状态枚举
- * @author: xiaorui
- * @date: 2026-01-19 19:44
- **/
 @Getter
 public enum AgentTaskStatusEnum {
 
     /**
-     * 任务状态枚举
+     * 任务状态
      */
     INIT("任务初始化中", "init"),
     QUEUED("任务排队中", "queued"),
@@ -29,12 +24,13 @@ public enum AgentTaskStatusEnum {
         this.value = value;
     }
 
-    /**
-     * 根据 value 获取枚举
-     *
-     * @param value 枚举值的value
-     * @return 枚举值
-     */
+    public String getApiValue() {
+        if (this == INIT || this == QUEUED) {
+            return "WAITING";
+        }
+        return this.name();
+    }
+
     public static AgentTaskStatusEnum getEnumByValue(String value) {
         if (ObjUtil.isEmpty(value)) {
             return null;
@@ -47,4 +43,18 @@ public enum AgentTaskStatusEnum {
         return null;
     }
 
+    public static String toApiValue(String value) {
+        if (ObjUtil.isEmpty(value)) {
+            return "WAITING";
+        }
+        AgentTaskStatusEnum statusEnum = getEnumByValue(value);
+        if (statusEnum != null) {
+            return statusEnum.getApiValue();
+        }
+        String upperValue = value.trim().toUpperCase();
+        if ("INIT".equals(upperValue) || "QUEUED".equals(upperValue)) {
+            return "WAITING";
+        }
+        return upperValue;
+    }
 }

@@ -1,6 +1,9 @@
 -- auto-generated definition
 create schema xiaorui_app_creator collate utf8mb4_general_ci;
 
+use xiaorui_app_creator;
+
+-- auto-generated definition
 create table xr_user
 (
     user_id        varchar(36) default ''                not null comment '用户id'
@@ -38,6 +41,7 @@ create index idx_user_id
 create index idx_user_phone
     on xr_user (user_phone);
 
+-- auto-generated definition
 create table xr_app
 (
     app_id          varchar(36)  default ''                not null comment '应用id'
@@ -45,20 +49,24 @@ create table xr_app
     app_name        varchar(256) default ''                not null comment '应用名称',
     app_cover       varchar(1000)                          null comment '应用封面',
     app_init_prompt text                                   null comment '应用初始化的 prompt',
+    app_description varchar(500)                           null comment '应用描述',
     code_gen_type   varchar(64)                            null comment '代码生成类型（枚举）',
     deploy_key      varchar(64)                            null comment '部署唯一标识',
     deploy_url      varchar(255)                           null comment '部署访问地址',
     deployed_time   datetime                               null comment '部署时间',
     app_priority    int          default 0                 null comment '应用排序优先级',
     user_id         varchar(36)                            not null comment '创建用户id',
+    comment_count   bigint       default 0                 null comment '评论数',
+    like_count      bigint       default 0                 null comment '点赞数',
+    share_count     bigint       default 0                 null comment '分享数',
+    view_count      bigint       default 0                 null comment '浏览量',
     create_time     datetime     default CURRENT_TIMESTAMP null comment '创建时间',
     update_time     datetime     default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     is_deleted      tinyint      default 0                 null comment '是否删除 0-未删除 1-已删除',
-    app_description varchar(500)                           null comment '应用描述',
     constraint uk_deploy_key
         unique (deploy_key)
 )
-    comment '应用表';
+    comment '应用表' charset = utf8mb4;
 
 create index idx_app_name
     on xr_app (app_name);
@@ -66,8 +74,37 @@ create index idx_app_name
 create index idx_create_time
     on xr_app (create_time);
 
+create index idx_like_count
+    on xr_app (like_count);
+
 create index idx_user_id
     on xr_app (user_id);
+
+create index idx_view_count
+    on xr_app (view_count);
+
+-- auto-generated definition
+create table xr_user_thread_bind
+(
+    bind_id     varchar(36) default ''                  not null comment '绑定ID'
+        primary key,
+    user_id     varchar(64)                             not null comment '用户ID',
+    thread_id   varchar(64)                             not null comment 'Agent 对话线程ID',
+    agent_name  varchar(64) default 'app_creator_agent' null comment 'Agent 名称',
+    bind_status tinyint     default 0                   null comment '绑定状态 0-未绑定 1-已绑定',
+    create_time datetime    default CURRENT_TIMESTAMP   null comment '创建时间',
+    update_time datetime    default CURRENT_TIMESTAMP   null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted  tinyint     default 0                   null comment '是否删除 0-未删除 1-已删除',
+    constraint uk_thread
+        unique (thread_id)
+)
+    comment '用户-智能体会话绑定表';
+
+create index idx_user
+    on xr_user_thread_bind (user_id);
+
+
+-- auto-generated definition
 create table xr_chat_history
 (
     chat_history_id   varchar(36) default ''                not null comment '对话历史id'
@@ -92,25 +129,7 @@ create index idx_app_id_create_time
 create index idx_create_time
     on xr_chat_history (create_time);
 
-create table xr_user_thread_bind
-(
-    bind_id     varchar(36) default ''                  not null comment '绑定ID'
-        primary key,
-    user_id     varchar(64)                             not null comment '用户ID',
-    thread_id   varchar(64)                             not null comment 'Agent 对话线程ID',
-    agent_name  varchar(64) default 'app_creator_agent' null comment 'Agent 名称',
-    create_time datetime    default CURRENT_TIMESTAMP   null comment '创建时间',
-    update_time datetime    default CURRENT_TIMESTAMP   null on update CURRENT_TIMESTAMP comment '更新时间',
-    is_deleted  tinyint     default 0                   null comment '是否删除 0-未删除 1-已删除',
-    bind_status tinyint     default 0                   null comment '绑定状态 1-已绑定 0-未绑定',
-    constraint uk_thread
-        unique (thread_id)
-)
-    comment '用户-智能体会话绑定表';
-
-create index idx_user
-    on xr_user_thread_bind (user_id);
-
+-- auto-generated definition
 create table xr_code_optimize_result
 (
     code_optimize_history_id  varchar(36) default ''                not null comment '代码优化历史id'
@@ -135,6 +154,7 @@ create index idx_app_id_create_time
 create index idx_create_time
     on xr_code_optimize_result (create_time);
 
+-- auto-generated definition
 create table xr_agent_task
 (
     agent_task_id   varchar(36) default ''                not null comment 'agent执行任务id'
@@ -145,12 +165,12 @@ create table xr_agent_task
     task_status     varchar(32)                           not null comment '任务状态',
     task_result     text                                  null comment '任务结果',
     task_error      text                                  null comment '任务错误信息',
-    create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
-    update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
-    is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
     retry_count     int         default 0                 not null comment '重试次数',
     fail_type       varchar(32) default ''                not null comment '失败类型',
     next_retry_time datetime                              null comment '下次重试时间',
+    create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
     constraint uk_task_id
         unique (task_id)
 )
@@ -165,6 +185,66 @@ create index idx_task_id
 create index idx_task_id_create_time
     on xr_agent_task (task_id, create_time);
 
+
+
+-- auto-generated definition
+create table xr_like_record
+(
+    like_id         varchar(36) default ''                not null comment '点赞记录id'
+        primary key,
+    user_id         varchar(36)                           not null comment '用户id',
+    target_id       varchar(36)                           not null comment '被点赞内容id',
+    target_user_id  varchar(36)                           not null comment '被点赞内容所属用户id',
+    is_liked        tinyint     default 1                 not null comment '是否点赞 0-取消 1-点赞',
+    first_like_time datetime    default CURRENT_TIMESTAMP null comment '第一次点赞时间',
+    last_like_time  datetime    default CURRENT_TIMESTAMP null comment '最近一次点赞时间',
+    is_read         tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
+    create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
+    constraint uk_user_target
+        unique (user_id, target_id)
+)
+    comment '点赞记录表' charset = utf8mb4;
+
+create index idx_target_id
+    on xr_like_record (target_id);
+
+create index idx_target_user_id
+    on xr_like_record (target_user_id);
+
+create index idx_user_id
+    on xr_like_record (user_id);
+
+-- auto-generated definition
+create table xr_share_record
+(
+    share_id       varchar(36) default ''                not null comment '分享记录id'
+        primary key,
+    user_id        varchar(36)                           not null comment '用户id',
+    target_id      varchar(36)                           not null comment '被分享内容id',
+    target_user_id varchar(36)                           not null comment '被分享内容所属用户id',
+    is_shared      tinyint     default 1                 not null comment '是否分享 0-取消 1-分享',
+    share_time     datetime    default CURRENT_TIMESTAMP null comment '分享时间',
+    is_read        tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
+    create_time    datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time    datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_deleted     tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
+    constraint uk_user_target
+        unique (user_id, target_id)
+)
+    comment '分享记录表' charset = utf8mb4;
+
+create index idx_target_id
+    on xr_share_record (target_id);
+
+create index idx_target_user_id
+    on xr_share_record (target_user_id);
+
+create index idx_user_id
+    on xr_share_record (user_id);
+
+-- auto-generated definition
 create table xr_app_comment
 (
     comment_id      varchar(36) default ''                not null comment '评论id'
@@ -195,57 +275,4 @@ create index idx_like_count
 create index idx_user_id
     on xr_app_comment (user_id);
 
-create table xr_like_record
-(
-    like_id         varchar(36) default ''                not null comment '点赞记录id'
-        primary key,
-    user_id         varchar(36)                           not null comment '用户id',
-    target_id       varchar(36)                           not null comment '被点赞内容id',
-    target_user_id  varchar(36)                           not null comment '被点赞内容所属用户id',
-    is_liked        tinyint     default 1                 not null comment '是否点赞 0-取消 1-点赞',
-    first_like_time datetime    default CURRENT_TIMESTAMP null comment '第一次点赞时间',
-    last_like_time  datetime    default CURRENT_TIMESTAMP null comment '最近一次点赞时间',
-    is_read         tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
-    create_time     datetime    default CURRENT_TIMESTAMP null comment '创建时间',
-    update_time     datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
-    is_deleted      tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
-    constraint uk_user_target
-        unique (user_id, target_id)
-)
-    comment '点赞记录表' charset = utf8mb4;
 
-create index idx_target_id
-    on xr_like_record (target_id);
-
-create index idx_target_user_id
-    on xr_like_record (target_user_id);
-
-create index idx_user_id
-    on xr_like_record (user_id);
-
-create table xr_share_record
-(
-    share_id       varchar(36) default ''                not null comment '分享记录id'
-        primary key,
-    user_id        varchar(36)                           not null comment '用户id',
-    target_id      varchar(36)                           not null comment '被分享内容id',
-    target_user_id varchar(36)                           not null comment '被分享内容所属用户id',
-    is_shared      tinyint     default 1                 not null comment '是否分享 0-取消 1-分享',
-    share_time     datetime    default CURRENT_TIMESTAMP null comment '分享时间',
-    is_read        tinyint     default 0                 null comment '是否已读 0-未读 1-已读',
-    create_time    datetime    default CURRENT_TIMESTAMP null comment '创建时间',
-    update_time    datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
-    is_deleted     tinyint     default 0                 null comment '是否删除 0-未删除 1-已删除',
-    constraint uk_user_target
-        unique (user_id, target_id)
-)
-    comment '分享记录表' charset = utf8mb4;
-
-create index idx_target_id
-    on xr_share_record (target_id);
-
-create index idx_target_user_id
-    on xr_share_record (target_user_id);
-
-create index idx_user_id
-    on xr_share_record (user_id);

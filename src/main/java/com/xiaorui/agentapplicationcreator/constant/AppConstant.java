@@ -29,13 +29,13 @@ public interface AppConstant {
     String CODE_DEPLOY_ROOT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "code_deploy";
 
     /**
-     * 应用部署域名（TODO 改为自己的 Liunx 服务器地址或本地地址）
+     * 应用部署域名（TODO 改为自己的 Liunx 服务器地址）
      */
-    String CODE_DEPLOY_HOST = "http://172.30.43.12";
+    String CODE_DEPLOY_HOST = "http://172.19.48.249";
 
     /**
-     * 远程部署目录（TODO 改为自己的 Liunx 服务器目录或本地目录）
+     * 远程部署目录（TODO 改为自己的 Liunx 服务器目录）
      */
-    String REMOTE_DEPLOY_DIR = "/home/shenrui/nginx/code_deploy/";
+    String REMOTE_DEPLOY_DIR = "/home/xiaorui/nginx/code_deploy/";
 
 }

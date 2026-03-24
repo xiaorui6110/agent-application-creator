@@ -1,13 +1,17 @@
 package com.xiaorui.agentapplicationcreator.controller;
 
+import cn.hutool.core.util.StrUtil;
+import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
+import com.xiaorui.agentapplicationcreator.model.entity.App;
+import com.xiaorui.agentapplicationcreator.service.AppService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,50 +25,29 @@ import java.io.File;
 import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.DEPLOY;
 import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.PREVIEW;
 
-/**
- * @description: 静态资源访问控制器
- * @author: xiaorui
- * @date: 2025-12-25 15:33
- **/
-//@Tag(name = "静态资源访问接口")
 @RestController
 @RequestMapping("/static")
 public class StaticResourceController {
 
-    /**
-     * 访问预览应用
-     * 提供静态资源访问，支持目录重定向
-     * 访问格式：<a href="http://localhost:8123/api/static/preview/appId">...</a>
-     */
+    @Resource
+    private AppService appService;
+
     @GetMapping("/preview/{appId}/**")
-    @Operation(summary = "访问预览应用" , description = "访问预览应用")
+    @Operation(summary = "访问预览应用", description = "访问预览应用")
     @Parameter(name = "appId", description = "应用ID")
     public ResponseEntity<Resource> serveStaticPreviewResource(@PathVariable String appId, HttpServletRequest request) {
         return getResource(StaticVisitTypeEnum.PREVIEW, appId, request);
     }
 
-    /**
-     * 访问部署好的应用
-     * 提供静态资源访问，支持目录重定向
-     * 访问格式：<a href="http://localhost:8123/api/static/deploy/deployKey">...</a>
-     */
     @GetMapping("/deploy/{deployKey}/**")
-    @Operation(summary = "访问部署好的应用" , description = "访问部署好的应用")
+    @Operation(summary = "访问部署应用", description = "访问部署应用")
     @Parameter(name = "deployKey", description = "部署key")
     public ResponseEntity<Resource> serveStaticDeployResource(@PathVariable String deployKey, HttpServletRequest request) {
         return getResource(StaticVisitTypeEnum.DEPLOY, deployKey, request);
     }
 
-    /**
-     * 提供静态资源访问 - (预览/部署)
-     *
-     * @param staticVisitTypeEnum 预览/部署 枚举值
-     * @param appIdOrDeployKey 预览文件名或部署ID
-     * @param request ServletRequest
-     * @return 请求的资源
-     */
-    private ResponseEntity<Resource> getResource(StaticVisitTypeEnum staticVisitTypeEnum, String appIdOrDeployKey, HttpServletRequest request) {
-        // 获取完整请求URI，然后提取资源路径
+    private ResponseEntity<Resource> getResource(StaticVisitTypeEnum staticVisitTypeEnum, String appIdOrDeployKey,
+                                                 HttpServletRequest request) {
         String requestUri = request.getRequestURI();
         String prefix;
         if (PREVIEW.equals(staticVisitTypeEnum)) {
@@ -74,71 +57,81 @@ public class StaticResourceController {
         } else {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "未知访问类型");
         }
-        // 提取资源路径（移除前缀）
-        String resourcePath = requestUri.substring(prefix.length());
 
-        // 调试日志
-        //System.out.println("=== StaticResourceController Debug ===");
-        //System.out.println("RequestURI: " + requestUri);
-        //System.out.println("Prefix: " + prefix);
-        //System.out.println("ResourcePath: " + resourcePath);
-        //System.out.println("Type: " + staticVisitTypeEnum);
-        //System.out.println("Key: " + appIdOrDeployKey);
+        String resourcePath = requestUri.substring(prefix.length());
+        if (resourcePath.contains("..")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         try {
-            // 如果是目录访问（不带斜杠），重定向到带斜杠的URL
             if (resourcePath.isEmpty()) {
                 HttpHeaders headers = new HttpHeaders();
                 headers.add(HttpHeaders.LOCATION, request.getRequestURI() + "/");
                 return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
             }
-            // 默认返回 index.html
             if ("/".equals(resourcePath)) {
-                resourcePath = "/index.html";
+                String defaultEntry = resolveDefaultEntry(staticVisitTypeEnum, appIdOrDeployKey);
+                HttpHeaders headers = new HttpHeaders();
+                headers.add(HttpHeaders.LOCATION, request.getRequestURI() + defaultEntry.substring(1));
+                return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);
             }
-            // 构建文件路径（使用绝对路径）
+
             String projectPath = System.getProperty("user.dir");
             String filePath = projectPath + File.separator +
                     staticVisitTypeEnum.getValue() + File.separator + appIdOrDeployKey + resourcePath;
-            //System.out.println("FilePath: " + filePath);
             File file = new File(filePath);
-            //System.out.println("File exists: " + file.exists());
-            //System.out.println("File absolute path: " + file.getAbsolutePath());
-
-            // 检查文件是否存在
-            if (!file.exists()) {
+            if (!file.exists() || !file.isFile()) {
                 return ResponseEntity.notFound().build();
             }
-            // 返回文件资源
-            Resource resource = new FileSystemResource(file);
+            FileSystemResource resource = new FileSystemResource(file);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, getContentTypeWithCharset(filePath))
-                    .body(resource);
+                    .body((Resource) resource);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * 根据文件扩展名返回带字符编码的 Content-Type
-     */
+    private String resolveDefaultEntry(StaticVisitTypeEnum visitType, String appIdOrDeployKey) {
+        if (DEPLOY.equals(visitType)) {
+            return "/index.html";
+        }
+        App app = appService.getById(appIdOrDeployKey);
+        if (app != null && CodeGenTypeEnum.VUE_PROJECT.getValue().equals(app.getCodeGenType())) {
+            return "/dist/index.html";
+        }
+        return "/index.html";
+    }
+
     private String getContentTypeWithCharset(String filePath) {
-        if (filePath.endsWith(".html")) {
+        String lowerPath = filePath.toLowerCase();
+        if (lowerPath.endsWith(".html")) {
             return "text/html; charset=UTF-8";
         }
-        if (filePath.endsWith(".css")) {
+        if (lowerPath.endsWith(".css")) {
             return "text/css; charset=UTF-8";
         }
-        if (filePath.endsWith(".js")) {
+        if (lowerPath.endsWith(".js")) {
             return "application/javascript; charset=UTF-8";
         }
-        if (filePath.endsWith(".png")) {
+        if (lowerPath.endsWith(".png")) {
             return "image/png";
         }
-        if (filePath.endsWith(".jpg")) {
+        if (lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg")) {
             return "image/jpeg";
+        }
+        if (lowerPath.endsWith(".svg")) {
+            return "image/svg+xml";
+        }
+        if (lowerPath.endsWith(".json")) {
+            return "application/json; charset=UTF-8";
+        }
+        if (lowerPath.endsWith(".ico")) {
+            return "image/x-icon";
+        }
+        if (StrUtil.endWithAnyIgnoreCase(lowerPath, ".woff", ".woff2")) {
+            return "font/woff2";
         }
         return "application/octet-stream";
     }
-
 }
