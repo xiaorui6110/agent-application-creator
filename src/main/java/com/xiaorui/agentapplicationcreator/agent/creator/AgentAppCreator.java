@@ -28,7 +28,6 @@ import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeRe
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
-import com.xiaorui.agentapplicationcreator.model.entity.AgentChatMessage;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.*;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
@@ -79,9 +78,6 @@ public class AgentAppCreator {
     private UserThreadBindService userThreadBindService;
 
     @Resource
-    private AgentChatMemoryService agentChatMemoryService;
-
-    @Resource
     private ChatHistoryService chatHistoryService;
 
     @Resource
@@ -128,7 +124,6 @@ public class AgentAppCreator {
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 保存 Agent 回复
-        //agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
         // 异步设置应用名称和代码生成类型
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
@@ -198,7 +193,6 @@ public class AgentAppCreator {
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 保存 Agent 回复
-        //agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", response.getText()));
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
         // 异步设置应用名称和代码生成类型
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
@@ -279,7 +273,6 @@ public class AgentAppCreator {
         validateUserInput(userMessage);
         // 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
         // 通义千问 API 是无状态的，不会保存对话历史。要实现多轮对话，需在每次请求中显式传入历史对话消息（好吧）
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"user", userMessage));
         // 初始化 Generation 实例
         Generation gen = new Generation();
         Message systemMsg = Message.builder()
@@ -340,8 +333,6 @@ public class AgentAppCreator {
         // 主线程等待异步任务完成
         latch.await();
         AgentResponse agentResponse = JSONUtil.toBean(fullContent.toString(), AgentResponse.class,true);
-        // 保存 Agent 回复到 MongoDB 中
-        agentChatMemoryService.saveMessage(buildMessage(userId, threadId, appId,"assistant", fullContent.toString()));
         System.out.println("程序执行完成");
         // 构建返回值
         return SystemOutput.builder()
@@ -398,27 +389,6 @@ public class AgentAppCreator {
         if (SensitiveWordHelper.contains(input)) {
             throw new BusinessException("输入包含不适宜内容", ErrorCode.PARAMS_ERROR);
         }
-    }
-
-    /**
-     * 构建消息实体（MongoDB）
-     */
-    @NotNull
-    private AgentChatMessage buildMessage(
-            String userId,
-            String threadId,
-            String appId,
-            String role,
-            String content) {
-        AgentChatMessage msg = new AgentChatMessage();
-        msg.setUserId(userId);
-        msg.setThreadId(threadId);
-        msg.setAppId(appId);
-        msg.setRole(role);
-        msg.setContent(content);
-        msg.setAgentName("app_creator_agent");
-        msg.setTimestamp(System.currentTimeMillis());
-        return msg;
     }
 
 

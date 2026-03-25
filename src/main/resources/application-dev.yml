@@ -77,13 +77,6 @@ spring:
           min-idle: 10
           max-wait: 10000ms
         shutdown-timeout: 200ms
-    # MongoDB 配置
-    mongodb:
-      host: 127.0.0.1
-      port: 27017
-      #password: 123456
-      uri: mongodb://127.0.0.1:27017
-      database: agent_memory_store
   # AI 配置
   ai:
     dashscope:
