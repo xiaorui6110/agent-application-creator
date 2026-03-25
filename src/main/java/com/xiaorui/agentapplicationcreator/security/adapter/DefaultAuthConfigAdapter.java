@@ -22,7 +22,7 @@ public class DefaultAuthConfigAdapter implements AuthConfigAdapter {
 
     @Override
     public List<String> pathPatterns() {
-        return Collections.singletonList("/*");
+        return Collections.singletonList("/api/**");
     }
 
     @Override

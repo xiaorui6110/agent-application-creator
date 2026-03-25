@@ -64,6 +64,9 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
     @Resource
     private RedisTemplate<String, String> stringRedisTemplate;
 
+    @Resource
+    private CodeFileSaverUtil codeFileSaverUtil;
+
     @Override
     public AgentTaskStatus handleUserMessage(String message, String threadId, String appId) {
         validateUserInput(message);
@@ -95,7 +98,7 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
                 if (output.getAgentResponse() != null
                         && output.getAgentResponse().getStructuredReply() != null
                         && output.getAgentResponse().getStructuredReply().getFiles() != null) {
-                    CodeFileSaverUtil.writeFilesToLocal(
+                    codeFileSaverUtil.writeFilesToLocal(
                             output.getAgentResponse().getStructuredReply().getFiles(), appId);
                 }
                 agentTaskService.saveFinalOutput(taskId, output);

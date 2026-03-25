@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.ShearCaptcha;
 import cn.hutool.captcha.generator.RandomGenerator;
@@ -338,6 +339,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         String accessToken = request.getHeader("Authorization");
         if (StrUtil.isBlank(accessToken)) {
+            accessToken = StpUtil.getTokenValue();
+        }
+        if (StrUtil.isBlank(accessToken)) {
             return true;
         }
         // 删除该用户在该系统当前的token
@@ -430,46 +434,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      */
     @Override
     public boolean changeUserEmail(String newUserEmail, String emailVerifyCode) {
-        // 校验用户输入信息
         if (StrUtil.hasBlank(newUserEmail, emailVerifyCode)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数为空");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "request params is blank");
         }
         if (!PrincipalUtil.isEmail(newUserEmail)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"邮箱格式错误");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid email format");
         }
-        // 校验验证码
         String verifyCodeKey = String.format("email:code:verify:changeEmail:%s", newUserEmail);
         String correctCode = stringRedisTemplate.opsForValue().get(verifyCodeKey);
         if (StrUtil.isBlank(correctCode) || !correctCode.equals(emailVerifyCode)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"验证码错误或已过期");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid or expired verify code");
         }
-        // 获取当前用户信息
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = this.mapper.selectOneById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
-        // 检查新邮箱是否已被使用
         synchronized (newUserEmail.intern()) {
             QueryWrapper queryWrapper = new QueryWrapper();
             queryWrapper.eq("user_email", newUserEmail);
             long count = this.mapper.selectCountByQuery(queryWrapper);
             if (count > 0) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR,"邮箱已被使用");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "email already exists");
             }
-            // 修改邮箱
             User user = new User();
             user.setUserId(loginUser.getUserId());
             user.setUserEmail(newUserEmail);
             user.setUpdateTime(LocalDateTime.now());
             boolean updateResult = this.updateById(user);
             if (!updateResult) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR,"修改邮箱失败");
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to change email");
             }
             log.info("user change email success : {}", userId);
-            // 删除验证码
             stringRedisTemplate.delete(verifyCodeKey);
-            // 返回修改结果
             return true;
         }
     }
@@ -485,37 +482,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      */
     @Override
     public boolean changeUserPassword(String oldPassword, String newPassword, String checkPassword) {
-        // 简单的参数校验
         if (StrUtil.hasBlank(oldPassword, newPassword, checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数为空");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "request params is blank");
         }
         if (newPassword.length() < USERPASSWORD_MIN_LENGTH) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码长度过短");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "password is too short");
         }
         if (newPassword.length() > USERPASSWORD_MAX_LENGTH) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码长度过长");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "password is too long");
         }
         if (!newPassword.equals(checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"两次输入的密码不一致");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "password confirmation mismatch");
         }
-        // 查询用户信息
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = this.mapper.selectOneById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
-        // （暂时作废）将新密码解密再加密，现在是直接前端明文传输后加密
         String encryptPassword = passwordEncoder.encode(newPassword);
-        if (passwordEncoder.matches(newPassword,loginUser.getLoginPassword())) {
-            // 新密码不能与原密码相同
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"新密码不能与原密码相同");
+        if (passwordEncoder.matches(newPassword, loginUser.getLoginPassword())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "new password must differ from old password");
         }
-        // 修改密码
         loginUser.setLoginPassword(encryptPassword);
         loginUser.setUpdateTime(LocalDateTime.now());
         boolean updateResult = this.updateById(loginUser);
         if (!updateResult) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"修改密码失败");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to change password");
         }
         log.info("user change password success : {}", userId);
         return true;
@@ -533,45 +525,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
      */
     @Override
     public boolean resetUserPassword(String userEmail, String emailVerifyCode, String newPassword, String checkPassword) {
-        // 校验信息
         if (StrUtil.hasBlank(userEmail, emailVerifyCode, newPassword, checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "request params is blank");
         }
         if (!PrincipalUtil.isEmail(userEmail)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"邮箱格式错误");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid email format");
         }
         if (newPassword.length() < USERPASSWORD_MIN_LENGTH) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码长度过短");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "password is too short");
         }
         if (newPassword.length() > USERPASSWORD_MAX_LENGTH) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"密码长度过长");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "password is too long");
         }
         if (!newPassword.equals(checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"两次输入的密码不一致");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "password confirmation mismatch");
         }
-        // 校验验证码
         String verifyCodeKey = String.format("email:code:verify:resetPassword:%s", userEmail);
         String correctCode = stringRedisTemplate.opsForValue().get(verifyCodeKey);
         if (StrUtil.isBlank(correctCode) || !correctCode.equals(emailVerifyCode)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"验证码错误或已过期");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid or expired verify code");
         }
-        // 查询用户信息
-        String userId = SecurityUtil.getUserInfo().getUserId();
-        User loginUser = this.mapper.selectOneById(userId);
-        if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+        User targetUser = this.mapper.selectOneByQuery(new QueryWrapper().eq(User::getUserEmail, userEmail));
+        if (targetUser == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
-        // （暂时作废）解密并加密密码，现在是直接前端明文传输后加密
         String encryptPassword = passwordEncoder.encode(newPassword);
-        // 重置密码
-        loginUser.setLoginPassword(encryptPassword);
-        loginUser.setUpdateTime(LocalDateTime.now());
-        boolean updateResult = this.updateById(loginUser);
+        targetUser.setLoginPassword(encryptPassword);
+        targetUser.setUpdateTime(LocalDateTime.now());
+        boolean updateResult = this.updateById(targetUser);
         if (!updateResult) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"重置密码失败");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to reset password");
         }
-        log.info("user reset password success : {}", userId);
-        // 删除验证码
+        log.info("user reset password success : {}", targetUser.getUserId());
         stringRedisTemplate.delete(verifyCodeKey);
         return true;
     }

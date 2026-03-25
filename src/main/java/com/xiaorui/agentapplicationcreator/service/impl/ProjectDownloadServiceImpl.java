@@ -2,10 +2,12 @@ package com.xiaorui.agentapplicationcreator.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.ZipUtil;
+import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.service.ProjectDownloadService;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,18 +19,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Set;
 
-/**
- * @description: 项目下载服务实现类
- * @author: xiaorui
- * @date: 2026-01-02 15:57
- **/
 @Slf4j
 @Service
 public class ProjectDownloadServiceImpl implements ProjectDownloadService {
 
-    /**
-     * 需要过滤的文件和目录名称
-     */
     private static final Set<String> IGNORED_NAMES = Set.of(
             "node_modules",
             ".git",
@@ -42,73 +36,66 @@ public class ProjectDownloadServiceImpl implements ProjectDownloadService {
             ".vscode"
     );
 
-    /**
-     * 需要过滤的文件扩展名
-     */
     private static final Set<String> IGNORED_EXTENSIONS = Set.of(
             ".log",
             ".tmp",
             ".cache"
     );
 
-    /**
-     * 下载项目为压缩包
-     *
-     * @param projectPath 项目路径
-     * @param downloadFileName 下载文件名称
-     * @param response HttpServletResponse对象
-     * @return 下载成功返回true，失败返回false
-     */
+    @Resource
+    private AppProperties appProperties;
+
     @Override
-    public boolean downloadProjectAsZip(String projectPath, String downloadFileName, HttpServletResponse response) {
-        // 基础校验
-        ThrowUtil.throwIf(StrUtil.isBlank(projectPath), ErrorCode.PARAMS_ERROR, "项目路径不能为空");
-        ThrowUtil.throwIf(StrUtil.isBlank(downloadFileName), ErrorCode.PARAMS_ERROR, "下载文件名不能为空");
-        File projectDir = new File(projectPath);
-        ThrowUtil.throwIf(!projectDir.exists(), ErrorCode.PARAMS_ERROR, "项目路径不存在");
-        ThrowUtil.throwIf(!projectDir.isDirectory(), ErrorCode.PARAMS_ERROR, "项目路径不是一个目录");
-        log.info("开始打包下载项目: {} -> {}.zip", projectPath, downloadFileName);
-        // 设置 HTTP 响应头
+    public boolean downloadProjectAsZip(String appId, HttpServletResponse response) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
+        File projectDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
+        ThrowUtil.throwIf(!projectDir.exists(), ErrorCode.NOT_FOUND_ERROR, "project directory not found");
+        ThrowUtil.throwIf(!projectDir.isDirectory(), ErrorCode.SYSTEM_ERROR, "project path is not a directory");
+        ThrowUtil.throwIf(isDirectoryEmpty(projectDir), ErrorCode.NOT_FOUND_ERROR, "project files not found");
+
+        String downloadFileName = sanitizeDownloadFileName(appId);
+        log.info("start project download, appId: {}, dir: {}", appId, projectDir.getAbsolutePath());
+
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/zip");
         response.addHeader("Content-Disposition",
                 String.format("attachment; filename=\"%s.zip\"", downloadFileName));
-        // 定义文件过滤器
+
         FileFilter filter = file -> isPathAllowed(projectDir.toPath(), file.toPath());
-        // 压缩
         try {
-            // 使用 Hutool 的 ZipUtil 直接将过滤后的目录压缩到响应输出流
             ZipUtil.zip(response.getOutputStream(), StandardCharsets.UTF_8, false, filter, projectDir);
-            log.info("打包下载项目成功: {} -> {}.zip", projectPath, downloadFileName);
+            log.info("project download success, appId: {}", appId);
             return true;
         } catch (IOException e) {
-            log.error("打包下载项目失败", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "打包下载项目失败");
+            log.error("project download failed, appId: {}", appId, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to package project download");
         }
     }
 
-    /**
-     * 校验路径是否允许包含在压缩包中
-     *
-     * @param projectRoot 项目根目录
-     * @param fullPath 完整路径
-     * @return 是否允许
-     */
     private boolean isPathAllowed(Path projectRoot, Path fullPath) {
-        // 获取相对路径
         Path relativePath = projectRoot.relativize(fullPath);
-        // 检查路径中的每一部分是否符合要求
         for (Path part : relativePath) {
             String partName = part.toString();
-            // 检查是否在忽略名称列表中
             if (IGNORED_NAMES.contains(partName)) {
                 return false;
             }
-            // 检查是否以忽略扩展名结尾
             if (IGNORED_EXTENSIONS.stream().anyMatch(ext -> partName.toLowerCase().endsWith(ext))) {
                 return false;
             }
         }
         return true;
+    }
+
+    private boolean isDirectoryEmpty(File directory) {
+        File[] children = directory.listFiles();
+        return children == null || children.length == 0;
+    }
+
+    private String sanitizeDownloadFileName(String appId) {
+        String sanitized = appId.replaceAll("[^A-Za-z0-9_-]", "");
+        if (StrUtil.isBlank(sanitized)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid appId for download");
+        }
+        return sanitized;
     }
 }

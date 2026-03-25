@@ -2,7 +2,6 @@ package com.xiaorui.agentapplicationcreator.security.adapter;
 
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -15,6 +14,25 @@ public class ResourceServerAdapter extends DefaultAuthConfigAdapter {
 
     @Override
     public List<String> pathPatterns() {
-        return Collections.singletonList("/api/*");
+        return List.of("/api/**");
+    }
+
+    @Override
+    public List<String> excludePathPatterns() {
+        return List.of(
+                "/api/user/register",
+                "/api/user/login",
+                "/api/user/sendEmailCode",
+                "/api/user/getPictureVerifyCode",
+                "/api/user/reset/password",
+                "/api/app/get/info/**",
+                "/api/app/good/list/page/info",
+                "/api/static/**",
+                "/api/swagger-ui.html",
+                "/api/swagger-ui/**",
+                "/api/v3/api-docs/**",
+                "/api/doc.html",
+                "/api/error"
+        );
     }
 }

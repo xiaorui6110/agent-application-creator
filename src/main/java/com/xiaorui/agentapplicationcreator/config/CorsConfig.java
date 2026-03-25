@@ -1,27 +1,31 @@
 package com.xiaorui.agentapplicationcreator.config;
 
+import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * @description: 全局跨域配置
- * @author: xiaorui
- * @date: 2025-11-29 16:07
- **/
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+    @Resource
+    private AppProperties appProperties;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // 覆盖所有请求
-        registry.addMapping("/**")
-                // 允许发送 Cookie
-                .allowCredentials(true)
-                // 放行哪些域名（必须用 patterns，否则 * 会和 allowCredentials 冲突）
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .exposedHeaders("*");
+        applyPolicy(registry.addMapping("/api/**"), appProperties.getCors().getApi());
+        applyPolicy(registry.addMapping("/static/**"), appProperties.getCors().getStatics());
+    }
+
+    private void applyPolicy(CorsRegistration registration, AppProperties.CorsPolicy policy) {
+        registration
+                .allowCredentials(policy.isAllowCredentials())
+                .allowedOriginPatterns(policy.getAllowedOriginPatterns().toArray(String[]::new))
+                .allowedMethods(policy.getAllowedMethods().toArray(String[]::new))
+                .allowedHeaders(policy.getAllowedHeaders().toArray(String[]::new))
+                .exposedHeaders(policy.getExposedHeaders().toArray(String[]::new))
+                .maxAge(policy.getMaxAge());
     }
 }

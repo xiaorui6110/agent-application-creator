@@ -5,6 +5,7 @@ import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.orchestrator.DefaultAgentOrchestrator;
 import com.xiaorui.agentapplicationcreator.constant.AgentTaskConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.enums.AgentFailTypeEnum;
 import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
@@ -12,7 +13,11 @@ import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.mapper.AgentTaskMapper;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentTask;
+import com.xiaorui.agentapplicationcreator.model.entity.App;
+import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.AgentTaskService;
+import com.xiaorui.agentapplicationcreator.service.AppService;
+import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +30,9 @@ import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @Service
 public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask> implements AgentTaskService {
@@ -39,6 +47,12 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
 
     @Resource
     private DefaultAgentOrchestrator defaultAgentOrchestrator;
+
+    @Resource
+    private AppService appService;
+
+    @Resource
+    private UserService userService;
 
     @Override
     public void initTask(String taskId, String threadId, String appId) {
@@ -108,7 +122,8 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
     @Override
     public SystemOutput getTask(String taskId) {
         AgentTask agentTask = getTaskState(taskId);
-        ThrowUtil.throwIf(agentTask == null, ErrorCode.NOT_FOUND_ERROR, "任务不存在");
+        ThrowUtil.throwIf(agentTask == null, ErrorCode.NOT_FOUND_ERROR, "task not found");
+        validateTaskAccess(agentTask);
 
         String normalizedStatus = AgentTaskStatusEnum.toApiValue(agentTask.getTaskStatus());
         SystemOutput.SystemOutputBuilder builder = SystemOutput.builder()
@@ -171,14 +186,15 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
     @Override
     public void manualRetryTask(String taskId) {
         AgentTask task = getTaskStateOrThrow(taskId);
+        validateTaskAccess(task);
         if (!AgentTaskStatusEnum.FAILED.getValue().equals(task.getTaskStatus())
                 && !AgentTaskStatusEnum.RETRY_WAITING.getValue().equals(task.getTaskStatus())) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前任务状态不支持重试");
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "current task status does not support retry");
         }
         Boolean locked = agentTaskRedisTemplate.opsForValue()
                 .setIfAbsent("agent:retry:lock:" + taskId, task, 30, TimeUnit.SECONDS);
         if (Boolean.FALSE.equals(locked)) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "请稍后再试");
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "please retry later");
         }
         defaultAgentOrchestrator.manualRetry(task);
     }
@@ -206,7 +222,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
     private AgentTask getTaskStateOrThrow(String taskId) {
         AgentTask state = getTaskState(taskId);
         if (state == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "任务不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "task not found");
         }
         return state;
     }
@@ -216,14 +232,27 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         agentTaskRedisTemplate.opsForValue().set(keyName, state, 24, TimeUnit.HOURS);
     }
 
+    private void validateTaskAccess(AgentTask task) {
+        String userId = SecurityUtil.getUserInfo().getUserId();
+        User loginUser = userService.getById(userId);
+        ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR, "user not found");
+        if (UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
+            return;
+        }
+        ThrowUtil.throwIf(task.getAppId() == null, ErrorCode.NOT_FOUND_ERROR, "task app not found");
+        App app = appService.getById(task.getAppId());
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
+        ThrowUtil.throwIf(!userId.equals(app.getUserId()), ErrorCode.NOT_AUTH_ERROR, "no permission for task");
+    }
+
     private String buildTaskMessage(String normalizedStatus, AgentTask agentTask) {
         return switch (normalizedStatus) {
-            case "WAITING" -> "任务排队中";
-            case "RUNNING" -> "任务执行中";
-            case "RETRY_WAITING" -> "任务失败，等待系统重试";
-            case "FAILED" -> agentTask.getTaskError() != null ? agentTask.getTaskError() : "任务执行失败";
-            case "SUCCEEDED" -> "任务执行成功";
-            default -> "任务状态未知";
+            case "WAITING" -> "task is waiting in queue";
+            case "RUNNING" -> "task is running";
+            case "RETRY_WAITING" -> "task failed and is waiting for retry";
+            case "FAILED" -> agentTask.getTaskError() != null ? agentTask.getTaskError() : "task failed";
+            case "SUCCEEDED" -> "task succeeded";
+            default -> "unknown task status";
         };
     }
 }

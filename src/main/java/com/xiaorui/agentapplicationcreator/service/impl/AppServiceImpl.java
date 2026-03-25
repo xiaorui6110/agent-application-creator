@@ -8,6 +8,7 @@ import cn.hutool.core.util.StrUtil;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
 import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
@@ -29,27 +30,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.xiaorui.agentapplicationcreator.constant.AppConstant.*;
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.GOOD_APP_PRIORITY;
 
-/**
- * 应用表 服务层实现。
- *
- * @author xiaorui
- */
 @Slf4j
 @Service
-public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppService{
+public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
-    private final static Integer MAX_INPUT_LENGTH = 2000;
+    private static final int MAX_INPUT_LENGTH = 2000;
 
     @Resource
     private UserService userService;
@@ -60,55 +55,39 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
     @Resource
     private ScreenshotService screenshotService;
 
-    /**
-     * 创建应用
-     *
-     * @param appInitPrompt 应用初始化prompt(UserPrompt)
-     * @return 应用id
-     */
+    @Resource
+    private AppProperties appProperties;
+
     @Override
     public String createApp(String appInitPrompt) {
-        // 获取当前用户信息
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
-        ThrowUtil.throwIf(StrUtil.isBlank(appInitPrompt), ErrorCode.PARAMS_ERROR, "应用初始化prompt不能为空");
-        // 用户输入 prompt 校验
+
+        ThrowUtil.throwIf(StrUtil.isBlank(appInitPrompt), ErrorCode.PARAMS_ERROR, "appInitPrompt is blank");
         validateUserInput(appInitPrompt);
-        // 构造入库对象
+
         App app = new App();
-        // 应用名称先暂时为 appInitPrompt 前 12 位，之后系统会异步设置 AI 生成的应用名称
         app.setAppName(appInitPrompt.substring(0, Math.min(appInitPrompt.length(), 12)));
         app.setUserId(userId);
         app.setAppInitPrompt(appInitPrompt);
-        // 随机获取应用封面 TODO 待优化，目前使用的是部署应用后，ScreenshotService 生成应用截图
-        String coverUrl = "https://picsum.photos/1200/600";
-        app.setAppCover(coverUrl);
+        app.setAppCover("https://picsum.photos/1200/600");
         app.setDeployKey(RandomUtil.randomString(6));
+
         boolean result = this.save(app);
-        ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR, "应用创建失败");
-        log.info("app create success，app_id: {}, user_id: {}", app.getAppId(), userId);
+        ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR, "failed to create app");
+        log.info("app create success, appId: {}, userId: {}", app.getAppId(), userId);
         return app.getAppId();
     }
 
-
-    /**
-     * 获取查询条件（通过appId、appName和codeGenType查询）
-     *
-     * @param appQueryRequest 应用查询请求
-     * @return 查询条件
-     */
     @Override
     public QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest) {
-        ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
-        // 获取查询参数
+        ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         String appId = appQueryRequest.getAppId();
         String appName = appQueryRequest.getAppName();
-        CodeGenTypeEnum codeGenType = CodeGenTypeEnum
-                .getEnumByValue(appQueryRequest.getCodeGenType());
-        // 构造查询条件
+        CodeGenTypeEnum codeGenType = CodeGenTypeEnum.getEnumByValue(appQueryRequest.getCodeGenType());
         return QueryWrapper.create()
                 .eq("app_id", appId)
                 .like("app_name", appName)
@@ -116,290 +95,205 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
                 .orderBy("app_name");
     }
 
-
-    /**
-     * 部署应用
-     *
-     * @param appId 应用id
-     * @return 部署结果url
-     */
     @Override
     public String deployApp(String appId) {
-        // 获取当前用户信息
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"用户不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
-        // 查询应用信息
+
         App app = this.mapper.selectOneById(appId);
         if (app == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"应用不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
         }
-        // 权限校验，只能部署自己的应用
         if (!app.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "无权限部署该应用");
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to deploy this app");
         }
-        // 检查是否已有 deployKey，否则生成 6 位 deployKey（字母 + 数字）
+
         String deployKey = app.getDeployKey();
         if (StrUtil.isBlank(deployKey)) {
             deployKey = RandomUtil.randomString(6);
         }
-        // 获取源目录(code_output)
-        Path sourceDirName = Paths.get(appId);
-        String sourceDirPath = CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
-        // 检查源目录是否存在
-        File sourceDir = new File(sourceDirPath);
-        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用代码不存在，请先生成代码");
-        }
-        // 复制文件到本地部署文件保存目录(code_deploy)
-        String deployDirPath = CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
+
+        File sourceDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
+        validateDeploySource(app, sourceDir);
+
+        File deployDir = appProperties.resolveCodeDeployAppDir(deployKey).toFile();
         try {
-            FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
+            FileUtil.copyContent(sourceDir, deployDir, true);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "复制本地文件到部署文件夹失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to copy deploy files: " + e.getMessage());
         }
-        // 将本地 code_deploy 文件夹的内容上传到 linux 服务器对应文件夹中，实现真正部署 TODO 后面可能会改为使用直接放在本地目录完成部署
-        // 注意：uploadDirectory 方法会自动在路径后拼接本地目录名，所以这里只传父目录
-        String deployToLinuxDirPath = REMOTE_DEPLOY_DIR;
+
+        String deployToLinuxDirPath = appProperties.getDeploy().getRemoteDir();
         try {
-            sftpFileUtil.uploadDirToLinux(deployDirPath, deployToLinuxDirPath);
-            log.info("upload dir to linux success, deployToLinuxDirPath: {}", deployToLinuxDirPath);
+            sftpFileUtil.uploadDirToLinux(deployDir.getAbsolutePath(), deployToLinuxDirPath);
+            log.info("upload dir to linux success, remoteDir: {}", deployToLinuxDirPath);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "文件部署到服务器失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "failed to upload deploy files: " + e.getMessage());
         }
-        // 更新应用的 deployKey 和部署时间
+
         App updateApp = new App();
         updateApp.setAppId(appId);
         updateApp.setDeployKey(deployKey);
         updateApp.setDeployedTime(LocalDateTime.now());
         updateApp.setUpdateTime(LocalDateTime.now());
-        updateApp.setDeployUrl(String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey));
+        updateApp.setDeployUrl(appProperties.buildDeployUrl(deployKey));
         boolean updateResult = this.updateById(updateApp);
-        ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        // 返回可访问的 URL
-        String appDeployUrl = String.format("%s/%s/", CODE_DEPLOY_HOST, deployKey);
-        // 异步生成应用截图
+        ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "failed to update deploy info");
+
+        String appDeployUrl = appProperties.buildDeployUrl(deployKey);
         createAppScreenshotAsync(appId, appDeployUrl);
         return appDeployUrl;
     }
 
-
-    /**
-     * 获取应用信息
-     *
-     * @param appId 应用id
-     * @return 应用信息vo
-     */
     @Override
     public AppVO getAppInfo(String appId) {
         App app = this.mapper.selectOneById(appId);
         if (app == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,"应用不存在");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
         }
-        AppVO appVO = new AppVO();
-        BeanUtil.copyProperties(app, appVO);
-        // 关联查询用户信息
-        String userId = app.getUserId();
-        if (userId != null) {
-            User user = userService.getById(userId);
-            UserVO userVO = new UserVO();
-            BeanUtil.copyProperties(user, userVO);
-            appVO.setUserVO(userVO);
-        }
-        return appVO;
+        return buildAppVO(app, loadUserInfoMap(Collections.singletonList(app)));
     }
 
-
-    /**
-     * 获取应用信息列表
-     *
-     * @param appList 应用列表
-     * @return 应用信息列表
-     */
     @Override
     public List<AppVO> getAppInfoList(List<App> appList) {
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
-
-        List<App> filteredApps = new ArrayList<>(appList);
-
-        if (CollUtil.isEmpty(filteredApps)) {
-            return new ArrayList<>();
-        }
-
-        // 批量获取用户信息，避免 N+1 查询问题
-        Set<String> userIds = filteredApps.stream()
-                .map(App::getUserId)
-                .collect(Collectors.toSet());
-        Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
-                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo(user)));
-        return filteredApps.stream().map(app -> {
-            AppVO appVO = getAppInfo(app.getAppId());
-            UserVO userVO = userInfoMap.get(app.getUserId());
-            appVO.setUserVO(userVO);
-            return appVO;
-        }).collect(Collectors.toList());
+        return buildAppVOList(appList);
     }
 
-    /**
-     * 获取我的应用信息列表
-     *
-     * @param appList 应用列表
-     * @return 应用信息列表
-     */
     @Override
     public List<AppVO> getMyAppInfoList(List<App> appList) {
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
-        // 获取当前用户ID
         String userId = SecurityUtil.getUserInfo().getUserId();
-
-        // 过滤掉不属于当前用户的应用，只返回自己的应用
         List<App> filteredApps = appList.stream()
-                .filter(app -> app.getUserId().equals(userId))
+                .filter(app -> userId.equals(app.getUserId()))
                 .collect(Collectors.toList());
-
         if (CollUtil.isEmpty(filteredApps)) {
             return new ArrayList<>();
         }
-
-        // 批量获取用户信息，避免 N+1 查询问题
-        Set<String> userIds = filteredApps.stream()
-                .map(App::getUserId)
-                .collect(Collectors.toSet());
-        Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
-                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo(user)));
-        return filteredApps.stream().map(app -> {
-            AppVO appVO = getAppInfo(app.getAppId());
-            UserVO userVO = userInfoMap.get(app.getUserId());
-            appVO.setUserVO(userVO);
-            return appVO;
-        }).collect(Collectors.toList());
+        return buildAppVOList(filteredApps);
     }
 
-    /**
-     * 获取精选应用信息列表
-     *
-     * @param appList 应用列表
-     * @return 应用信息列表
-     */
     @Override
     public List<AppVO> getAppInfoListForGoods(List<App> appList) {
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
-
-        // 过滤精选应用：appPriority = GOOD_APP_PRIORITY (99)
         List<App> featuredApps = appList.stream()
                 .filter(app -> GOOD_APP_PRIORITY.equals(app.getAppPriority()))
                 .collect(Collectors.toList());
-
         if (CollUtil.isEmpty(featuredApps)) {
             return new ArrayList<>();
         }
-
-        // 批量获取用户信息，避免 N+1 查询问题
-        Set<String> userIds = featuredApps.stream()
-                .map(App::getUserId)
-                .collect(Collectors.toSet());
-        Map<String, UserVO> userInfoMap = userService.listByIds(userIds).stream()
-                .collect(Collectors.toMap(User::getUserId, user -> userService.getUserInfo(user)));
-        
-        return featuredApps.stream().map(app -> {
-            AppVO appVO = getAppInfo(app.getAppId());
-            UserVO userVO = userInfoMap.get(app.getUserId());
-            appVO.setUserVO(userVO);
-            return appVO;
-        }).collect(Collectors.toList());
+        return buildAppVOList(featuredApps);
     }
 
-    /**
-     * 异步生成应用截图
-     *
-     * @param appId 应用id
-     * @param appDeploy 应用部署url
-     */
     @Override
     public void createAppScreenshotAsync(String appId, String appDeploy) {
-        // 使用虚拟线程异步执行（Java 21 的虚拟线程 Virtual Thread）
         Thread.startVirtualThread(() -> {
-            // 调用截图服务生成截图并上传
             String screenshotUrl = screenshotService.createAndUploadScreenshot(appDeploy);
-            // 更新应用封面字段
             App updateApp = new App();
             updateApp.setAppId(appId);
             updateApp.setAppCover(screenshotUrl);
             boolean updated = this.updateById(updateApp);
-            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面信息失败");
+            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update app cover");
         });
     }
 
-    /**
-     * 异步更新应用名称
-     *
-     * @param appId 应用id
-     * @param appName 应用名称
-     */
     @Override
     public void updateAppNameAsync(String appId, String appName) {
-        // 使用虚拟线程异步执行（Java 21 的虚拟线程 Virtual Thread）
         Thread.startVirtualThread(() -> {
             try {
-                // 更新应用名称
                 App updateApp = new App();
                 updateApp.setAppId(appId);
                 updateApp.setAppName(appName);
                 boolean updated = this.updateById(updateApp);
-                ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用名称失败");
+                ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update app name");
             } catch (Exception e) {
-                // 记录异常日志，避免任务失败无感知
-                log.error("虚拟线程更新应用名称失败，appId:{}", appId, e);
+                log.error("failed to update app name asynchronously, appId: {}", appId, e);
             }
         });
     }
 
-    /**
-     * 更新应用代码生成类型
-     *
-     * @param appId 应用id
-     * @param codeGenType 代码生成类型
-     */
     @Override
     public void updateAppCodeGenTypeAsync(String appId, String codeGenType) {
-        // 使用虚拟线程异步执行（Java 21 的虚拟线程 Virtual Thread）
         Thread.startVirtualThread(() -> {
             try {
-                // 更新应用名称
                 App updateApp = new App();
                 updateApp.setAppId(appId);
                 updateApp.setCodeGenType(codeGenType);
                 boolean updated = this.updateById(updateApp);
-                ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用代码生成类型失败");
+                ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update codeGenType");
             } catch (Exception e) {
-                // 记录异常日志，避免任务失败无感知
-                log.error("虚拟线程更新应用代码生成类型失败，appId:{}", appId, e);
+                log.error("failed to update codeGenType asynchronously, appId: {}", appId, e);
             }
         });
     }
 
-    /**
-     * 用户输入校验：敏感词检测 ...
-     */
-    private void validateUserInput(String input) {
-        if (StringUtil.isBlank(input)) {
-            throw new BusinessException("输入不能为空", ErrorCode.PARAMS_ERROR);
+    private List<AppVO> buildAppVOList(List<App> appList) {
+        Map<String, UserVO> userInfoMap = loadUserInfoMap(appList);
+        return appList.stream()
+                .map(app -> buildAppVO(app, userInfoMap))
+                .collect(Collectors.toList());
+    }
+
+    private AppVO buildAppVO(App app, Map<String, UserVO> userInfoMap) {
+        AppVO appVO = new AppVO();
+        BeanUtil.copyProperties(app, appVO);
+        if (userInfoMap != null) {
+            appVO.setUserVO(userInfoMap.get(app.getUserId()));
         }
-        if (input.length() > MAX_INPUT_LENGTH) {
-            throw new BusinessException("输入过长，请分段发送", ErrorCode.PARAMS_ERROR);
+        return appVO;
+    }
+
+    private Map<String, UserVO> loadUserInfoMap(List<App> appList) {
+        Set<String> userIds = appList.stream()
+                .map(App::getUserId)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(userIds)) {
+            return Collections.emptyMap();
         }
-        // 验证字符串是否包含敏感词（目前先使用第三方框架简单实现）
-        if (SensitiveWordHelper.contains(input)) {
-            throw new BusinessException("输入包含不适宜内容", ErrorCode.PARAMS_ERROR);
+        return userService.listByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getUserId, userService::getUserInfo));
+    }
+
+    private void validateDeploySource(App app, File sourceDir) {
+        if (!sourceDir.exists() || !sourceDir.isDirectory()) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "app code directory not found");
+        }
+        File[] children = sourceDir.listFiles();
+        if (children == null || children.length == 0) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "app code directory is empty");
+        }
+        File entryFile = resolveDeployEntryFile(app, sourceDir);
+        if (!entryFile.exists() || !entryFile.isFile()) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "deploy entry file not found: " + entryFile.getName());
         }
     }
 
+    private File resolveDeployEntryFile(App app, File sourceDir) {
+        if (app != null && CodeGenTypeEnum.VUE_PROJECT.getValue().equals(app.getCodeGenType())) {
+            return new File(new File(sourceDir, "dist"), "index.html");
+        }
+        return new File(sourceDir, "index.html");
+    }
+
+    private void validateUserInput(String input) {
+        if (StringUtil.isBlank(input)) {
+            throw new BusinessException("input is blank", ErrorCode.PARAMS_ERROR);
+        }
+        if (input.length() > MAX_INPUT_LENGTH) {
+            throw new BusinessException("input is too long", ErrorCode.PARAMS_ERROR);
+        }
+        if (SensitiveWordHelper.contains(input)) {
+            throw new BusinessException("input contains sensitive content", ErrorCode.PARAMS_ERROR);
+        }
+    }
 }

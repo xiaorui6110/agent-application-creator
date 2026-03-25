@@ -11,7 +11,6 @@ public interface AuthConfigAdapter {
     /**
      * 也许需要登录才可用的url
      */
-    String MAYBE_AUTH_URI = "/**/api/**";
 
     /**
      * 需要授权登陆的路径

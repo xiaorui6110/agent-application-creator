@@ -1,191 +1,152 @@
 package com.xiaorui.agentapplicationcreator.agent.tool;
 
+import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 
-import static com.xiaorui.agentapplicationcreator.constant.AppConstant.CODE_OUTPUT_ROOT_DIR;
-
-/**
- * @description: 文件操作工具（方法工具 methodTools） TODO 我相信是可以的，应该是 prompt 没有写好、权限不够、路径问题之类的等等其他原因导致的，但其实允许 agent 直接操作文件系统也有些风险
- * @author: xiaorui
- * @date: 2026-01-04 22:04
- **/
-//@Component
+// @Component
 public class FileOperationTool {
 
-    /**
-     * 文件修改根目录
-     */
-    private static final Path ROOT_DIR = Paths.get(CODE_OUTPUT_ROOT_DIR).toAbsolutePath().normalize();
+    private final AppProperties appProperties;
 
-    /**
-     * 将相对路径解析为安全的绝对路径（不抛异常）
-     */
+    public FileOperationTool(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
+
+    private Path getRootDir() {
+        return appProperties.getCodeOutputRootPath();
+    }
+
     private Path resolveSafePathQuietly(String relativePath) {
         try {
-            Path resolved = ROOT_DIR.resolve(relativePath).normalize();
-            if (!resolved.startsWith(ROOT_DIR)) {
-                return null;
-            }
-            return resolved;
+            return appProperties.resolvePathWithinRoot(getRootDir(), relativePath);
         } catch (Exception e) {
             return null;
         }
     }
 
-    /* ========================= 创建文件 ========================= */
-
-    @Tool(description = "在 code_output 目录下创建文件并写入内容，如果存在则覆盖")
+    @Tool(description = "Create or overwrite a file under code_output")
     public String createFile(
-            @ToolParam(description = "相对文件路径（基于 code_output）") String path,
-            @ToolParam(description = "文件内容") String content) {
+            @ToolParam(description = "Relative file path") String path,
+            @ToolParam(description = "File content") String content) {
 
         Path filePath = resolveSafePathQuietly(path);
         if (filePath == null) {
-            return "非法路径，禁止访问 code_output 目录之外的文件";
+            return "illegal path";
         }
 
         try {
             if (filePath.getParent() != null) {
                 Files.createDirectories(filePath.getParent());
             }
-            Files.writeString(
-                    filePath,
-                    content,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING
-            );
-            return "文件创建成功：" + path;
+            Files.writeString(filePath, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            return "created file: " + path;
         } catch (IOException e) {
-            return "创建文件失败：" + e.getMessage();
+            return "failed to create file: " + e.getMessage();
         }
     }
 
-    /* ========================= 覆盖文件 ========================= */
-
-    @Tool(description = "覆盖 code_output 目录下已有文件的内容")
+    @Tool(description = "Overwrite an existing file under code_output")
     public String overwriteFile(
-            @ToolParam(description = "相对文件路径（基于 code_output）") String path,
-            @ToolParam(description = "新文件内容") String newContent) {
+            @ToolParam(description = "Relative file path") String path,
+            @ToolParam(description = "New file content") String newContent) {
 
         Path filePath = resolveSafePathQuietly(path);
         if (filePath == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(filePath)) {
-            return "文件不存在：" + path;
+            return "file does not exist: " + path;
         }
-
         if (!Files.isRegularFile(filePath)) {
-            return "目标不是普通文件：" + path;
+            return "target is not a regular file: " + path;
         }
 
         try {
             Files.writeString(filePath, newContent, StandardOpenOption.TRUNCATE_EXISTING);
-            System.out.println("[Agent Write File] " + filePath.toAbsolutePath());
-            return "文件更新成功：" + filePath.toAbsolutePath();
+            return "updated file: " + path;
         } catch (IOException e) {
-            return "更新文件失败：" + e.getMessage();
+            return "failed to update file: " + e.getMessage();
         }
     }
 
-    /* ========================= 删除文件 ========================= */
-
-    @Tool(description = "删除 code_output 目录下的文件")
-    public String deleteFile(
-            @ToolParam(description = "相对文件路径（基于 code_output）") String path) {
-
+    @Tool(description = "Delete a file under code_output")
+    public String deleteFile(@ToolParam(description = "Relative file path") String path) {
         Path filePath = resolveSafePathQuietly(path);
         if (filePath == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(filePath)) {
-            return "文件不存在：" + path;
+            return "file does not exist: " + path;
         }
 
         try {
             Files.delete(filePath);
-            return "文件已删除：" + path;
+            return "deleted file: " + path;
         } catch (IOException e) {
-            return "删除文件失败：" + e.getMessage();
+            return "failed to delete file: " + e.getMessage();
         }
     }
 
-    /* ========================= 目录结构 ========================= */
-
-    @Tool(description = "递归列出 code_output 目录下的文件结构")
-    public String listDirectoryTree(
-            @ToolParam(description = "相对目录路径（基于 code_output，可为空）") String rootPath) {
-
-        Path root = resolveSafePathQuietly(
-                rootPath == null || rootPath.isBlank() ? "" : rootPath
-        );
+    @Tool(description = "List the directory tree under code_output")
+    public String listDirectoryTree(@ToolParam(description = "Relative directory path, optional") String rootPath) {
+        Path root = resolveSafePathQuietly(rootPath == null || rootPath.isBlank() ? "" : rootPath);
         if (root == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(root)) {
-            return "目录不存在：" + rootPath;
+            return "directory does not exist: " + rootPath;
         }
 
         StringBuilder sb = new StringBuilder();
         try {
-            Files.walk(root).forEach(p ->
-                    sb.append(ROOT_DIR.relativize(p)).append("\n")
-            );
+            Files.walk(root).forEach(p -> sb.append(getRootDir().relativize(p)).append("\n"));
             return sb.toString();
         } catch (IOException e) {
-            return "获取目录结构失败：" + e.getMessage();
+            return "failed to list directory tree: " + e.getMessage();
         }
     }
 
-    /* ========================= 删除空目录 ========================= */
-
-    @Tool(description = "删除 code_output 目录下的空目录")
-    public String deleteEmptyDir(
-            @ToolParam(description = "相对目录路径（基于 code_output）") String dirPath) {
-
+    @Tool(description = "Delete an empty directory under code_output")
+    public String deleteEmptyDir(@ToolParam(description = "Relative directory path") String dirPath) {
         Path dir = resolveSafePathQuietly(dirPath);
         if (dir == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(dir) || !Files.isDirectory(dir)) {
-            return "目录不存在：" + dirPath;
+            return "directory does not exist: " + dirPath;
         }
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
             if (stream.iterator().hasNext()) {
-                return "目录非空，未删除：" + dirPath;
+                return "directory is not empty: " + dirPath;
             }
             Files.delete(dir);
-            return "空目录已删除：" + dirPath;
+            return "deleted empty directory: " + dirPath;
         } catch (IOException e) {
-            return "删除目录失败：" + e.getMessage();
+            return "failed to delete directory: " + e.getMessage();
         }
     }
 
-    /* ========================= 移动 / 重命名 ========================= */
-
-    @Tool(description = "在 code_output 目录下移动或重命名文件")
+    @Tool(description = "Move or rename a file under code_output")
     public String moveOrRename(
-            @ToolParam(description = "源文件相对路径") String source,
-            @ToolParam(description = "目标文件相对路径") String target) {
+            @ToolParam(description = "Relative source path") String source,
+            @ToolParam(description = "Relative target path") String target) {
 
         Path src = resolveSafePathQuietly(source);
         Path tgt = resolveSafePathQuietly(target);
-
         if (src == null || tgt == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(src)) {
-            return "源文件不存在：" + source;
+            return "source file does not exist: " + source;
         }
 
         try {
@@ -193,44 +154,34 @@ public class FileOperationTool {
                 Files.createDirectories(tgt.getParent());
             }
             Files.move(src, tgt, StandardCopyOption.REPLACE_EXISTING);
-            return "文件已移动：" + source + " -> " + target;
+            return "moved file: " + source + " -> " + target;
         } catch (IOException e) {
-            return "移动文件失败：" + e.getMessage();
+            return "failed to move file: " + e.getMessage();
         }
     }
 
-    /* ========================= 读取文件 ========================= */
-
-    @Tool(description = "读取 code_output 目录下的文件内容")
-    public String readFile(
-            @ToolParam(description = "相对文件路径（基于 code_output）") String path) {
-
+    @Tool(description = "Read a file under code_output")
+    public String readFile(@ToolParam(description = "Relative file path") String path) {
         Path filePath = resolveSafePathQuietly(path);
         if (filePath == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(filePath)) {
-            return "文件不存在：" + path;
+            return "file does not exist: " + path;
         }
-
         if (!Files.isRegularFile(filePath)) {
-            return "目标不是普通文件：" + path;
+            return "target is not a regular file: " + path;
         }
 
         try {
             return Files.readString(filePath);
         } catch (IOException e) {
-            return "读取文件失败：" + e.getMessage();
+            return "failed to read file: " + e.getMessage();
         }
     }
 
-    /* ========================= 是否存在 ========================= */
-
-    @Tool(description = "检查 code_output 目录下文件或目录是否存在")
-    public String exists(
-            @ToolParam(description = "相对路径（基于 code_output）") String path) {
-
+    @Tool(description = "Check whether a file or directory exists under code_output")
+    public String exists(@ToolParam(description = "Relative path") String path) {
         Path p = resolveSafePathQuietly(path);
         if (p == null) {
             return "ILLEGAL_PATH";
@@ -238,36 +189,27 @@ public class FileOperationTool {
         return Files.exists(p) ? "EXISTS" : "NOT_EXISTS";
     }
 
-    /* ========================= 搜索 ========================= */
-
-    @Tool(description = "在 code_output 目录下按名称关键词搜索文件")
+    @Tool(description = "Search files by name under code_output")
     public String searchByName(
-            @ToolParam(description = "相对目录路径（基于 code_output，可为空）") String root,
-            @ToolParam(description = "关键词") String keyword) {
+            @ToolParam(description = "Relative directory path, optional") String root,
+            @ToolParam(description = "Keyword") String keyword) {
 
-        Path rootPath = resolveSafePathQuietly(
-                root == null || root.isBlank() ? "" : root
-        );
+        Path rootPath = resolveSafePathQuietly(root == null || root.isBlank() ? "" : root);
         if (rootPath == null) {
-            return "非法路径";
+            return "illegal path";
         }
-
         if (!Files.exists(rootPath)) {
-            return "目录不存在：" + root;
+            return "directory does not exist: " + root;
         }
 
         StringBuilder sb = new StringBuilder();
         try {
             Files.walk(rootPath)
                     .filter(p -> p.getFileName().toString().contains(keyword))
-                    .forEach(p -> sb.append(ROOT_DIR.relativize(p)).append("\n"));
-
-            return sb.length() == 0
-                    ? "未找到匹配文件"
-                    : sb.toString();
+                    .forEach(p -> sb.append(getRootDir().relativize(p)).append("\n"));
+            return sb.length() == 0 ? "no matching file found" : sb.toString();
         } catch (IOException e) {
-            return "搜索失败：" + e.getMessage();
+            return "search failed: " + e.getMessage();
         }
     }
 }
-

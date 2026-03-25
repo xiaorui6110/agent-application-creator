@@ -2,3 +2,42 @@
 spring:
   profiles:
     active: dev
+
+app:
+  storage:
+    code-output-dir: ${APP_CODE_OUTPUT_DIR:${user.dir}/tmp/code_output}
+    code-deploy-dir: ${APP_CODE_DEPLOY_DIR:${user.dir}/tmp/code_deploy}
+  deploy:
+    public-base-url: ${APP_DEPLOY_PUBLIC_BASE_URL:http://localhost}
+    remote-dir: ${APP_REMOTE_DEPLOY_DIR:/home/xiaorui/nginx/code_deploy/}
+  cors:
+    api:
+      allowed-origin-patterns:
+        - ${APP_CORS_API_ALLOWED_ORIGIN_1:http://localhost:*}
+        - ${APP_CORS_API_ALLOWED_ORIGIN_2:http://127.0.0.1:*}
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowed-headers:
+        - "*"
+      exposed-headers:
+        - "*"
+      allow-credentials: true
+      max-age: 3600
+    statics:
+      allowed-origin-patterns:
+        - ${APP_CORS_STATIC_ALLOWED_ORIGIN_1:http://localhost:*}
+        - ${APP_CORS_STATIC_ALLOWED_ORIGIN_2:http://127.0.0.1:*}
+      allowed-methods:
+        - GET
+        - HEAD
+        - OPTIONS
+      allowed-headers:
+        - "*"
+      exposed-headers:
+        - "*"
+      allow-credentials: false
+      max-age: 3600

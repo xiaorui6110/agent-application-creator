@@ -5,6 +5,7 @@ import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.agent.interceptor.todolist.TodoListInterceptor;
 import com.alibaba.cloud.ai.graph.agent.interceptor.toolretry.ToolRetryInterceptor;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.redis.RedisSaver;
+import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
 import com.xiaorui.agentapplicationcreator.agent.hook.LoggingHook;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolErrorInterceptor;
 import com.xiaorui.agentapplicationcreator.agent.interceptor.ToolMonitoringInterceptor;
@@ -34,6 +35,9 @@ public class AppCreatorAgentConfig {
 
     @Resource
     private RedisSaver redisSaver;
+
+    @Resource
+    private AppProperties appProperties;
 
     /**
      * 系统提示词（需要不断优化哦）
@@ -84,8 +88,8 @@ public class AppCreatorAgentConfig {
                 .build();
 
         // 创建带有 @Tool 注解的方法工具对象
-        FileOperationTool fileOperationTool = new FileOperationTool();
-        VerifyFileTool verifyFileTool = new VerifyFileTool();
+        FileOperationTool fileOperationTool = new FileOperationTool(appProperties);
+        VerifyFileTool verifyFileTool = new VerifyFileTool(appProperties);
 
         // ========== 结构化输出 ==========
         // 使用 BeanOutputConverter 生成 outputSchema 结构化输出
