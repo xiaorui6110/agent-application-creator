@@ -1,16 +1,16 @@
 // @ts-ignore
 /* eslint-disable */
-// API 更新时间：
-// API 唯一标识：
 import * as userController from './userController'
 import * as shareRecordController from './shareRecordController'
 import * as likeRecordController from './likeRecordController'
 import * as chatHistoryController from './chatHistoryController'
 import * as appCommentController from './appCommentController'
-import * as appController from './appController'
+import * as appController from './AppController'
 import * as agentTaskController from './agentTaskController'
-import * as agentController from './agentController'
-import * as healthController from './healthController'
+import * as agentController from './AgentController'
+import * as healthController from './HealthController'
+import * as communityController from './communityController'
+
 export default {
   userController,
   shareRecordController,
@@ -21,4 +21,5 @@ export default {
   agentTaskController,
   agentController,
   healthController,
+  communityController,
 }

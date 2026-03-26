@@ -7,6 +7,8 @@ app:
   storage:
     code-output-dir: ${APP_CODE_OUTPUT_DIR:${user.dir}/tmp/code_output}
     code-deploy-dir: ${APP_CODE_DEPLOY_DIR:${user.dir}/tmp/code_deploy}
+    code-version-dir: ${APP_CODE_VERSION_DIR:${user.dir}/tmp/code_version}
+    code-template-dir: ${APP_CODE_TEMPLATE_DIR:${user.dir}/tmp/code_template}
   deploy:
     public-base-url: ${APP_DEPLOY_PUBLIC_BASE_URL:http://localhost}
     remote-dir: ${APP_REMOTE_DEPLOY_DIR:/home/xiaorui/nginx/code_deploy/}

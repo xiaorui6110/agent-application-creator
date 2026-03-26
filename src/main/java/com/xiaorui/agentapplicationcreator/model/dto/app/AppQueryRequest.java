@@ -8,11 +8,6 @@ import lombok.EqualsAndHashCode;
 import java.io.Serial;
 import java.io.Serializable;
 
-/**
- * @description: 应用查询请求
- * @author: xiaorui
- * @date: 2025-12-22 11:11
- **/
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class AppQueryRequest extends PageRequest implements Serializable {
@@ -20,28 +15,21 @@ public class AppQueryRequest extends PageRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 8008136519720523420L;
 
-    /**
-     * 应用id
-     */
     @Schema(description = "应用id")
     private String appId;
 
-    /**
-     * 应用名称
-     */
     @Schema(description = "应用名称")
     private String appName;
 
-    /**
-     * 代码生成类型（枚举）
-     */
-    @Schema(description = "代码生成类型（枚举）")
+    @Schema(description = "代码生成类型")
     private String codeGenType;
 
-    /**
-     * 应用排序优先级
-     */
     @Schema(description = "应用排序优先级")
     private Integer appPriority;
 
+    @Schema(description = "应用分类")
+    private String appCategory;
+
+    @Schema(description = "排行类型 hot/recommend/latest")
+    private String rankType;
 }

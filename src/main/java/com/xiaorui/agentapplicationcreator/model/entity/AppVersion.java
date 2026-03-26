@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -20,47 +19,30 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("xr_app")
-public class App implements Serializable {
+@Table("xr_app_version")
+public class AppVersion implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Id(keyType = KeyType.Generator, value = KeyGenerators.snowFlakeId)
+    private String appVersionId;
+
     private String appId;
 
-    private String appName;
+    private Integer versionNumber;
 
-    private String appCover;
+    private String versionSource;
 
-    private String appInitPrompt;
+    private String versionNote;
 
-    private String appDescription;
+    private String snapshotPath;
 
-    private String codeGenType;
-
-    private String deployKey;
+    private String entryFile;
 
     private String deployUrl;
 
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime deployedTime;
-
-    private Integer appPriority;
-
-    private String appCategory;
-
-    private Double recommendScore;
-
-    private String userId;
-
-    private Long commentCount;
-
-    private Long likeCount;
-
-    private Long shareCount;
-
-    private Long viewCount;
+    private String createdBy;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;

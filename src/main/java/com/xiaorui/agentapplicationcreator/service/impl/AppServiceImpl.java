@@ -6,9 +6,12 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
+import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
+import com.xiaorui.agentapplicationcreator.constant.AppCategoryConstant;
+import com.xiaorui.agentapplicationcreator.enums.AppVersionSourceEnum;
 import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
@@ -20,6 +23,7 @@ import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import com.xiaorui.agentapplicationcreator.service.AppService;
+import com.xiaorui.agentapplicationcreator.service.AppVersionService;
 import com.xiaorui.agentapplicationcreator.service.ScreenshotService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
@@ -38,6 +42,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.DEFAULT_APP_PRIORITY;
+import static com.xiaorui.agentapplicationcreator.constant.AppConstant.DEFAULT_RECOMMEND_SCORE;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.GOOD_APP_PRIORITY;
 
 @Slf4j
@@ -58,6 +64,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private AppProperties appProperties;
 
+    @Resource
+    private AppVersionService appVersionService;
+
     @Override
     public String createApp(String appInitPrompt) {
         String userId = SecurityUtil.getUserInfo().getUserId();
@@ -75,6 +84,13 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         app.setAppInitPrompt(appInitPrompt);
         app.setAppCover("https://picsum.photos/1200/600");
         app.setDeployKey(RandomUtil.randomString(6));
+        app.setAppPriority(DEFAULT_APP_PRIORITY);
+        app.setAppCategory(AppCategoryConstant.GENERAL);
+        app.setRecommendScore(DEFAULT_RECOMMEND_SCORE);
+        app.setCommentCount(0L);
+        app.setLikeCount(0L);
+        app.setShareCount(0L);
+        app.setViewCount(0L);
 
         boolean result = this.save(app);
         ThrowUtil.throwIf(!result, ErrorCode.OPERATION_ERROR, "failed to create app");
@@ -85,14 +101,17 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Override
     public QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
-        String appId = appQueryRequest.getAppId();
-        String appName = appQueryRequest.getAppName();
-        CodeGenTypeEnum codeGenType = CodeGenTypeEnum.getEnumByValue(appQueryRequest.getCodeGenType());
-        return QueryWrapper.create()
-                .eq("app_id", appId)
-                .like("app_name", appName)
-                .eq("code_gen_type", codeGenType)
-                .orderBy("app_name");
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .eq("app_id", appQueryRequest.getAppId())
+                .like("app_name", appQueryRequest.getAppName())
+                .eq("code_gen_type", appQueryRequest.getCodeGenType())
+                .eq("app_priority", appQueryRequest.getAppPriority())
+                .eq("app_category", appQueryRequest.getAppCategory());
+        applyRankOrder(queryWrapper, appQueryRequest.getRankType());
+        if (StrUtil.isBlank(appQueryRequest.getRankType())) {
+            queryWrapper.orderBy("update_time", false);
+        }
+        return queryWrapper;
     }
 
     @Override
@@ -144,6 +163,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtil.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "failed to update deploy info");
 
         String appDeployUrl = appProperties.buildDeployUrl(deployKey);
+        appVersionService.createVersionSnapshot(appId, AppVersionSourceEnum.DEPLOYED.getValue(), "deploy snapshot", appDeployUrl);
         createAppScreenshotAsync(appId, appDeployUrl);
         return appDeployUrl;
     }
@@ -186,7 +206,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             return new ArrayList<>();
         }
         List<App> featuredApps = appList.stream()
-                .filter(app -> GOOD_APP_PRIORITY.equals(app.getAppPriority()))
+                .filter(app -> app.getAppPriority() != null && app.getAppPriority() >= GOOD_APP_PRIORITY)
                 .collect(Collectors.toList());
         if (CollUtil.isEmpty(featuredApps)) {
             return new ArrayList<>();
@@ -234,6 +254,70 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 log.error("failed to update codeGenType asynchronously, appId: {}", appId, e);
             }
         });
+    }
+
+    @Override
+    public Page<AppVO> listRecommendedApps(AppQueryRequest appQueryRequest) {
+        AppQueryRequest finalRequest = appQueryRequest == null ? new AppQueryRequest() : appQueryRequest;
+        if (finalRequest.getCurrent() <= 0) {
+            finalRequest.setCurrent(1);
+        }
+        if (finalRequest.getPageSize() <= 0) {
+            finalRequest.setPageSize(10);
+        }
+        finalRequest.setRankType("recommend");
+        QueryWrapper queryWrapper = getQueryWrapper(finalRequest);
+        Page<App> appPage = this.page(Page.of(finalRequest.getCurrent(), finalRequest.getPageSize()), queryWrapper);
+        return toAppVOPage(appPage);
+    }
+
+    @Override
+    public Page<AppVO> listRankedApps(AppQueryRequest appQueryRequest) {
+        AppQueryRequest finalRequest = appQueryRequest == null ? new AppQueryRequest() : appQueryRequest;
+        if (finalRequest.getCurrent() <= 0) {
+            finalRequest.setCurrent(1);
+        }
+        if (finalRequest.getPageSize() <= 0) {
+            finalRequest.setPageSize(10);
+        }
+        QueryWrapper queryWrapper = getQueryWrapper(finalRequest);
+        Page<App> appPage = this.page(Page.of(finalRequest.getCurrent(), finalRequest.getPageSize()), queryWrapper);
+        return toAppVOPage(appPage);
+    }
+
+    @Override
+    public List<String> listAppCategories() {
+        return AppCategoryConstant.CATEGORY_LIST;
+    }
+
+    private Page<AppVO> toAppVOPage(Page<App> appPage) {
+        Page<AppVO> appVOPage = new Page<>(appPage.getPageNumber(), appPage.getPageSize(), appPage.getTotalRow());
+        appVOPage.setRecords(getAppInfoList(appPage.getRecords()));
+        return appVOPage;
+    }
+
+    private void applyRankOrder(QueryWrapper queryWrapper, String rankType) {
+        if ("latest".equalsIgnoreCase(rankType)) {
+            queryWrapper.orderBy("create_time", false);
+            return;
+        }
+        if ("hot".equalsIgnoreCase(rankType)) {
+            queryWrapper.orderBy("app_priority", false)
+                    .orderBy("view_count", false)
+                    .orderBy("like_count", false)
+                    .orderBy("share_count", false)
+                    .orderBy("comment_count", false)
+                    .orderBy("create_time", false);
+            return;
+        }
+        if ("recommend".equalsIgnoreCase(rankType)) {
+            queryWrapper.orderBy("recommend_score", false)
+                    .orderBy("app_priority", false)
+                    .orderBy("view_count", false)
+                    .orderBy("like_count", false)
+                    .orderBy("share_count", false)
+                    .orderBy("create_time", false);
+        }
     }
 
     private List<AppVO> buildAppVOList(List<App> appList) {

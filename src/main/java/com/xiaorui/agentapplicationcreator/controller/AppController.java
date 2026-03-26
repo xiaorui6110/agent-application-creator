@@ -14,13 +14,20 @@ import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthChec
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppAdminUpdateInfoRequest;
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppCreateRequest;
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppDeployRequest;
+import com.xiaorui.agentapplicationcreator.model.dto.app.AppTemplateCreateRequest;
+import com.xiaorui.agentapplicationcreator.model.dto.app.AppTemplateUseRequest;
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppUpdateInfoRequest;
+import com.xiaorui.agentapplicationcreator.model.dto.app.AppVersionRestoreRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
+import com.xiaorui.agentapplicationcreator.model.vo.AppTemplateVO;
+import com.xiaorui.agentapplicationcreator.model.vo.AppVersionVO;
 import com.xiaorui.agentapplicationcreator.response.ServerResponseEntity;
 import com.xiaorui.agentapplicationcreator.service.AppService;
+import com.xiaorui.agentapplicationcreator.service.AppTemplateService;
+import com.xiaorui.agentapplicationcreator.service.AppVersionService;
 import com.xiaorui.agentapplicationcreator.service.ProjectDownloadService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.RedisCacheUtil;
@@ -56,6 +63,12 @@ public class AppController {
     @Resource
     private RedisCacheUtil redisCacheUtil;
 
+    @Resource
+    private AppVersionService appVersionService;
+
+    @Resource
+    private AppTemplateService appTemplateService;
+
     @PostMapping("/create")
     @Operation(summary = "create app", description = "create app")
     @Parameter(name = "appCreateRequest", description = "app create request")
@@ -63,6 +76,36 @@ public class AppController {
         ThrowUtil.throwIf(appCreateRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         String appId = appService.createApp(appCreateRequest.getAppInitPrompt());
         return ServerResponseEntity.success(appId);
+    }
+
+    @GetMapping("/template/list")
+    @Operation(summary = "list app templates", description = "list app templates")
+    public ServerResponseEntity<List<AppTemplateVO>> listTemplates() {
+        return ServerResponseEntity.success(appTemplateService.listTemplates());
+    }
+
+    @PostMapping("/template/create")
+    @Operation(summary = "create app template", description = "create app template")
+    @Parameter(name = "appTemplateCreateRequest", description = "app template create request")
+    public ServerResponseEntity<AppTemplateVO> createTemplate(@RequestBody AppTemplateCreateRequest appTemplateCreateRequest) {
+        ThrowUtil.throwIf(appTemplateCreateRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        return ServerResponseEntity.success(appTemplateService.createTemplateFromApp(
+                appTemplateCreateRequest.getAppId(),
+                appTemplateCreateRequest.getTemplateName(),
+                appTemplateCreateRequest.getTemplateDescription()
+        ));
+    }
+
+    @PostMapping("/template/use")
+    @Operation(summary = "create app from template", description = "create app from template")
+    @Parameter(name = "appTemplateUseRequest", description = "app template use request")
+    public ServerResponseEntity<String> createAppFromTemplate(@RequestBody AppTemplateUseRequest appTemplateUseRequest) {
+        ThrowUtil.throwIf(appTemplateUseRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        return ServerResponseEntity.success(appTemplateService.createAppFromTemplate(
+                appTemplateUseRequest.getTemplateId(),
+                appTemplateUseRequest.getAppName(),
+                appTemplateUseRequest.getAppDescription()
+        ));
     }
 
     @PostMapping("/deploy")
@@ -109,6 +152,28 @@ public class AppController {
         return ServerResponseEntity.success(appService.getAppInfo(appId));
     }
 
+    @GetMapping("/category/list")
+    @Operation(summary = "list app categories", description = "list app categories")
+    public ServerResponseEntity<List<String>> listAppCategories() {
+        return ServerResponseEntity.success(appService.listAppCategories());
+    }
+
+    @PostMapping("/recommend/list/page")
+    @Operation(summary = "list recommended apps", description = "list recommended apps")
+    @Parameter(name = "appQueryRequest", description = "app query request")
+    public ServerResponseEntity<Page<AppVO>> listRecommendedApps(@RequestBody AppQueryRequest appQueryRequest) {
+        ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        return ServerResponseEntity.success(appService.listRecommendedApps(appQueryRequest));
+    }
+
+    @PostMapping("/rank/list/page")
+    @Operation(summary = "list ranked apps", description = "list ranked apps")
+    @Parameter(name = "appQueryRequest", description = "app query request")
+    public ServerResponseEntity<Page<AppVO>> listRankedApps(@RequestBody AppQueryRequest appQueryRequest) {
+        ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        return ServerResponseEntity.success(appService.listRankedApps(appQueryRequest));
+    }
+
     @PostMapping("/delete")
     @Operation(summary = "delete app", description = "delete app")
     @Parameter(name = "deleteRequest", description = "delete request")
@@ -152,7 +217,8 @@ public class AppController {
         long pageSize = appQueryRequest.getPageSize();
         ThrowUtil.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "pageSize exceeds limit");
 
-        String cacheKey = "good_app:list:" + current + ":" + pageSize;
+        String category = StrUtil.blankToDefault(appQueryRequest.getAppCategory(), "all");
+        String cacheKey = "good_app:list:" + category + ":" + current + ":" + pageSize;
         List<AppVO> cachedList = redisCacheUtil.get(cacheKey + ":data");
         Object cachedTotalObj = redisCacheUtil.get(cacheKey + ":total");
         Long cachedTotal = castToLong(cachedTotalObj);
@@ -244,6 +310,41 @@ public class AppController {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to download this app");
         }
         return ServerResponseEntity.success(projectDownloadService.downloadProjectAsZip(appId, response));
+    }
+
+    @GetMapping("/version/list/{appId}")
+    @Operation(summary = "list app versions", description = "list app versions")
+    @Parameter(name = "appId", description = "app id")
+    public ServerResponseEntity<List<AppVersionVO>> listAppVersions(@PathVariable String appId) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
+        App app = appService.getById(appId);
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
+
+        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
+        if (!app.getUserId().equals(loginUser.getUserId())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to list app versions");
+        }
+        return ServerResponseEntity.success(appVersionService.listAppVersions(appId));
+    }
+
+    @PostMapping("/version/restore")
+    @Operation(summary = "restore app version", description = "restore app version")
+    @Parameter(name = "appVersionRestoreRequest", description = "app version restore request")
+    public ServerResponseEntity<Boolean> restoreAppVersion(@RequestBody AppVersionRestoreRequest appVersionRestoreRequest) {
+        ThrowUtil.throwIf(appVersionRestoreRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        ThrowUtil.throwIf(StrUtil.isBlank(appVersionRestoreRequest.getAppId()), ErrorCode.PARAMS_ERROR, "appId is blank");
+        ThrowUtil.throwIf(StrUtil.isBlank(appVersionRestoreRequest.getAppVersionId()), ErrorCode.PARAMS_ERROR, "appVersionId is blank");
+
+        App app = appService.getById(appVersionRestoreRequest.getAppId());
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
+
+        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
+        if (!app.getUserId().equals(loginUser.getUserId())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to restore this app version");
+        }
+        return ServerResponseEntity.success(
+                appVersionService.restoreVersion(appVersionRestoreRequest.getAppId(), appVersionRestoreRequest.getAppVersionId())
+        );
     }
 
     private Long castToLong(Object value) {

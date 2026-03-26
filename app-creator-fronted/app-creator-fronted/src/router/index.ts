@@ -4,18 +4,19 @@ import UserLoginPage from '@/pages/user/UserLoginPage.vue'
 import UserRegisterPage from '@/pages/user/UserRegisterPage.vue'
 import UserResetPasswordPage from '@/pages/user/UserResetPasswordPage.vue'
 import UserSettingsPage from '@/pages/user/UserSettingsPage.vue'
+import UserCommunityPage from '@/pages/user/UserCommunityPage.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
 import AppManagePage from '@/pages/admin/AppManagePage.vue'
 import AppChatPage from '@/pages/app/AppChatPage.vue'
 import AppEditPage from '@/pages/app/AppEditPage.vue'
-import ChatManagePage from "@/pages/admin/ChatManagePage.vue";
+import ChatManagePage from '@/pages/admin/ChatManagePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: '主页',
+      name: '首页',
       component: HomePage,
     },
     {
@@ -37,6 +38,11 @@ const router = createRouter({
       path: '/user/settings',
       name: '账号设置',
       component: UserSettingsPage,
+    },
+    {
+      path: '/user/community',
+      name: '社区中心',
+      component: UserCommunityPage,
     },
     {
       path: '/admin/userManage',

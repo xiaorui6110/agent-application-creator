@@ -1,7 +1,6 @@
 <template>
   <a-layout-header class="header">
     <a-row :wrap="false" align="middle">
-      <!-- 左侧：Logo和标题 -->
       <a-col flex="260px">
         <RouterLink to="/">
           <div class="header-left">
@@ -10,7 +9,6 @@
           </div>
         </RouterLink>
       </a-col>
-      <!-- 中间：导航菜单 -->
       <a-col flex="auto">
         <a-menu
           v-model:selectedKeys="selectedKeys"
@@ -20,10 +18,15 @@
           @click="handleMenuClick"
         />
       </a-col>
-      <!-- 右侧：用户操作区域 -->
       <a-col>
         <div class="user-login-status">
-          <div v-if="loginUserStore.loginUser.userId">
+          <div v-if="loginUserStore.loginUser.userId" class="header-actions">
+            <a-badge :count="unreadCount" :offset="[2, 2]">
+              <a-button class="inbox-btn" @click="router.push('/user/community')">
+                <BellOutlined />
+                社区中心
+              </a-button>
+            </a-badge>
             <a-dropdown>
               <a-space>
                 <a-avatar :src="loginUserStore.loginUser.userAvatar" />
@@ -31,6 +34,10 @@
               </a-space>
               <template #overlay>
                 <a-menu>
+                  <a-menu-item @click="router.push('/user/community')">
+                    <BellOutlined />
+                    社区中心
+                  </a-menu-item>
                   <a-menu-item @click="router.push('/user/settings')">
                     <SettingOutlined />
                     账号设置
@@ -53,30 +60,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type MenuProps, message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser.ts'
 import { userLogout } from '@/api/userController.ts'
-import { LogoutOutlined, HomeOutlined, SettingOutlined } from '@ant-design/icons-vue'
+import { getCommunityUnreadSummary } from '@/api/communityController'
+import {
+  BellOutlined,
+  HomeOutlined,
+  LogoutOutlined,
+  SettingOutlined,
+} from '@ant-design/icons-vue'
 import { isSuccessResponse } from '@/utils/apiResponse'
 
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
-// 当前选中菜单
 const selectedKeys = ref<string[]>(['/'])
-// 监听路由变化，更新当前选中菜单
+const unreadCount = ref(0)
+let pollTimer: number | undefined
+
 router.afterEach((to) => {
   selectedKeys.value = [to.path]
 })
 
-// 菜单配置项
 const originItems = [
   {
     key: '/',
     icon: () => h(HomeOutlined),
-    label: '主页',
-    title: '主页',
+    label: '首页',
+    title: '首页',
+  },
+  {
+    key: '/user/community',
+    label: '社区中心',
+    title: '社区中心',
   },
   {
     key: '/admin/userManage',
@@ -95,7 +113,6 @@ const originItems = [
   },
 ]
 
-// 过滤菜单项
 const filterMenus = (menus = [] as MenuProps['items']) => {
   return menus?.filter((menu) => {
     const menuKey = menu?.key as string
@@ -109,30 +126,57 @@ const filterMenus = (menus = [] as MenuProps['items']) => {
   })
 }
 
-// 展示在菜单的路由数组
 const menuItems = computed<MenuProps['items']>(() => filterMenus(originItems))
 
-// 处理菜单点击
 const handleMenuClick: MenuProps['onClick'] = (e) => {
   const key = e.key as string
   selectedKeys.value = [key]
-  // 跳转到对应页面
   if (key.startsWith('/')) {
     router.push(key)
   }
 }
 
-// 退出登录
+const loadUnreadSummary = async () => {
+  if (!loginUserStore.loginUser.userId) {
+    unreadCount.value = 0
+    return
+  }
+  const res = await getCommunityUnreadSummary()
+  if (isSuccessResponse(res.data) && res.data.data) {
+    unreadCount.value = Number(res.data.data.totalUnreadCount ?? 0)
+  }
+}
+
 const doLogout = async () => {
   const res = await userLogout()
   if (isSuccessResponse(res.data) && res.data.data !== false) {
     loginUserStore.clearLoginUser()
+    unreadCount.value = 0
     message.success('退出登录成功')
     await router.push('/user/login')
   } else {
     message.error('退出登录失败，' + (res.data.msg ?? ''))
   }
 }
+
+onMounted(async () => {
+  await loadUnreadSummary()
+  pollTimer = window.setInterval(loadUnreadSummary, 30000)
+})
+
+watch(
+  () => loginUserStore.loginUser.userId,
+  () => {
+    loadUnreadSummary()
+  },
+  { immediate: false }
+)
+
+onUnmounted(() => {
+  if (pollTimer) {
+    window.clearInterval(pollTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -194,6 +238,16 @@ const doLogout = async () => {
 
 .nav-menu {
   margin-left: 14px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inbox-btn {
+  border-radius: 999px;
 }
 
 :deep(.ant-menu) {

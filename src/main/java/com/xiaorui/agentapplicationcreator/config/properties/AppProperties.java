@@ -33,12 +33,28 @@ public class AppProperties {
         return Path.of(storage.getCodeDeployDir()).toAbsolutePath().normalize();
     }
 
+    public Path getCodeVersionRootPath() {
+        return Path.of(storage.getCodeVersionDir()).toAbsolutePath().normalize();
+    }
+
+    public Path getCodeTemplateRootPath() {
+        return Path.of(storage.getCodeTemplateDir()).toAbsolutePath().normalize();
+    }
+
     public Path resolveCodeOutputAppDir(String appId) {
         return resolveChildDir(getCodeOutputRootPath(), appId, "appId");
     }
 
     public Path resolveCodeDeployAppDir(String deployKey) {
         return resolveChildDir(getCodeDeployRootPath(), deployKey, "deployKey");
+    }
+
+    public Path resolveVersionSnapshotDir(String relativePath) {
+        return resolvePathWithinRoot(getCodeVersionRootPath(), relativePath);
+    }
+
+    public Path resolveTemplateDir(String templateId) {
+        return resolveChildDir(getCodeTemplateRootPath(), templateId, "templateId");
     }
 
     public Path resolvePathWithinRoot(Path rootDir, String relativePath) {
@@ -80,6 +96,8 @@ public class AppProperties {
     public static class Storage {
         private String codeOutputDir = "./tmp/code_output";
         private String codeDeployDir = "./tmp/code_deploy";
+        private String codeVersionDir = "./tmp/code_version";
+        private String codeTemplateDir = "./tmp/code_template";
     }
 
     @Data

@@ -63,6 +63,8 @@ create table `xr_app`
     `deploy_url`      varchar(255)           default null             comment '部署访问地址',
     `deployed_time`   datetime               default null             comment '部署时间',
     `app_priority`    int                    default 0                comment '应用排序优先级',
+    `app_category`    varchar(64)            default 'general'        comment '应用分类',
+    `recommend_score` decimal(10,2)          default 0.00             comment '推荐分',
     `user_id`         varchar(36)  not null                          comment '创建用户id',
     `comment_count`   bigint       default 0                         comment '评论数',
     `like_count`      bigint       default 0                         comment '点赞数',
@@ -80,7 +82,7 @@ create table `xr_app`
     index `idx_view_count` (`view_count`)
 ) engine = InnoDB default charset = utf8mb4 comment '应用表';
 
--- 对话历史表（基本上同 AgentChatMessage，mongodb 实体类，只是新增了 MySQL 数据库的实现）
+-- 对话历史表
 drop table if exists `xr_chat_history`;
 CREATE TABLE `xr_chat_history` (
     `chat_history_id`   varchar(36)  not null default ''    comment '对话历史id',
@@ -206,9 +208,48 @@ create table `xr_share_record`
     index `idx_user_id` (`user_id`)
 ) engine = InnoDB default charset = utf8mb4 comment '分享记录表';
 
+-- 应用版本表
+drop table if exists `xr_app_version`;
+create table `xr_app_version`
+(
+    `app_version_id` varchar(36)  not null default ''               comment '应用版本id',
+    `app_id`         varchar(36)  not null                          comment '应用id',
+    `version_number` int          not null                          comment '版本号',
+    `version_source` varchar(32)  not null                          comment '版本来源 GENERATED/DEPLOYED/RESTORED',
+    `version_note`   varchar(255)          default null             comment '版本备注',
+    `snapshot_path`  varchar(255) not null                          comment '快照相对路径',
+    `entry_file`     varchar(255)          default null             comment '入口文件',
+    `deploy_url`     varchar(255)          default null             comment '部署地址',
+    `created_by`     varchar(36)           default null             comment '创建人',
+    `create_time`    datetime     default CURRENT_TIMESTAMP         comment '创建时间',
+    `update_time`    datetime     default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted`     tinyint(4)   default '0'                       comment '是否删除 0-未删除 1-已删除',
+    primary key (`app_version_id`),
+    unique key `uk_app_version_number` (`app_id`, `version_number`),
+    index `idx_app_id` (`app_id`),
+    index `idx_version_source` (`version_source`),
+    index `idx_create_time` (`create_time`)
+) engine = InnoDB default charset = utf8mb4 comment '应用版本表';
 
 
-
-
-
-
+-- 应用模板表
+drop table if exists `xr_app_template`;
+create table `xr_app_template`
+(
+    `template_id`          varchar(36)  not null default ''               comment '应用模板id',
+    `template_name`        varchar(128) not null                          comment '模板名称',
+    `template_description` varchar(500)          default null             comment '模板描述',
+    `code_gen_type`        varchar(64)           default null             comment '代码生成类型',
+    `entry_file`           varchar(255)          default null             comment '入口文件',
+    `source_app_id`        varchar(36)           default null             comment '来源应用id',
+    `storage_path`         varchar(255) not null                          comment '模板文件相对路径',
+    `created_by`           varchar(36)           default null             comment '创建人',
+    `create_time`          datetime     default CURRENT_TIMESTAMP         comment '创建时间',
+    `update_time`          datetime     default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted`           tinyint(4)   default '0'                       comment '是否删除 0-未删除 1-已删除',
+    primary key (`template_id`),
+    index `idx_template_name` (`template_name`),
+    index `idx_source_app_id` (`source_app_id`),
+    index `idx_created_by` (`created_by`),
+    index `idx_create_time` (`create_time`)
+) engine = InnoDB default charset = utf8mb4 comment '应用模板表';

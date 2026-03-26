@@ -103,7 +103,7 @@ import {
   deleteAppByAdmin,
   updateAppByAdmin,
   getAppInfoByIdByAdmin,
-} from '@/api/appController'
+} from '@/api/AppController'
 import { CODE_GEN_TYPE_OPTIONS, formatCodeGenType } from '@/utils/codeGenTypes'
 import { isValidCodeGenType } from '@/utils/codeGenTypes'
 import { formatTime } from '@/utils/time'

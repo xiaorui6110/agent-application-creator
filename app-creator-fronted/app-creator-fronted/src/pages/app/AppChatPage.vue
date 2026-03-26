@@ -264,9 +264,9 @@ import {
   getAppInfoById,
   deployApp as deployAppApi,
   deleteApp as deleteAppApi,
-} from '@/api/appController'
+} from '@/api/AppController'
 import { listAppChatHistory } from '@/api/chatHistoryController'
-import { chat as agentChat } from '@/api/agentController'
+import { chat as agentChat } from '@/api/AgentController'
 import { getTaskState } from '@/api/agentTaskController'
 import { coerceCodeGenTypeValue, formatCodeGenType, normalizeCodeGenType } from '@/utils/codeGenTypes'
 import request from '@/request'
