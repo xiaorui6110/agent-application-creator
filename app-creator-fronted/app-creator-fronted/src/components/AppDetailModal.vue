@@ -61,12 +61,7 @@
                 </template>
                 修改
               </a-button>
-              <a-popconfirm
-                title="确定要删除这个应用吗？"
-                @confirm="handleDelete"
-                ok-text="确定"
-                cancel-text="取消"
-              >
+              <a-popconfirm title="确定要删除这个应用吗？" @confirm="handleDelete" ok-text="确定" cancel-text="取消">
                 <a-button danger>
                   <template #icon>
                     <DeleteOutlined />
@@ -87,9 +82,7 @@
               placeholder="写下你的评论..."
             />
             <div class="comment-actions">
-              <a-button type="primary" :loading="submitting" @click="submitComment">
-                发表评论
-              </a-button>
+              <a-button type="primary" :loading="submitting" @click="submitComment">发表评论</a-button>
             </div>
           </div>
 
@@ -146,7 +139,7 @@ import UserInfo from './UserInfo.vue'
 import { formatTime } from '@/utils/time'
 import { formatCodeGenType } from '@/utils/codeGenTypes'
 import { useLoginUserStore } from '@/stores/loginUser'
-import { addComment, commentedHistory, deleteComment } from '@/api/appCommentController'
+import { addComment, deleteComment, queryComment } from '@/api/appCommentController'
 import { isSuccessResponse } from '@/utils/apiResponse'
 import { resolveTotalCount } from '@/utils/pagination'
 
@@ -237,7 +230,7 @@ const loadComments = async (reset: boolean) => {
       comments.value = []
     }
 
-    const res = await commentedHistory(
+    const res = await queryComment(
       {},
       {
         appId: appId.value,

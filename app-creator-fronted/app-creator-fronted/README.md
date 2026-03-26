@@ -19,7 +19,7 @@ npm run dev
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8123/api
-VITE_DEPLOY_DOMAIN=http://localhost
+VITE_DEPLOY_DOMAIN=http://172.19.48.249
 ```
 
 ## 常用脚本

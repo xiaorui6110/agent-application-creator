@@ -1,190 +1,217 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { ArrowRightOutlined, AppstoreAddOutlined, CopyOutlined, RocketOutlined } from '@ant-design/icons-vue'
 import { useLoginUserStore } from '@/stores/loginUser'
-import { createApp as createAppApi, listAppInfoByPage, listGoodAppInfoByPage } from '@/api/AppController'
+import {
+  createApp as createAppApi,
+  createAppFromTemplate,
+  listAppInfoByPage,
+  listGoodAppInfoByPage,
+  listTemplates,
+} from '@/api/AppController'
 import AppCard from '@/components/AppCard.vue'
 import { isSuccessResponse } from '@/utils/apiResponse'
 import { resolveTotalCount } from '@/utils/pagination'
-import { ArrowRightOutlined } from '@ant-design/icons-vue'
+import { formatCodeGenType } from '@/utils/codeGenTypes'
+import { formatRelativeTime } from '@/utils/time'
 
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
 
-// 用户提示词
 const userPrompt = ref('')
 const creating = ref(false)
+const templateCreating = ref(false)
+const templateModalOpen = ref(false)
+const selectedTemplate = ref<API.AppTemplateVO>()
 
-// 我的应用数据
 const myApps = ref<API.AppVO[]>([])
+const featuredApps = ref<API.AppVO[]>([])
+const templates = ref<API.AppTemplateVO[]>([])
+
 const myAppsPage = reactive({
   current: 1,
   pageSize: 6,
   total: 0,
 })
 
-// 精选应用数据
-const featuredApps = ref<API.AppVO[]>([])
 const featuredAppsPage = reactive({
   current: 1,
   pageSize: 6,
   total: 0,
 })
 
-// 设置提示词
+const templateForm = reactive({
+  appName: '',
+  appDescription: '',
+})
+
 const setPrompt = (prompt: string) => {
   userPrompt.value = prompt
 }
 
-// 优化提示词功能已移除
+const requireLogin = async () => {
+  if (loginUserStore.loginUser.userId) return true
+  message.warning('请先登录')
+  await router.push('/user/login')
+  return false
+}
 
-// 创建应用
 const createApp = async () => {
   if (!userPrompt.value.trim()) {
-    message.warning('请输入应用描述')
+    message.warning('请输入应用需求描述')
     return
   }
 
-  if (!loginUserStore.loginUser.userId) {
-    message.warning('请先登录')
-    await router.push('/user/login')
-    return
-  }
+  const ok = await requireLogin()
+  if (!ok) return
 
   creating.value = true
   try {
     const res = await createAppApi({}, { appInitPrompt: userPrompt.value.trim() })
-
     if (isSuccessResponse(res.data) && res.data.data) {
       message.success('应用创建成功')
-      // 跳转到对话页面，确保ID是字符串类型
-      const appId = String(res.data.data)
-      await router.push(`/app/chat/${appId}`)
-    } else {
-      message.error('创建失败：' + (res.data.msg ?? ''))
+      await router.push(`/app/chat/${String(res.data.data)}`)
+      return
     }
-  } catch (error) {
-    console.error('创建应用失败：', error)
-    message.error('创建失败，请重试')
+    message.error(res.data.msg ?? '创建失败')
   } finally {
     creating.value = false
   }
 }
 
-// 加载我的应用
 const loadMyApps = async () => {
-  if (!loginUserStore.loginUser.userId) {
-    return
-  }
+  if (!loginUserStore.loginUser.userId) return
+  const res = await listAppInfoByPage(
+    {},
+    {
+      current: Math.max(myAppsPage.current, 1),
+      pageSize: Math.max(myAppsPage.pageSize, 6),
+      sortField: 'createTime',
+      sortOrder: 'desc',
+    },
+  )
 
-  try {
-    const res = await listAppInfoByPage({}, {
+  if (isSuccessResponse(res.data) && res.data.data) {
+    myApps.value = res.data.data.records || []
+    myAppsPage.total = resolveTotalCount({
       current: myAppsPage.current,
       pageSize: myAppsPage.pageSize,
-      sortField: 'createTime',
-      sortOrder: 'desc',
+      totalRow: res.data.data.totalRow,
+      recordsLength: myApps.value.length,
     })
-
-    if (isSuccessResponse(res.data) && res.data.data) {
-      myApps.value = res.data.data.records || []
-      myAppsPage.total = resolveTotalCount({
-        current: myAppsPage.current,
-        pageSize: myAppsPage.pageSize,
-        totalRow: res.data.data.totalRow,
-        recordsLength: myApps.value.length,
-      })
-    }
-  } catch (error) {
-    console.error('加载我的应用失败：', error)
   }
 }
 
-// 加载精选应用
 const loadFeaturedApps = async () => {
-  try {
-    const res = await listGoodAppInfoByPage({}, {
+  const res = await listGoodAppInfoByPage(
+    {},
+    {
+      current: Math.max(featuredAppsPage.current, 1),
+      pageSize: Math.max(featuredAppsPage.pageSize, 6),
+      sortField: 'createTime',
+      sortOrder: 'desc',
+    },
+  )
+
+  if (isSuccessResponse(res.data) && res.data.data) {
+    featuredApps.value = res.data.data.records || []
+    featuredAppsPage.total = resolveTotalCount({
       current: featuredAppsPage.current,
       pageSize: featuredAppsPage.pageSize,
-      sortField: 'createTime',
-      sortOrder: 'desc',
+      totalRow: res.data.data.totalRow,
+      recordsLength: featuredApps.value.length,
     })
-
-    if (isSuccessResponse(res.data) && res.data.data) {
-      featuredApps.value = res.data.data.records || []
-      featuredAppsPage.total = resolveTotalCount({
-        current: featuredAppsPage.current,
-        pageSize: featuredAppsPage.pageSize,
-        totalRow: res.data.data.totalRow,
-        recordsLength: featuredApps.value.length,
-      })
-    }
-  } catch (error) {
-    console.error('加载精选应用失败：', error)
   }
 }
 
-// 查看对话
+const loadTemplates = async () => {
+  const res = await listTemplates()
+  if (isSuccessResponse(res.data) && res.data.data) {
+    templates.value = res.data.data
+  }
+}
+
 const viewChat = (appId: string | number | undefined) => {
   if (appId) {
     router.push(`/app/chat/${appId}?view=1`)
   }
 }
 
-// 查看作品
 const viewWork = (app: API.AppVO) => {
   if (app.deployUrl) {
     window.open(app.deployUrl, '_blank')
   }
 }
 
-// 格式化时间函数已移除，不再需要显示创建时间
+const openTemplateModal = async (template: API.AppTemplateVO) => {
+  const ok = await requireLogin()
+  if (!ok) return
 
-// 页面加载时获取数据
+  selectedTemplate.value = template
+  templateForm.appName = `${template.templateName || '模板'} - 副本`
+  templateForm.appDescription = template.templateDescription || ''
+  templateModalOpen.value = true
+}
+
+const handleCreateFromTemplate = async () => {
+  if (!selectedTemplate.value?.templateId) return
+  if (!templateForm.appName.trim()) {
+    message.warning('请输入新应用名称')
+    return
+  }
+
+  templateCreating.value = true
+  try {
+    const res = await createAppFromTemplate(
+      {},
+      {
+        templateId: selectedTemplate.value.templateId,
+        appName: templateForm.appName.trim(),
+        appDescription: templateForm.appDescription.trim(),
+      },
+    )
+
+    if (isSuccessResponse(res.data) && res.data.data) {
+      message.success('已基于模板创建新应用')
+      templateModalOpen.value = false
+      await loadMyApps()
+      await router.push(`/app/chat/${String(res.data.data)}`)
+      return
+    }
+    message.error(res.data.msg ?? '模板创建失败')
+  } finally {
+    templateCreating.value = false
+  }
+}
+
 onMounted(() => {
   loadMyApps()
   loadFeaturedApps()
-
-  // 鼠标跟随光效
-  const handleMouseMove = (e: MouseEvent) => {
-    const { clientX, clientY } = e
-    const { innerWidth, innerHeight } = window
-    const x = (clientX / innerWidth) * 100
-    const y = (clientY / innerHeight) * 100
-
-    document.documentElement.style.setProperty('--mouse-x', `${x}%`)
-    document.documentElement.style.setProperty('--mouse-y', `${y}%`)
-  }
-
-  document.addEventListener('mousemove', handleMouseMove)
-
-  // 清理事件监听器
-  return () => {
-    document.removeEventListener('mousemove', handleMouseMove)
-  }
+  loadTemplates()
 })
 </script>
 
 <template>
   <div id="homePage">
     <div class="container">
-      <div class="hero">
+      <section class="hero">
         <div class="hero-copy">
-          <div class="kicker">把想法交给我</div>
+          <div class="kicker">Agent Application Creator</div>
           <h1 class="hero-title">
-            一句话
+            一句话生成应用
             <br />
-            做个站
+            也能一键复用模板
           </h1>
-          <div class="hero-desc">
-            <div>别写代码。</div>
-            <div>写清需求就行。</div>
-          </div>
+          <p class="hero-desc">
+            你可以从零创建，也可以直接从已有优秀应用模板出发，更快落地新的产品原型。
+          </p>
 
           <div class="hero-notes">
-            <div class="note">[ .ZIP ] 代码</div>
-            <div class="note">[ .HTML ] 预览</div>
-            <div class="note">{ DEPLOY } 一键</div>
+            <div class="note">[VERSION] 历史版本</div>
+            <div class="note">[TEMPLATE] 可复用模板</div>
+            <div class="note">[DEPLOY] 一键部署</div>
           </div>
         </div>
 
@@ -192,14 +219,14 @@ onMounted(() => {
           <div class="prompt-card">
             <a-textarea
               v-model:value="userPrompt"
-              placeholder="比如：个人博客"
-              :rows="4"
+              placeholder="例如：做一个适合独立开发者的产品展示页，带定价、FAQ 和用户评价。"
+              :rows="5"
               :maxlength="1000"
               class="prompt-input"
             />
             <div class="prompt-actions">
               <a-button type="primary" size="large" @click="createApp" :loading="creating">
-                开跑
+                开始创建
                 <template #icon>
                   <ArrowRightOutlined />
                 </template>
@@ -208,67 +235,67 @@ onMounted(() => {
           </div>
 
           <div class="chips">
-            <button
-              class="chip"
-              type="button"
-              @click="
-                setPrompt(
-                  '做个个人博客。要有文章列表、详情页、标签、搜索。风格干净，手机也好看。',
-                )
-              "
-            >
+            <button class="chip" type="button" @click="setPrompt('做一个个人博客，包含文章列表、详情页、标签、搜索和归档。')">
               个人博客
             </button>
-            <button
-              class="chip"
-              type="button"
-              @click="
-                setPrompt(
-                  '做个企业官网。要有介绍、产品、新闻、联系。风格稳一点。',
-                )
-              "
-            >
+            <button class="chip" type="button" @click="setPrompt('做一个企业官网，要有产品介绍、案例展示、客户评价和联系表单。')">
               企业官网
             </button>
-            <button
-              class="chip"
-              type="button"
-              @click="
-                setPrompt(
-                  '做个在线商城。要有商品、购物车、下单。页面要清爽。',
-                )
-              "
-            >
+            <button class="chip" type="button" @click="setPrompt('做一个在线商城首页，强调活动氛围、分类导航和商品推荐。')">
               在线商城
             </button>
-            <button
-              class="chip"
-              type="button"
-              @click="
-                setPrompt(
-                  '做个作品集。要有画廊、项目详情、联系方式。图片要大。',
-                )
-              "
-            >
+            <button class="chip" type="button" @click="setPrompt('做一个作品集网站，要有项目卡片、筛选、详情和关于我。')">
               作品集
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="section">
+      <section class="section template-section">
         <div class="section-head">
-          <h2 class="section-title">我的作品</h2>
-          <div class="section-sub">你做过的，都在这。</div>
+          <div>
+            <h2 class="section-title">模板广场</h2>
+            <div class="section-sub">把优秀应用沉淀成模板，再用模板快速创建新的应用。</div>
+          </div>
+          <a-tag color="orange">{{ templates.length }} 个模板</a-tag>
+        </div>
+
+        <a-empty v-if="templates.length === 0" description="暂时还没有可用模板" />
+
+        <div v-else class="template-grid">
+          <article v-for="template in templates" :key="template.templateId" class="template-card">
+            <div class="template-card__icon">
+              <AppstoreAddOutlined />
+            </div>
+            <div class="template-card__body">
+              <div class="template-card__title-row">
+                <h3>{{ template.templateName || '未命名模板' }}</h3>
+                <a-tag>{{ formatCodeGenType(template.codeGenType) || template.codeGenType || '未知类型' }}</a-tag>
+              </div>
+              <p class="template-card__desc">
+                {{ template.templateDescription || '这个模板暂时还没有补充描述。' }}
+              </p>
+              <div class="template-card__meta">
+                <span><CopyOutlined /> 来源应用：{{ template.sourceAppId || '-' }}</span>
+                <span><RocketOutlined /> {{ formatRelativeTime(template.createdTime) || '刚刚创建' }}</span>
+              </div>
+            </div>
+            <div class="template-card__actions">
+              <a-button type="primary" @click="openTemplateModal(template)">使用模板</a-button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">我的作品</h2>
+            <div class="section-sub">你最近创建和维护的应用都在这里。</div>
+          </div>
         </div>
         <div class="app-grid">
-          <AppCard
-            v-for="app in myApps"
-            :key="app.appId"
-            :app="app"
-            @view-chat="viewChat"
-            @view-work="viewWork"
-          />
+          <AppCard v-for="app in myApps" :key="app.appId" :app="app" @view-chat="viewChat" @view-work="viewWork" />
         </div>
         <div class="pagination-wrapper">
           <a-pagination
@@ -280,12 +307,14 @@ onMounted(() => {
             @change="loadMyApps"
           />
         </div>
-      </div>
+      </section>
 
-      <div class="section section-featured">
+      <section class="section section-featured">
         <div class="section-head">
-          <h2 class="section-title">精选案例</h2>
-          <div class="section-sub">挑几个好看的。</div>
+          <div>
+            <h2 class="section-title">精选案例</h2>
+            <div class="section-sub">平台里已经沉淀下来的高优先级应用。</div>
+          </div>
         </div>
         <div class="featured-grid">
           <AppCard
@@ -307,149 +336,116 @@ onMounted(() => {
             @change="loadFeaturedApps"
           />
         </div>
-      </div>
+      </section>
     </div>
+
+    <a-modal
+      v-model:open="templateModalOpen"
+      title="基于模板创建应用"
+      :confirm-loading="templateCreating"
+      ok-text="创建应用"
+      cancel-text="取消"
+      @ok="handleCreateFromTemplate"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="模板">
+          <a-input :value="selectedTemplate?.templateName || '-'" disabled />
+        </a-form-item>
+        <a-form-item label="新应用名称">
+          <a-input v-model:value="templateForm.appName" :maxlength="50" show-count />
+        </a-form-item>
+        <a-form-item label="新应用描述">
+          <a-textarea v-model:value="templateForm.appDescription" :rows="4" :maxlength="300" show-count />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <style scoped>
 #homePage {
-  width: 100%;
-  margin: 0;
-  padding: 0;
   min-height: 100vh;
   background:
     radial-gradient(900px 420px at 12% 8%, rgba(242, 140, 40, 0.14), transparent 60%),
     radial-gradient(760px 360px at 92% 18%, rgba(242, 140, 40, 0.08), transparent 62%),
     linear-gradient(180deg, #fbfbf9 0%, #f6f2ea 55%, #f1ece2 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-/* 科技感网格背景 */
-#homePage::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    linear-gradient(rgba(17, 24, 39, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 24, 39, 0.05) 1px, transparent 1px),
-    linear-gradient(rgba(17, 24, 39, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 24, 39, 0.035) 1px, transparent 1px);
-  background-size:
-    120px 120px,
-    120px 120px,
-    24px 24px,
-    24px 24px;
-  pointer-events: none;
-  transform: translateY(-12px) rotate(-0.2deg);
-}
-
-#homePage::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%20viewBox='0%200%20140%20140'%3E%3Cfilter%20id='n'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='.9'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3C/filter%3E%3Crect%20width='140'%20height='140'%20filter='url(%23n)'%20opacity='.06'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  pointer-events: none;
-  mix-blend-mode: multiply;
 }
 
 .container {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 26px 22px 34px;
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 26px 22px 42px;
 }
 
 .hero {
   display: grid;
-  grid-template-columns: 1.25fr 0.95fr;
+  grid-template-columns: 1.2fr 0.9fr;
   gap: 24px;
-  align-items: start;
-  padding: 56px 0 40px;
-}
-
-.hero-copy {
-  padding-left: 8px;
+  padding: 54px 0 36px;
 }
 
 .kicker {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(17, 24, 39, 0.10);
-  color: rgba(17, 24, 39, 0.72);
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  color: rgba(17, 24, 39, 0.74);
   font-size: 13px;
-  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
 }
 
 .hero-title {
-  margin: 18px 0 10px;
-  font-size: 64px;
-  letter-spacing: -1px;
+  margin: 18px 0 12px;
+  font-size: 62px;
   line-height: 0.98;
-  color: var(--ink);
+  letter-spacing: -1px;
+  color: #171717;
 }
 
 .hero-desc {
-  margin-top: 10px;
+  margin: 0;
+  max-width: 620px;
   color: rgba(17, 24, 39, 0.66);
+  line-height: 1.7;
   font-size: 16px;
-  line-height: 1.6;
 }
 
 .hero-notes {
-  margin-top: 22px;
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
 }
 
 .note {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
-  font-size: 12px;
-  color: rgba(17, 24, 39, 0.55);
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px dashed rgba(17, 24, 39, 0.14);
   background: rgba(255, 255, 255, 0.45);
+  color: rgba(17, 24, 39, 0.56);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
 }
 
 .hero-panel {
-  transform: translateY(18px);
+  transform: translateY(16px);
 }
 
 .prompt-card {
   position: relative;
-  padding: 16px 16px 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.78);
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(17, 24, 39, 0.12);
-  box-shadow: var(--shadow-m);
+  box-shadow: 0 20px 44px rgba(17, 24, 39, 0.1);
   backdrop-filter: blur(16px);
 }
 
 .prompt-input {
   border-radius: 14px;
-  border: 1px solid rgba(17, 24, 39, 0.10) !important;
+  padding: 14px 14px 58px !important;
   background: rgba(255, 255, 255, 0.86) !important;
-  padding: 14px 14px 58px 14px !important;
-  font-size: 15px;
-  line-height: 1.55;
 }
 
 .prompt-actions {
@@ -459,15 +455,13 @@ onMounted(() => {
 }
 
 .chips {
-  margin-top: 14px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: flex-start;
+  margin-top: 14px;
 }
 
 .chip {
-  appearance: none;
   border: 1px solid rgba(17, 24, 39, 0.12);
   background: rgba(255, 255, 255, 0.62);
   color: rgba(17, 24, 39, 0.78);
@@ -475,93 +469,157 @@ onMounted(() => {
   border-radius: 999px;
   font-size: 13px;
   cursor: pointer;
-  transition:
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .chip:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-s);
-  border-color: rgba(242, 140, 40, 0.35);
+  box-shadow: 0 10px 20px rgba(17, 24, 39, 0.08);
 }
 
-/* 区域标题 */
 .section {
-  margin: 18px 0 54px;
-}
-
-.section-featured {
-  margin-left: 28px;
+  margin: 20px 0 54px;
 }
 
 .section-head {
   display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding-left: 6px;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .section-title {
-  font-size: 22px;
-  font-weight: 650;
   margin: 0;
+  font-size: 24px;
   color: rgba(17, 24, 39, 0.92);
 }
 
 .section-sub {
+  margin-top: 4px;
+  color: rgba(17, 24, 39, 0.55);
   font-size: 13px;
-  color: rgba(17, 24, 39, 0.52);
 }
 
-/* 我的作品网格 */
+.template-section {
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 250, 243, 0.92));
+  border: 1px solid rgba(225, 147, 64, 0.12);
+  box-shadow: 0 18px 46px rgba(161, 106, 42, 0.08);
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.template-card__icon {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(246, 173, 85, 0.18), rgba(251, 191, 36, 0.12));
+  color: #b45309;
+  font-size: 20px;
+}
+
+.template-card__title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.template-card__title-row h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.template-card__desc {
+  margin: 10px 0 0;
+  color: rgba(17, 24, 39, 0.68);
+  line-height: 1.7;
+  min-height: 72px;
+}
+
+.template-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.54);
+}
+
+.template-card__actions {
+  margin-top: auto;
+}
+
 .app-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
-  margin-bottom: 32px;
+  margin-bottom: 30px;
 }
 
-/* 精选案例网格 */
 .featured-grid {
   display: grid;
-  grid-template-columns: 0.95fr 1.05fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  margin-bottom: 32px;
+  margin-bottom: 30px;
 }
 
-/* 分页 */
 .pagination-wrapper {
   display: flex;
   justify-content: flex-start;
-  margin-top: 32px;
-  padding-left: 6px;
 }
 
-/* 响应式设计 */
+@media (max-width: 1024px) {
+  .hero,
+  .template-grid,
+  .app-grid,
+  .featured-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .hero {
+  .container {
+    padding: 20px 14px 30px;
+  }
+
+  .hero,
+  .template-grid,
+  .app-grid,
+  .featured-grid {
     grid-template-columns: 1fr;
-    padding: 34px 0 24px;
   }
 
   .hero-title {
-    font-size: 44px;
+    font-size: 42px;
   }
 
   .hero-panel {
     transform: none;
   }
 
-  .section-featured {
-    margin-left: 0;
-  }
-
-  .app-grid,
-  .featured-grid {
-    grid-template-columns: 1fr;
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

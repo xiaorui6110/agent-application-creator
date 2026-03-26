@@ -56,6 +56,26 @@
       </div>
     </div>
   </div>
+
+  <a-modal
+    v-model:open="sharePreviewVisible"
+    title="分享应用"
+    :footer="null"
+    width="420px"
+    @cancel="closeSharePreview"
+  >
+    <div class="share-preview">
+      <div v-if="sharePreview?.qrCodeDataUrl" class="share-preview__qr">
+        <img :src="sharePreview.qrCodeDataUrl" alt="share-qrcode" />
+      </div>
+      <div class="share-preview__link">
+        <a-typography-paragraph :copyable="{ text: sharePreview?.shareUrl ?? '' }">
+          {{ sharePreview?.shareUrl ?? '-' }}
+        </a-typography-paragraph>
+      </div>
+      <a-button block type="primary" @click="openSharedUrl">打开分享链接</a-button>
+    </div>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -65,7 +85,7 @@ import { message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser'
 import { isSuccessResponse } from '@/utils/apiResponse'
 import { doLike, getLikeStatus } from '@/api/likeRecordController'
-import { doShare, getShareStatus } from '@/api/shareRecordController'
+import { doShare, getSharePreview, getShareStatus } from '@/api/shareRecordController'
 import { HeartFilled, HeartOutlined, ShareAltOutlined } from '@ant-design/icons-vue'
 
 interface Props {
@@ -99,6 +119,8 @@ const likeLoading = ref(false)
 const shareLoading = ref(false)
 const likeCount = ref<number>(props.app.likeCount ?? 0)
 const shareCount = ref<number>(props.app.shareCount ?? 0)
+const sharePreviewVisible = ref(false)
+const sharePreview = ref<API.SharePreviewVO>()
 
 watch(
   () => props.app.likeCount,
@@ -174,22 +196,36 @@ const toggleShare = async () => {
 
   shareLoading.value = true
   try {
-    const next = shared.value ? 0 : 1
-    const body: API.ShareDoRequest & { targetId?: string } = {
-      shareId: appId.value,
-      targetId: appId.value,
-      isShared: next,
+    if (!shared.value) {
+      const res = await doShare({}, { shareId: appId.value, isShared: 1 })
+      if (isSuccessResponse(res.data) && res.data.data) {
+        shared.value = true
+        shareCount.value = Math.max(0, shareCount.value + 1)
+      } else {
+        message.error(res.data.msg ?? '操作失败')
+        return
+      }
     }
-    const res = await doShare({}, body)
-    if (isSuccessResponse(res.data) && res.data.data) {
-      shared.value = !shared.value
-      shareCount.value = Math.max(0, shareCount.value + (next === 1 ? 1 : -1))
+
+    const previewRes = await getSharePreview({ targetId: appId.value })
+    if (isSuccessResponse(previewRes.data) && previewRes.data.data) {
+      sharePreview.value = previewRes.data.data
+      sharePreviewVisible.value = true
       return
     }
-    message.error(res.data.msg ?? '操作失败')
+    message.error(previewRes.data.msg ?? '获取分享预览失败')
   } finally {
     shareLoading.value = false
   }
+}
+
+const openSharedUrl = () => {
+  if (!sharePreview.value?.shareUrl) return
+  window.open(sharePreview.value.shareUrl, '_blank')
+}
+
+const closeSharePreview = () => {
+  sharePreviewVisible.value = false
 }
 
 const handleViewChat = () => {
@@ -258,7 +294,7 @@ watch(
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(240px 120px at 30% 30%, rgba(242, 140, 40, 0.10), transparent 60%),
+    radial-gradient(240px 120px at 30% 30%, rgba(242, 140, 40, 0.1), transparent 60%),
     radial-gradient(220px 120px at 80% 70%, rgba(242, 140, 40, 0.08), transparent 60%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.55));
 }
@@ -331,5 +367,32 @@ watch(
 
 .active {
   color: #f28c28;
+}
+
+.share-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.share-preview__qr {
+  display: flex;
+  justify-content: center;
+}
+
+.share-preview__qr img {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  padding: 10px;
+  background: #fff;
+}
+
+.share-preview__link {
+  padding: 12px;
+  border-radius: 12px;
+  background: #faf7f2;
 }
 </style>

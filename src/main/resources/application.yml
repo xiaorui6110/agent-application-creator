@@ -10,7 +10,7 @@ app:
     code-version-dir: ${APP_CODE_VERSION_DIR:${user.dir}/tmp/code_version}
     code-template-dir: ${APP_CODE_TEMPLATE_DIR:${user.dir}/tmp/code_template}
   deploy:
-    public-base-url: ${APP_DEPLOY_PUBLIC_BASE_URL:http://localhost}
+    public-base-url: ${APP_DEPLOY_PUBLIC_BASE_URL:http://172.19.48.249}
     remote-dir: ${APP_REMOTE_DEPLOY_DIR:/home/xiaorui/nginx/code_deploy/}
   cors:
     api:

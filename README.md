@@ -14,12 +14,21 @@
 
 **主页**
 
-![主页](page/主页1.png)
-![主页](page/主页2.png)
+![主页](page/img.png)
+![主页](page/img_1.png)
 
 **对话页**
 
 ![对话页](page/对话页.png)
+
+**应用编辑页**
+
+![应用编辑页](page/img_3.png)
+
+**社区中心页**
+
+![社区中心页](page/img_2.png)
+
 
 **管理页**
 
@@ -109,7 +118,7 @@ mysql -u root -p xiaorui_app_creator < db/create_table.sql
 
 ### 3. 环境配置
 
-修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些，还有要预先创建 `tmp/code_output` 和 `tmp/code_deploy` 文件夹等等）：
+修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些）：
 
 ```yaml
 spring:

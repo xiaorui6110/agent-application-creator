@@ -20,6 +20,7 @@ import com.xiaorui.agentapplicationcreator.service.AppVersionService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -31,6 +32,7 @@ import java.util.List;
 @Service
 public class AppVersionServiceImpl extends ServiceImpl<AppVersionMapper, AppVersion> implements AppVersionService {
 
+    @Lazy
     @Resource
     private AppService appService;
 

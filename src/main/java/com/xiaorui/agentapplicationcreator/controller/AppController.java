@@ -200,6 +200,8 @@ public class AppController {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
+        ThrowUtil.throwIf(current <= 0, ErrorCode.PARAMS_ERROR, "current must be greater than 0");
+        ThrowUtil.throwIf(pageSize <= 0, ErrorCode.PARAMS_ERROR, "pageSize must be greater than 0");
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
         Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
 
@@ -215,6 +217,8 @@ public class AppController {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
+        ThrowUtil.throwIf(current <= 0, ErrorCode.PARAMS_ERROR, "current must be greater than 0");
+        ThrowUtil.throwIf(pageSize <= 0, ErrorCode.PARAMS_ERROR, "pageSize must be greater than 0");
         ThrowUtil.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "pageSize exceeds limit");
 
         String category = StrUtil.blankToDefault(appQueryRequest.getAppCategory(), "all");
@@ -280,6 +284,8 @@ public class AppController {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
+        ThrowUtil.throwIf(current <= 0, ErrorCode.PARAMS_ERROR, "current must be greater than 0");
+        ThrowUtil.throwIf(pageSize <= 0, ErrorCode.PARAMS_ERROR, "pageSize must be greater than 0");
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
         Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
 

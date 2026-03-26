@@ -242,7 +242,7 @@ create table `xr_app_template`
     `code_gen_type`        varchar(64)           default null             comment '代码生成类型',
     `entry_file`           varchar(255)          default null             comment '入口文件',
     `source_app_id`        varchar(36)           default null             comment '来源应用id',
-    `storage_path`         varchar(255) not null                          comment '模板文件相对路径',
+    `storage_path`         varchar(255)          default null             comment '模板文件相对路径',
     `created_by`           varchar(36)           default null             comment '创建人',
     `create_time`          datetime     default CURRENT_TIMESTAMP         comment '创建时间',
     `update_time`          datetime     default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',

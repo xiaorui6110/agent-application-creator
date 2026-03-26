@@ -102,7 +102,7 @@ public class AppProperties {
 
     @Data
     public static class Deploy {
-        private String publicBaseUrl = "http://localhost";
+        private String publicBaseUrl = "http://172.19.48.249";
         private String remoteDir = "/home/xiaorui/nginx/code_deploy/";
     }
 

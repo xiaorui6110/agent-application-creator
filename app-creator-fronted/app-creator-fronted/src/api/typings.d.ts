@@ -1084,4 +1084,115 @@ declare namespace API {
     path?: string
     value?: string
   }
+
+  type getSharePreviewParams = {
+    targetId: string
+  }
+
+  type SharePreviewVO = {
+    appId?: string
+    appName?: string
+    shareUrl?: string
+    qrCodeDataUrl?: string
+  }
+
+  type ServerResponseEntitySharePreviewVO = {
+    code?: string
+    msg?: string
+    data?: SharePreviewVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+  type AppTemplateCreateRequest = {
+    appId?: string
+    templateName?: string
+    templateDescription?: string
+  }
+
+  type AppTemplateUseRequest = {
+    templateId?: string
+    appName?: string
+    appDescription?: string
+  }
+
+  type AppTemplateVO = {
+    templateId?: string
+    templateName?: string
+    templateDescription?: string
+    codeGenType?: string
+    entryFile?: string
+    sourceAppId?: string
+    createdBy?: string
+    createdTime?: string
+  }
+
+  type AppVersionRestoreRequest = {
+    appId?: string
+    appVersionId?: string
+  }
+
+  type AppVersionVO = {
+    appVersionId?: string
+    appId?: string
+    versionNumber?: number
+    versionSource?: string
+    versionNote?: string
+    snapshotPath?: string
+    entryFile?: string
+    deployUrl?: string
+    createdBy?: string
+    createTime?: string
+  }
+
+  type createTemplateParams = {
+    appTemplateCreateRequest?: any
+  }
+
+  type createAppFromTemplateParams = {
+    appTemplateUseRequest?: any
+  }
+
+  type listAppVersionsParams = {
+    appId: string
+  }
+
+  type restoreAppVersionParams = {
+    appVersionRestoreRequest?: any
+  }
+
+  type ServerResponseEntityAppTemplateVO = {
+    code?: string
+    msg?: string
+    data?: AppTemplateVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityListAppTemplateVO = {
+    code?: string
+    msg?: string
+    data?: AppTemplateVO[]
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityListAppVersionVO = {
+    code?: string
+    msg?: string
+    data?: AppVersionVO[]
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
 }

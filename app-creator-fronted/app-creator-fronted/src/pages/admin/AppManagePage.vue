@@ -188,7 +188,12 @@ const fetchData = async () => {
     if (searchParams.codeGenType && !isValidCodeGenType(searchParams.codeGenType)) {
       searchParams.codeGenType = undefined
     }
-    const res = await listAppInfoByPageByAdmin({}, searchParams)
+    const res = await listAppInfoByPageByAdmin({}, {
+      current: Math.max(searchParams.current ?? 1, 1),
+      pageSize: Math.max(searchParams.pageSize ?? 10, 10),
+      appName: searchParams.appName,
+      codeGenType: searchParams.codeGenType,
+    })
     if (isSuccessResponse(res.data) && res.data.data) {
       data.value = res.data.data.records ?? []
       total.value = resolveTotalCount({

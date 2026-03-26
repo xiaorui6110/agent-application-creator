@@ -2,7 +2,7 @@
  * 前端环境变量示例
  *
  * `.env.development`
- * VITE_DEPLOY_DOMAIN=http://localhost
+ * VITE_DEPLOY_DOMAIN=http://172.19.48.249
  * VITE_API_BASE_URL=http://localhost:8123/api
  *
  * `.env.production`
