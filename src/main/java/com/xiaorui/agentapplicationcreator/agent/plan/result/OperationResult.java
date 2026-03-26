@@ -39,4 +39,10 @@ public class OperationResult {
      */
     @Schema(description = "信息")
     private String message;
+
+    /**
+     * 是否执行了回滚
+     */
+    @Schema(description = "是否执行了回滚")
+    private boolean rolledBack;
 }

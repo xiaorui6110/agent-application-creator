@@ -343,12 +343,11 @@
 
 - `UserThreadBindServiceImpl`
 - `ChatHistoryServiceImpl`
-- `AgentChatMemoryServiceImpl`
-- Redis / MongoDB 记忆相关模块
+- Redis 记忆相关模块
 
 目标：
 
-- 明确谁是主记忆来源：MySQL、Redis、MongoDB 各自负责什么
+- 明确谁是主记忆来源：MySQL、Redis 各自负责什么
 - 避免同一份历史在多个存储中职责混乱
 - 提高多轮修改时的上下文稳定性
 

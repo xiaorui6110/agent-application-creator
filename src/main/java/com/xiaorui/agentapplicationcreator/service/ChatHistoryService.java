@@ -7,6 +7,7 @@ import com.xiaorui.agentapplicationcreator.model.dto.chathistory.ChatHistoryQuer
 import com.xiaorui.agentapplicationcreator.model.entity.ChatHistory;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 对话历史表 服务层。
@@ -35,12 +36,23 @@ public interface ChatHistoryService extends IService<ChatHistory> {
     QueryWrapper getQueryWrapper(ChatHistoryQueryRequest chatHistoryQueryRequest);
 
     /**
+     * 获取应用最近的对话历史。
+     * MySQL 是业务历史主存，供回显、追溯、补偿和后续记忆构建使用。
+     *
+     * @param appId 应用id
+     * @param limit 数量上限
+     * @return 最近的对话历史，按时间正序返回
+     */
+    List<ChatHistory> listRecentChatHistory(String appId, int limit);
+
+    /**
      * 加载对话历史到 Redis 内存
      *
      * @param appId 应用id
      * @param maxCount 最大数量
      * @return 加载的对话历史数量
      */
+    @Deprecated
     int loadChatHistoryToRedis(String appId, int maxCount);
 
     /**

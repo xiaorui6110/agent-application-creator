@@ -38,5 +38,17 @@ public class ExecutionResult {
      */
     @Schema(description = "错误信息")
     private String errorMessage;
+
+    /**
+     * 失败操作序号（从 0 开始）
+     */
+    @Schema(description = "失败操作序号")
+    private Integer failedOperationIndex;
+
+    /**
+     * 是否已完成回滚
+     */
+    @Schema(description = "是否已完成回滚")
+    private boolean rolledBack;
 }
 

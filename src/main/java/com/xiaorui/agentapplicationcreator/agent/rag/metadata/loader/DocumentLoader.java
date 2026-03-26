@@ -13,6 +13,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class DocumentLoader {
+
+    private static final Pattern SPEC_ID_PATTERN = Pattern.compile("##\\s*Spec ID\\s*\\R+`([^`]+)`", Pattern.CASE_INSENSITIVE);
 
     private final ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 
@@ -55,9 +59,7 @@ public class DocumentLoader {
                     if (content.isBlank()) {
                         continue;
                     }
-                    // 附加 filename 元信息
-                    Map<String, Object> metadata = new HashMap<>();
-                    metadata.put("filename", fileName);
+                    Map<String, Object> metadata = buildMetadata(fileName, markdownContent);
                     allDocuments.add(new Document(content.trim(), metadata));
                 }
             }
@@ -86,6 +88,49 @@ public class DocumentLoader {
                 .map(String::trim)
                 .filter(content -> !content.isBlank())
                 .collect(Collectors.toList());
+    }
+
+    private Map<String, Object> buildMetadata(String fileName, String markdownContent) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("filename", fileName);
+        metadata.put("specId", extractSpecId(fileName, markdownContent));
+        metadata.put("generationMode", inferGenerationMode(fileName));
+        metadata.put("stage", List.of("SOLUTION_DESIGN", "CODE_GENERATION"));
+        metadata.put("techStack", inferTechStack(fileName));
+        metadata.put("priority", 100);
+        metadata.put("version", "1.0.0");
+        metadata.put("status", "active");
+        return metadata;
+    }
+
+    private String extractSpecId(String fileName, String markdownContent) {
+        Matcher matcher = SPEC_ID_PATTERN.matcher(markdownContent);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return fileName == null ? UUID.randomUUID().toString() : fileName.replace(".md", "").toUpperCase(Locale.ROOT);
+    }
+
+    private String inferGenerationMode(String fileName) {
+        if (fileName == null) {
+            return "single_file";
+        }
+        String normalized = fileName.toLowerCase(Locale.ROOT);
+        if (normalized.contains("multi_file")) {
+            return "multi_file";
+        }
+        if (normalized.contains("vue_project")) {
+            return "vue_project";
+        }
+        return "single_file";
+    }
+
+    private List<String> inferTechStack(String fileName) {
+        String generationMode = inferGenerationMode(fileName);
+        if ("vue_project".equals(generationMode)) {
+            return List.of("Vue3", "Vite", "Vue Router");
+        }
+        return List.of("HTML5", "CSS3", "JavaScript");
     }
 
 }

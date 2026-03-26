@@ -37,12 +37,15 @@ public class UserThreadBindServiceImpl extends ServiceImpl<UserThreadBindMapper,
     public void bindThread(String userId, String threadId, String agentName) {
         try {
             // 先校验 threadId 是否已被绑定
-            long count =  QueryChain.of(UserThreadBind.class)
+            UserThreadBind existedBind = QueryChain.of(UserThreadBind.class)
                     .eq(UserThreadBind::getThreadId, threadId)
                     .eq(UserThreadBind::getBindStatus, BIND_STATUS_BOUND)
                     .eq(UserThreadBind::getIsDeleted, LOGIC_DELETED_NO)
-                    .count();
-            if (count > 0) {
+                    .one();
+            if (existedBind != null) {
+                if (!userId.equals(existedBind.getUserId())) {
+                    throw new BusinessException(ErrorCode.FORBIDDEN_ERROR, "threadId 已绑定其他用户");
+                }
                 // 已绑定，直接返回（幂等）
                 return;
             }
@@ -53,9 +56,23 @@ public class UserThreadBindServiceImpl extends ServiceImpl<UserThreadBindMapper,
             userThreadBind.setBindStatus(BIND_STATUS_BOUND);
             userThreadBind.setIsDeleted(LOGIC_DELETED_NO);
             save(userThreadBind);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("userBindThread error: 绑定用户与threadId失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "绑定用户与 threadId 失败");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void ensureThreadOwnership(String userId, String threadId, String agentName) {
+        if (userId == null || threadId == null || agentName == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "thread 归属校验参数不能为空");
+        }
+        bindThread(userId, threadId, agentName);
+        if (!validateThreadOwner(userId, threadId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ERROR, "非法对话 ID，已阻断访问");
         }
     }
 

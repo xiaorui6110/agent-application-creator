@@ -83,9 +83,7 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
         log.info("Agent task accepted, taskId={}, threadId={}, appId={}, userId={}",
                 taskId, updatedThreadId, appId, userId);
 
-        if (!threadBelongsToUser(userId, updatedThreadId)) {
-            throw new BusinessException("非法对话 ID，已阻止访问", ErrorCode.FORBIDDEN_ERROR);
-        }
+        userThreadBindService.ensureThreadOwnership(userId, updatedThreadId, "app_creator_agent");
 
         agentTaskService.initTask(taskId, updatedThreadId, appId);
         chatHistoryService.saveChatHistory(appId, userId, message, "user");
@@ -100,6 +98,15 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
                         && output.getAgentResponse().getStructuredReply().getFiles() != null) {
                     codeFileSaverUtil.writeFilesToLocal(
                             output.getAgentResponse().getStructuredReply().getFiles(), appId);
+                }
+                if (output.getAgentResponse() != null
+                        && output.getAgentResponse().getCodeOptimizationInput() != null) {
+                    agentTaskExecutor.submitOptimizationTask(
+                            output.getAgentResponse().getCodeOptimizationInput(),
+                            updatedThreadId,
+                            appId,
+                            finalUserId
+                    );
                 }
                 agentTaskService.saveFinalOutput(taskId, output);
                 agentTaskService.updateStatus(taskId, SUCCEEDED);
@@ -182,16 +189,6 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
         task.setNextRetryTime(LocalDateTime.now());
         agentTaskRedisTemplate.opsForValue().set(AgentTaskConstant.AGENT_TASK_PREFIX + task.getTaskId(), task);
         autoRetry(task);
-    }
-
-    private boolean threadBelongsToUser(String userId, String threadId) {
-        if (StrUtil.isNotBlank(threadId)) {
-            userThreadBindService.bindThread(userId, threadId, "app_creator_agent");
-            if (!userThreadBindService.validateThreadOwner(userId, threadId)) {
-                throw new BusinessException("非法对话 ID，已阻止访问", ErrorCode.FORBIDDEN_ERROR);
-            }
-        }
-        return true;
     }
 
     private void validateUserInput(String input) {

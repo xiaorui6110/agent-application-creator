@@ -20,10 +20,16 @@ import java.util.Map;
 public class StructuredReply {
 
     /**
-     * 应用生成模式（SINGLE_FILE / MULTI_FILE / VUE_PROJECT）（但是这里的定义被我遗漏了，就算了吧，不使用了）
+     * 兼容旧字段，建议使用 generationMode
+     */
+    @Schema(description = "兼容旧字段，建议使用 generationMode")
+    private String type;
+
+    /**
+     * 应用生成模式（single_file / multi_file / vue_project）
      */
     @Schema(description = "应用生成模式")
-    private String type;
+    private String generationMode;
 
     /**
      * 是否可直接运行

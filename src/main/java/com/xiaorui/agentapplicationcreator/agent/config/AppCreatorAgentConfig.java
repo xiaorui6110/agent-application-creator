@@ -55,7 +55,7 @@ public class AppCreatorAgentConfig {
      * 主: 平台应用生成 agent
      */
     @Bean
-    public ReactAgent appCreatorAgent(ChatModel chatModel) {
+    public ReactAgent appCreatorAgent(ChatModel chatModel, DocumentSearchTool documentSearchTool) {
 
         // ========== 创建 Hooks ==========
         LoggingHook loggingHook = new LoggingHook();
@@ -80,9 +80,8 @@ public class AppCreatorAgentConfig {
 
         // ========== 创建 Tools ==========
         // 在这里创建直接工具回调，避免循环依赖
-        DocumentSearchTool searchTool = new DocumentSearchTool();
         ToolCallback searchToolCallback = FunctionToolCallback
-                .builder("search_documents", searchTool::search)
+                .builder("search_documents", documentSearchTool::search)
                 .description("搜索文档以查找相关工程规范约束信息")
                 .inputType(DocumentSearchTool.Request.class)
                 .build();

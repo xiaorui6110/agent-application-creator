@@ -26,6 +26,17 @@ public class DefaultPlanValidator implements PlanValidator {
 
     private static final String DEFAULT_ROOT_DIR = "code_output";
 
+    private static final List<OperationTypeEnum> SUPPORTED_OPERATION_TYPES = List.of(
+            OperationTypeEnum.CREATE_FILE,
+            OperationTypeEnum.OVERWRITE_FILE,
+            OperationTypeEnum.APPEND_FILE,
+            OperationTypeEnum.DELETE_FILE,
+            OperationTypeEnum.MOVE_FILE,
+            OperationTypeEnum.RENAME_FILE,
+            OperationTypeEnum.CREATE_DIRECTORY,
+            OperationTypeEnum.DELETE_EMPTY_DIRECTORY
+    );
+
     @Resource
     private AppProperties appProperties;
 
@@ -59,6 +70,9 @@ public class DefaultPlanValidator implements PlanValidator {
         if (type == null) {
             throw new IllegalArgumentException("operationType is blank");
         }
+        if (!SUPPORTED_OPERATION_TYPES.contains(type)) {
+            throw new IllegalArgumentException("unsupported operationType in main flow: " + type);
+        }
         if (op.getPath() == null || op.getPath().isBlank()) {
             throw new IllegalArgumentException("path is blank");
         }
@@ -78,7 +92,7 @@ public class DefaultPlanValidator implements PlanValidator {
                     throw new IllegalArgumentException(type + " requires content");
                 }
             }
-            case READ_FILE, EXISTS, DELETE_FILE, CREATE_DIRECTORY, DELETE_EMPTY_DIRECTORY -> {
+            case DELETE_FILE, CREATE_DIRECTORY, DELETE_EMPTY_DIRECTORY -> {
             }
             case MOVE_FILE, RENAME_FILE -> {
                 if (op.getTargetPath() == null) {
@@ -86,12 +100,10 @@ public class DefaultPlanValidator implements PlanValidator {
                 }
                 resolvedTarget = resolveSafePath(op.getTargetPath());
             }
-            case DELETE_DIRECTORY_RECURSIVE ->
-                    throw new IllegalArgumentException("DELETE_DIRECTORY_RECURSIVE is forbidden");
             default -> throw new IllegalArgumentException("unknown operationType: " + type);
         }
 
-        return new ValidatedOperation(type, resolvedPath, resolvedTarget, expected, op.getContent());
+        return new ValidatedOperation(type, resolvedPath, resolvedTarget, expected, op.getContent(), null);
     }
 
     private void validateExpected(ExpectedCondition expected) {

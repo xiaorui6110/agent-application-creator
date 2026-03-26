@@ -16,18 +16,13 @@ import com.xiaorui.agentapplicationcreator.model.entity.ChatHistory;
 import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.ChatHistoryService;
 import com.xiaorui.agentapplicationcreator.service.UserService;
-import com.xiaorui.agentapplicationcreator.util.RedisUtil;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-
-import static com.xiaorui.agentapplicationcreator.constant.RedisMemoryConstant.AI_MESSAGE_MEMORY_PREFIX;
-import static com.xiaorui.agentapplicationcreator.constant.RedisMemoryConstant.USER_MESSAGE_MEMORY_PREFIX;
 
 /**
  * 对话历史表 服务层实现。
@@ -37,11 +32,6 @@ import static com.xiaorui.agentapplicationcreator.constant.RedisMemoryConstant.U
 @Slf4j
 @Service
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory>  implements ChatHistoryService{
-
-    /**
-     * 存储到Redis的key的一部分，采用 yyyy-MM-dd_HH_mm_ss 格式（如 2025-12-30-16_14_31）
-     */
-    public static final DateTimeFormatter REDIS_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm_ss");
 
     @Resource
     private AppService appService;
@@ -116,51 +106,41 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         return queryWrapper;
     }
 
+    @Override
+    public List<ChatHistory> listRecentChatHistory(String appId, int limit) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        ThrowUtil.throwIf(limit <= 0 || limit > 100, ErrorCode.PARAMS_ERROR, "查询数量必须在1~100之间");
+
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .eq("app_id", appId)
+                .orderBy("create_time", false)
+                .limit(limit);
+        List<ChatHistory> historyList = this.mapper.selectListByQuery(queryWrapper);
+        if (CollUtil.isEmpty(historyList)) {
+            return List.of();
+        }
+        return historyList.reversed();
+    }
+
     /**
-     * 从数据库加载对话历史到 Redis 内存（user + ai 信息）
+     * 兼容旧接口。
+     * 当前运行态对话上下文由 Agent 框架的 RedisSaver 负责，
+     * MySQL 才是业务历史主存。该方法不再向自定义 Redis key 写入数据。
      *
      * @param appId 应用id
      * @param maxCount 最大数量
      * @return 加载的对话历史数量
      */
     @Override
+    @Deprecated
     public int loadChatHistoryToRedis(String appId, int maxCount) {
-
         try {
-            // 直接构造查询条件，起始点为 1 而不是 0，用于排除最新的用户消息
-            QueryWrapper queryWrapper = QueryWrapper.create()
-                    .eq("app_id", appId)
-                    .orderBy("create_time", false)
-                    // offset = 1，会排除掉最新的一条数据
-                    .limit(1, maxCount);
-            List<ChatHistory> historyList = this.mapper.selectListByQuery(queryWrapper);
-
-            if (CollUtil.isEmpty(historyList)) {
-                return 0;
-            }
-            // 反转列表，确保按时间正序（老的在前，新的在后）
-            historyList = historyList.reversed();
-            // 按时间顺序添加到记忆中
-            int loadedCount = 0;
-            // 先清理历史缓存，防止重复加载（可以传一个值或多个）
-            RedisUtil.del();
-            for (ChatHistory history : historyList) {
-                if (ChatHistoryMsgTypeEnum.USER.getValue().equals(history.getChatMessageType())) {
-                    // key:xiaorui_user_memory:appId:timestamp    value:message
-                    String timePart = history.getCreateTime().format(REDIS_TIME_FORMATTER);
-                    RedisUtil.set(USER_MESSAGE_MEMORY_PREFIX + appId + ":" + timePart, history.getChatMessage());
-                    loadedCount++;
-                } else if (ChatHistoryMsgTypeEnum.AI.getValue().equals(history.getChatMessageType())) {
-                    String timePart = history.getCreateTime().format(REDIS_TIME_FORMATTER);
-                    RedisUtil.set(AI_MESSAGE_MEMORY_PREFIX + appId + ":" + timePart, history.getChatMessage());
-                    loadedCount++;
-                }
-            }
-            log.info("成功为 appId: {} 加载了 {} 条历史对话", appId, loadedCount);
-            return loadedCount;
+            List<ChatHistory> historyList = listRecentChatHistory(appId, maxCount);
+            log.warn("loadChatHistoryToRedis() 已降级为兼容接口，当前仅从 MySQL 读取最近历史数量，appId={}, count={}",
+                    appId, historyList.size());
+            return historyList.size();
         } catch (Exception e) {
-            log.error("加载历史对话失败，appId: {}, error: {}", appId, e.getMessage(), e);
-            // 加载失败不影响系统运行，只是没有历史上下文
+            log.error("读取历史对话失败，appId: {}, error: {}", appId, e.getMessage(), e);
             return 0;
         }
     }

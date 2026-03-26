@@ -14,6 +14,7 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
+import com.xiaorui.agentapplicationcreator.agent.model.protocol.AgentOutputProtocolResolver;
 import com.xiaorui.agentapplicationcreator.agent.model.response.AgentResponse;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.agent.plan.entity.CodeModificationPlan;
@@ -64,6 +65,8 @@ public class AgentAppCreator {
     private final PlanValidator validator = new DefaultPlanValidator();
 
     private final PlanExecutor executor = new DefaultPlanExecutor();
+
+    private final AgentOutputProtocolResolver agentOutputProtocolResolver = new AgentOutputProtocolResolver();
 
     @Resource
     private ReactAgent appCreatorAgent;
@@ -118,7 +121,7 @@ public class AgentAppCreator {
                 throw new BusinessException("智能体应用生成 AI 服务响应超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
             }
             // JSON 转 Bean
-            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
+            agentResponse = parseAgentResponse(response.getText());
         } catch (Exception e) {
             log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
@@ -129,13 +132,7 @@ public class AgentAppCreator {
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
         appService.updateAppCodeGenTypeAsync(appId, agentResponse.getCodeGenType());
         // 如果 AgentResponse 中包含 CodeModificationPlan 代码修改计划，则需要调用执行器来执行文件操作
-        if (agentResponse.getCodeModificationPlan() != null) {
-            CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
-            ValidatedPlan validatedPlan = validator.validate(plan);
-            ExecutionResult result = executor.execute(validatedPlan);
-            ThrowUtil.throwIf(!result.isVerified(), ErrorCode.SYSTEM_ERROR, "文件操作验证未通过：" + result.getErrorMessage());
-            ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
-        }
+        handleCodeModificationPlan(agentResponse);
         // 构建返回值
         return SystemOutput.builder()
                 .threadId(threadId)
@@ -187,7 +184,7 @@ public class AgentAppCreator {
                 throw new BusinessException("智能体应用生成 AI 服务响应超时，请稍后再试", ErrorCode.SYSTEM_ERROR);
             }
             // JSON 转 Bean
-            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
+            agentResponse = parseAgentResponse(response.getText());
         } catch (Exception e) {
             log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
@@ -198,13 +195,7 @@ public class AgentAppCreator {
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
         appService.updateAppCodeGenTypeAsync(appId, agentResponse.getCodeGenType());
         // 如果 AgentResponse 中包含 CodeModificationPlan 代码修改计划，则需要调用执行器来执行文件操作
-        if (agentResponse.getCodeModificationPlan() != null) {
-            CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
-            ValidatedPlan validatedPlan = validator.validate(plan);
-            ExecutionResult result = executor.execute(validatedPlan);
-            ThrowUtil.throwIf(!result.isVerified(), ErrorCode.SYSTEM_ERROR, "文件操作验证未通过：" + result.getErrorMessage());
-            ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
-        }
+        handleCodeModificationPlan(agentResponse);
         // 构建返回值
         return SystemOutput.builder()
                 .threadId(threadId)
@@ -231,7 +222,7 @@ public class AgentAppCreator {
             // 调用 Agent
             response = appCreatorAgent.call(userMessage, runnableConfig);
             // JSON 转 Bean（主要是为了方便获取代码文件）
-            agentResponse = JSONUtil.toBean(response.getText(), AgentResponse.class,true);
+            agentResponse = parseAgentResponse(response.getText());
         } catch (Exception e) {
             e.printStackTrace();
             throw new BusinessException("AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
@@ -266,9 +257,7 @@ public class AgentAppCreator {
                 .filter(StringUtil::isNotBlank)
                 .orElse(UUID.randomUUID().toString());
         // 强制绑定 userId 与 threadId
-        if (!threadBelongsToUser(userId, threadId)) {
-            throw new BusinessException("非法对话 ID，已阻断访问", ErrorCode.FORBIDDEN_ERROR);
-        }
+        userThreadBindService.ensureThreadOwnership(userId, threadId, "app_creator_agent");
         // 输入校验
         validateUserInput(userMessage);
         // 感觉还是有问题，主要就是怎么维持记忆呢，这里没有 threadId 传递给智能体（行，以下解决疑问）
@@ -332,7 +321,7 @@ public class AgentAppCreator {
                 );
         // 主线程等待异步任务完成
         latch.await();
-        AgentResponse agentResponse = JSONUtil.toBean(fullContent.toString(), AgentResponse.class,true);
+        AgentResponse agentResponse = parseAgentResponse(fullContent.toString());
         System.out.println("程序执行完成");
         // 构建返回值
         return SystemOutput.builder()
@@ -351,21 +340,6 @@ public class AgentAppCreator {
 
 
     /**
-     * 判断对话是否属于当前用户（否则用户 A 可能传入用户 B 的 threadId，看到 B 的对话内容，非常危险）
-     */
-    private boolean threadBelongsToUser(String userId, String threadId) {
-        // threadId 肯定非空，新 thread：绑定
-        if (StrUtil.isNotBlank(threadId)) {
-            userThreadBindService.bindThread(userId, threadId, "app_creator_agent");
-            // 老 thread：校验归属
-            if (!userThreadBindService.validateThreadOwner(userId, threadId)) {
-                throw new BusinessException("非法对话 ID，已阻断访问", ErrorCode.FORBIDDEN_ERROR);
-            }
-        }
-        return true;
-    }
-
-    /**
      * 构建配置
      */
     private RunnableConfig buildRunnableConfig(String threadId, String userId) {
@@ -373,6 +347,21 @@ public class AgentAppCreator {
                 .threadId(threadId)
                 .addMetadata("user_id", userId)
                 .build();
+    }
+
+    private AgentResponse parseAgentResponse(String rawResponseText) {
+        return agentOutputProtocolResolver.parse(rawResponseText);
+    }
+
+    private void handleCodeModificationPlan(AgentResponse agentResponse) {
+        if (agentResponse.getCodeModificationPlan() == null) {
+            return;
+        }
+        CodeModificationPlan plan = agentResponse.getCodeModificationPlan();
+        ValidatedPlan validatedPlan = validator.validate(plan);
+        ExecutionResult result = executor.execute(validatedPlan);
+        ThrowUtil.throwIf(!result.isVerified(), ErrorCode.SYSTEM_ERROR, "文件操作验证未通过：" + result.getErrorMessage());
+        ThrowUtil.throwIf(!result.isSuccess(), ErrorCode.SYSTEM_ERROR, "文件操作执行失败：" + result.getErrorMessage());
     }
 
     /**

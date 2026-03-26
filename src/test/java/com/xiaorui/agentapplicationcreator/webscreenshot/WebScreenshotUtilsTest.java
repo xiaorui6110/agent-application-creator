@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class WebScreenshotUtilsTest {
 
     /**
-     * 测试网页截图功能（需要梯子）
+     * 测试网页截图功能
      */
     @Test
     public void saveWebPageScreenshot() {

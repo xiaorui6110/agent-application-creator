@@ -21,7 +21,7 @@ public class ProjectDownloadAsZipTest {
     @Test
     public void testProjectDownload() {
         HttpServletResponse response = new MockHttpServletResponse();
-        projectDownloadService.downloadProjectAsZip("tmp/code_output/361683664271351808", "test", response);
+        projectDownloadService.downloadProjectAsZip("tmp/code_output/361683664271351808", response);
 
     }
 

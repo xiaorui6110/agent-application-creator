@@ -24,6 +24,13 @@ import java.util.Map;
 public class AgentResponse {
 
     /**
+     * Agent 当前返回所属阶段 / 输出类型
+     * 允许值：CLARIFICATION / MODE_SELECTION / SOLUTION_DESIGN / CODE_GENERATION / CODE_MODIFICATION
+     */
+    @Schema(description = "Agent 当前返回所属阶段 / 输出类型")
+    private String responseType;
+
+    /**
      * Agent 最终给用户的自然语言回复
      * ⚠️ 严禁包含代码
      */

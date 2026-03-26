@@ -8,16 +8,15 @@ import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationInput;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.entity.CodeOptimizeResult;
+import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeResultService;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
-import com.xiaorui.agentapplicationcreator.mapper.CodeOptimizeResultMapper;
 import jakarta.annotation.Resource;
 import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,17 +36,17 @@ public class CodeOptimization {
     private ReactAgent codeOptimizationAgent;
 
     @Resource
-    private CodeOptimizeResultMapper codeOptimizeResultMapper;
+    private CodeOptimizeResultService codeOptimizeResultService;
 
     /**
      * 异步执行代码优化
      * 1. 主 agent 生成应用代码后，就可以异步执行代码优化 agent
      * 2. 在下一次调用主 agent 生成代码时，将副 agent 的代码优化等结果添加为输入
      */
-    @Async("codeOptExecutor")
     public void codeOptimizeAsync(CodeOptimizationInput codeOptimizationInput, String userId) {
         log.info("Starting code optimization, appId={}", codeOptimizationInput.getAppId());
         // 基础校验
+        validateInput(codeOptimizationInput);
         String input = codeOptimizationInput.toString();
         validateInput(input);
         // 提前在外部声明 POJO 变量
@@ -96,10 +95,17 @@ public class CodeOptimization {
         if (input.length() > MAX_INPUT_LENGTH) {
             throw new BusinessException("输入过长，请分段发送", ErrorCode.PARAMS_ERROR);
         }
-        // 验证字符串是否包含敏感词（目前先使用第三方框架简单实现）
         if (SensitiveWordHelper.contains(input)) {
             throw new BusinessException("输入包含不适宜内容", ErrorCode.PARAMS_ERROR);
         }
+    }
+
+    private void validateInput(CodeOptimizationInput input) {
+        ThrowUtil.throwIf(input == null, ErrorCode.PARAMS_ERROR, "代码优化输入不能为空");
+        ThrowUtil.throwIf(StringUtil.isBlank(input.getAppId()), ErrorCode.PARAMS_ERROR, "代码优化 appId 不能为空");
+        ThrowUtil.throwIf(StringUtil.isBlank(input.getAppGoal()), ErrorCode.PARAMS_ERROR, "代码优化 appGoal 不能为空");
+        ThrowUtil.throwIf(input.getFiles() == null || input.getFiles().isEmpty(), ErrorCode.PARAMS_ERROR, "代码优化 files 不能为空");
+        // 验证字符串是否包含敏感词（目前先使用第三方框架简单实现）
     }
 
     /**
@@ -114,8 +120,8 @@ public class CodeOptimization {
         codeOptimizeResult.setCodeOptimizeSuggestions(codeOptimizationResult.getSuggestedDiff().toString());
         codeOptimizeResult.setPlatformExperience(codeOptimizationResult.getNewPatterns().toString());
         codeOptimizeResult.setAgentConfidence(codeOptimizationResult.getConfidence());
-        int insert = codeOptimizeResultMapper.insert(codeOptimizeResult);
-        if (insert <= 0) {
+        boolean saved = codeOptimizeResultService.save(codeOptimizeResult);
+        if (!saved) {
             log.error("save code optimize result failed");
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存代码优化结果失败");
         }

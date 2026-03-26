@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -86,19 +87,30 @@ public class MetadataManagerImpl implements MetadataManager {
     public List<String> findCandidateSpecIds(String generationMode, String stage) {
 
         Set<String> keys = stringRedisTemplate.keys("spec:*");
+        if (keys == null || keys.isEmpty()) {
+            return List.of();
+        }
         // 先用 Redis 做 metadata 过滤
         return keys.stream()
                 .filter(key -> {
                     String metaJson = (String) stringRedisTemplate
                             .opsForHash()
                             .get(key, "metadata");
+                    if (metaJson == null || metaJson.isBlank()) {
+                        return false;
+                    }
 
                     SpecMetadata meta = JsonUtils.fromJson(metaJson, SpecMetadata.class);
+                    if (meta == null) {
+                        return false;
+                    }
 
-                    return meta.getGenerationMode().equals(generationMode)
+                    return Objects.equals(meta.getGenerationMode(), generationMode)
+                            && meta.getStage() != null
                             && meta.getStage().contains(stage)
-                            && "ACTIVE".equals(meta.getStatus());
+                            && "active".equalsIgnoreCase(meta.getStatus());
                 })
+                .map(key -> key.replaceFirst("^spec:", ""))
                 .toList();
     }
 

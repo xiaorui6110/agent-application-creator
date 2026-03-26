@@ -39,4 +39,9 @@ public class ValidatedOperation {
      * 写入 / 覆盖内容
      */
     private String content;
+
+    /**
+     * 执行前快照，供失败回滚使用
+     */
+    private OperationSnapshot snapshot;
 }
