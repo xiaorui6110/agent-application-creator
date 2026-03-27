@@ -32,4 +32,8 @@ public class MonitorContext implements Serializable {
      */
     private String appId;
 
+    private String threadId;
+
+    private String agentName;
+
 }

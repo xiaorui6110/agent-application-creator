@@ -117,6 +117,11 @@ const originItems = [
     title: '任务监控',
   },
   {
+    key: '/admin/observability',
+    label: '可观测性面板',
+    title: '可观测性面板',
+  },
+  {
     key: 'others',
     label: h('a', { href: 'https://www.promptingguide.ai/zh', target: '_blank' }, '提示工程指南'),
     title: '提示工程指南',

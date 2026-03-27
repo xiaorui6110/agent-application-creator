@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.manager.monitor;
 
+import com.alibaba.ttl.TransmittableThreadLocal;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -10,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MonitorContextHolder {
 
-    private static final ThreadLocal<MonitorContext> CONTEXT_HOLDER = new ThreadLocal<>();
+    private static final TransmittableThreadLocal<MonitorContext> CONTEXT_HOLDER =
+            new TransmittableThreadLocal<>();
 
     /**
      * 设置监控上下文

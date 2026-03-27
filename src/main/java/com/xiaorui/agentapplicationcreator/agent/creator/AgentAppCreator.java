@@ -29,6 +29,9 @@ import com.xiaorui.agentapplicationcreator.agent.subagent.service.CodeOptimizeRe
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContext;
+import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContextHolder;
+import com.xiaorui.agentapplicationcreator.model.entity.ModelCallLog;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.*;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
@@ -86,6 +89,9 @@ public class AgentAppCreator {
     @Resource
     private CodeOptimizeResultService codeOptimizeResultService;
 
+    @Resource
+    private ModelCallLogService modelCallLogService;
+
     /**
      * 智能体对话（TODO alibaba 框架的流式输出与 Graph 工作流集成了，所以待学习 Graph Core 之后再做流式输出实现）
      * 1. 用户输入提示词：“创建xxx应用”  -->  agent确认后生成代码应用呈现
@@ -104,6 +110,12 @@ public class AgentAppCreator {
         // 设置监控上下文
         //MonitorContextHolder.setContext(MonitorContext.builder().userId(userId).appId(appId).build());
         // 提前在外部声明 POJO 变量
+        MonitorContextHolder.setContext(MonitorContext.builder()
+                .userId(userId)
+                .appId(appId)
+                .threadId(threadId)
+                .agentName("app_creator_agent")
+                .build());
         AssistantMessage response;
         AgentResponse agentResponse;
         try {
@@ -127,6 +139,7 @@ public class AgentAppCreator {
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 保存 Agent 回复
+        MonitorContextHolder.clearContext();
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
         // 异步设置应用名称和代码生成类型
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
@@ -166,6 +179,12 @@ public class AgentAppCreator {
         // 设置监控上下文
         //MonitorContextHolder.setContext(MonitorContext.builder().userId(userId).appId(appId).build());
         // 提前在外部声明 POJO 变量
+        MonitorContextHolder.setContext(MonitorContext.builder()
+                .userId(userId)
+                .appId(appId)
+                .threadId(threadId)
+                .agentName("app_creator_agent")
+                .build());
         AssistantMessage response;
         AgentResponse agentResponse;
         try {
@@ -190,6 +209,7 @@ public class AgentAppCreator {
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
         // 保存 Agent 回复
+        MonitorContextHolder.clearContext();
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
         // 异步设置应用名称和代码生成类型
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
@@ -282,6 +302,8 @@ public class AgentAppCreator {
         // 发起流式调用并处理响应
         Flowable<GenerationResult> result = gen.streamCall(param);
         StringBuilder fullContent = new StringBuilder();
+        final long streamStartTime = System.currentTimeMillis();
+        final GenerationResult[] lastUsageResult = new GenerationResult[1];
         System.out.print("AI: ");
         result
                 // IO线程执行请求
@@ -291,6 +313,7 @@ public class AgentAppCreator {
                 .subscribe(
                         // onNext: 处理每个响应片段
                         message -> {
+                            lastUsageResult[0] = message;
                             String content = message.getOutput().getChoices().getFirst().getMessage().getContent();
                             String finishReason = message.getOutput().getChoices().getFirst().getFinishReason();
                             // 输出内容
@@ -307,6 +330,18 @@ public class AgentAppCreator {
                         },
                         // onError: 处理错误
                         error -> {
+                            modelCallLogService.record(ModelCallLog.builder()
+                                    .userId(userId)
+                                    .appId(appId)
+                                    .threadId(threadId)
+                                    .agentName("app_creator_agent")
+                                    .provider("dashscope")
+                                    .modelName("qwen3-coder-plus")
+                                    .callType("STREAM")
+                                    .callStatus("FAILED")
+                                    .latencyMs(System.currentTimeMillis() - streamStartTime)
+                                    .errorMessage(error.getMessage())
+                                    .build());
                             System.err.println("\n请求失败: " + error.getMessage());
                             log.error("agent stream call failed, threadId={}, userId={}, error={}", threadId, userId, error.getMessage());
                             latch.countDown();
@@ -314,6 +349,23 @@ public class AgentAppCreator {
                         },
                         // onComplete: 完成回调
                         () -> {
+                            GenerationResult finalResult = lastUsageResult[0];
+                            if (finalResult != null && finalResult.getUsage() != null) {
+                                modelCallLogService.record(ModelCallLog.builder()
+                                        .userId(userId)
+                                        .appId(appId)
+                                        .threadId(threadId)
+                                        .agentName("app_creator_agent")
+                                        .provider("dashscope")
+                                        .modelName("qwen3-coder-plus")
+                                        .callType("STREAM")
+                                        .callStatus("SUCCESS")
+                                        .promptTokens(finalResult.getUsage().getInputTokens())
+                                        .completionTokens(finalResult.getUsage().getOutputTokens())
+                                        .totalTokens(finalResult.getUsage().getTotalTokens())
+                                        .latencyMs(System.currentTimeMillis() - streamStartTime)
+                                        .build());
+                            }
                             System.out.println(); // 换行
                             // System.out.println("完整响应: " + fullContent.toString());
                             latch.countDown();

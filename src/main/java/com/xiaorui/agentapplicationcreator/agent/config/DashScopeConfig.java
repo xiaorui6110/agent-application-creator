@@ -2,9 +2,13 @@ package com.xiaorui.agentapplicationcreator.agent.config;
 
 import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
+import com.xiaorui.agentapplicationcreator.manager.monitor.ObservableChatModel;
+import com.xiaorui.agentapplicationcreator.service.ModelCallLogService;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * @description: DashScope 配置
@@ -28,9 +32,26 @@ public class DashScopeConfig {
     }
 
     @Bean
-    public ChatModel chatModel(DashScopeApi api) {
+    public DashScopeChatModel dashScopeChatModel(DashScopeApi api) {
+        DashScopeChatOptions chatOptions = DashScopeChatOptions.builder()
+                .model(props.getChat().getOptions().getModel())
+                .stream(props.getChat().getOptions().getStream())
+                .incrementalOutput(props.getChat().getOptions().getIncrementalOutput())
+                .temperature(props.getChat().getOptions().getTemperature())
+                .build();
         return DashScopeChatModel.builder()
                 .dashScopeApi(api)
+                .defaultOptions(chatOptions)
                 .build();
+    }
+
+    @Bean
+    @Primary
+    public ChatModel chatModel(DashScopeChatModel dashScopeChatModel, ModelCallLogService modelCallLogService) {
+        return new ObservableChatModel(
+                dashScopeChatModel,
+                modelCallLogService,
+                props.getChat().getOptions().getModel()
+        );
     }
 }

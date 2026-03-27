@@ -231,7 +231,6 @@ create table `xr_app_version`
     index `idx_create_time` (`create_time`)
 ) engine = InnoDB default charset = utf8mb4 comment '应用版本表';
 
-
 -- 应用模板表
 drop table if exists `xr_app_template`;
 create table `xr_app_template`
@@ -253,3 +252,34 @@ create table `xr_app_template`
     index `idx_created_by` (`created_by`),
     index `idx_create_time` (`create_time`)
 ) engine = InnoDB default charset = utf8mb4 comment '应用模板表';
+
+-- 模型调用记录表
+drop table if exists `xr_model_call_log`;
+create table `xr_model_call_log`
+(
+    `model_call_log_id` varchar(36) not null default '' comment '模型调用记录 id',
+    `user_id` varchar(36) default null comment '用户 id',
+    `app_id` varchar(36) default null comment '应用 id',
+    `thread_id` varchar(64) default null comment '线程 id',
+    `agent_name` varchar(64) default null comment 'Agent 名称',
+    `provider` varchar(32) default null comment '模型提供方',
+    `model_name` varchar(128) default null comment '模型名称',
+    `call_type` varchar(16) default null comment '调用类型 SYNC/STREAM',
+    `call_status` varchar(16) default null comment '调用状态 SUCCESS/FAILED',
+    `prompt_tokens` int default '0' comment '输入 token 数',
+    `completion_tokens` int default '0' comment '输出 token 数',
+    `total_tokens` int default '0' comment '总 token 数',
+    `latency_ms` bigint default '0' comment '调用耗时 ms',
+    `error_message` varchar(1000) default null comment '错误信息',
+    `create_time` datetime default CURRENT_TIMESTAMP comment '创建时间',
+    `update_time` datetime default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
+    `is_deleted` tinyint(4) default '0' comment '是否删除 0-未删除 1-已删除',
+    primary key (`model_call_log_id`),
+    index `idx_user_id` (`user_id`),
+    index `idx_app_id` (`app_id`),
+    index `idx_thread_id` (`thread_id`),
+    index `idx_agent_name` (`agent_name`),
+    index `idx_model_name` (`model_name`),
+    index `idx_call_status` (`call_status`),
+    index `idx_create_time` (`create_time`)
+) engine = InnoDB default charset = utf8mb4 comment '模型调用记录表';

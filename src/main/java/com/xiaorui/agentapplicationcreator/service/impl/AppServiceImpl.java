@@ -1,6 +1,5 @@
 package com.xiaorui.agentapplicationcreator.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -329,7 +328,23 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     private AppVO buildAppVO(App app, Map<String, UserVO> userInfoMap) {
         AppVO appVO = new AppVO();
-        BeanUtil.copyProperties(app, appVO);
+        appVO.setAppId(app.getAppId());
+        appVO.setAppName(app.getAppName());
+        appVO.setAppCover(app.getAppCover());
+        appVO.setAppInitPrompt(app.getAppInitPrompt());
+        appVO.setAppDescription(app.getAppDescription());
+        appVO.setCodeGenType(CodeGenTypeEnum.getEnumByValue(app.getCodeGenType()));
+        appVO.setAppPriority(app.getAppPriority());
+        appVO.setAppCategory(app.getAppCategory());
+        appVO.setRecommendScore(app.getRecommendScore());
+        appVO.setDeployUrl(app.getDeployUrl());
+        appVO.setDeployedTime(app.getDeployedTime());
+        appVO.setCommentCount(app.getCommentCount());
+        appVO.setLikeCount(app.getLikeCount());
+        appVO.setShareCount(app.getShareCount());
+        appVO.setViewCount(app.getViewCount());
+        appVO.setCreateTime(app.getCreateTime());
+        appVO.setUpdateTime(app.getUpdateTime());
         if (userInfoMap != null) {
             appVO.setUserVO(userInfoMap.get(app.getUserId()));
         }

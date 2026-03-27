@@ -9,6 +9,7 @@ import AdminOverviewPage from '@/pages/admin/AdminOverviewPage.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
 import AppManagePage from '@/pages/admin/AppManagePage.vue'
 import TaskManagePage from '@/pages/admin/TaskManagePage.vue'
+import AdminObservabilityPage from '@/pages/admin/AdminObservabilityPage.vue'
 import AppChatPage from '@/pages/app/AppChatPage.vue'
 import AppEditPage from '@/pages/app/AppEditPage.vue'
 import ChatManagePage from '@/pages/admin/ChatManagePage.vue'
@@ -70,6 +71,11 @@ const router = createRouter({
       path: '/admin/taskManage',
       name: '任务监控',
       component: TaskManagePage,
+    },
+    {
+      path: '/admin/observability',
+      name: '可观测性面板',
+      component: AdminObservabilityPage,
     },
     {
       path: '/app/chat/:id',

@@ -5,6 +5,8 @@ import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.agent.ReactAgent;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
+import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContext;
+import com.xiaorui.agentapplicationcreator.manager.monitor.MonitorContextHolder;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationInput;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.dto.CodeOptimizationResult;
 import com.xiaorui.agentapplicationcreator.agent.subagent.model.entity.CodeOptimizeResult;
@@ -62,9 +64,17 @@ public class CodeOptimization {
             // 使用 Future 设置超时
             java.util.concurrent.Future<AssistantMessage> future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
+                    MonitorContextHolder.setContext(MonitorContext.builder()
+                            .userId(userId)
+                            .appId(codeOptimizationInput.getAppId())
+                            .threadId(runnableConfig.threadId().get())
+                            .agentName("code_optimization_agent")
+                            .build());
                     return codeOptimizationAgent.call(input, runnableConfig);
                 } catch (GraphRunnerException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    MonitorContextHolder.clearContext();
                 }
             });
 

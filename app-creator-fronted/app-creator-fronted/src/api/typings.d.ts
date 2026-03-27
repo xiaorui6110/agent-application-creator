@@ -83,6 +83,50 @@ declare namespace API {
     failedTaskCount?: number
   }
 
+  type ModelCallLog = {
+    modelCallLogId?: string
+    userId?: string
+    appId?: string
+    threadId?: string
+    agentName?: string
+    provider?: string
+    modelName?: string
+    callType?: string
+    callStatus?: string
+    promptTokens?: number
+    completionTokens?: number
+    totalTokens?: number
+    latencyMs?: number
+    errorMessage?: string
+    createTime?: string
+    updateTime?: string
+    isDeleted?: number
+  }
+
+  type ModelCallLogQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    userId?: string
+    appId?: string
+    threadId?: string
+    agentName?: string
+    modelName?: string
+    callStatus?: string
+  }
+
+  type ModelCallStatsVO = {
+    totalCallCount?: number
+    todayCallCount?: number
+    successCallCount?: number
+    failedCallCount?: number
+    totalPromptTokens?: number
+    totalCompletionTokens?: number
+    totalTokens?: number
+    avgLatencyMs?: number
+  }
+
   type AppAdminUpdateInfoRequest = {
     /** 应用id */
     appId: string
@@ -641,6 +685,15 @@ declare namespace API {
     optimizeCountQuery?: boolean
   }
 
+  type PageModelCallLog = {
+    records?: ModelCallLog[]
+    pageNumber?: number
+    pageSize?: number
+    totalPage?: number
+    totalRow?: number
+    optimizeCountQuery?: boolean
+  }
+
   type queryCommentParams = {
     /** 查询评论请求 */
     appCommentQueryRequest?: any
@@ -874,6 +927,28 @@ declare namespace API {
     code?: string
     msg?: string
     data?: AdminDashboardStatsVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityModelCallStatsVO = {
+    code?: string
+    msg?: string
+    data?: ModelCallStatsVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityPageModelCallLog = {
+    code?: string
+    msg?: string
+    data?: PageModelCallLog
     version?: string
     timestamp?: number
     sign?: string
