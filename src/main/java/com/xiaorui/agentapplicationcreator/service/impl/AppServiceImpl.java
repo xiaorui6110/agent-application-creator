@@ -229,6 +229,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     public void updateAppNameAsync(String appId, String appName) {
         Thread.startVirtualThread(() -> {
             try {
+                if (StrUtil.isBlank(appId) || StrUtil.isBlank(appName)) {
+                    return;
+                }
                 App updateApp = new App();
                 updateApp.setAppId(appId);
                 updateApp.setAppName(appName);
@@ -244,6 +247,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     public void updateAppCodeGenTypeAsync(String appId, String codeGenType) {
         Thread.startVirtualThread(() -> {
             try {
+                if (StrUtil.isBlank(appId) || StrUtil.isBlank(codeGenType)) {
+                    return;
+                }
                 App updateApp = new App();
                 updateApp.setAppId(appId);
                 updateApp.setCodeGenType(codeGenType);

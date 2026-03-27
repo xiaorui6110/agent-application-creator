@@ -1,99 +1,175 @@
-# AI 智能体应用生成平台（毕设）
+# AI 智能体应用生成平台
 
-> 基于 Spring Boot + Spring AI Alibaba 构建的 AI 智能体应用生成平台，支持用户输入自然语言需求，自动生成可运行的小型应用代码文件。
+基于 `Spring Boot 3 + Spring AI Alibaba + Vue 3` 的 Agent 应用生成平台。  
+项目面向“网页 / 小应用生成”场景，支持用户通过自然语言创建应用、继续对话迭代、预览、下载、部署，并提供模板广场、社区互动、后台运营与可观测性能力。
 
-**_还有为了提交代码和新增功能方便，一些本地配置 key 等信息就没有忽略提交了，还请不要搞我呢(￣﹃￣)_**
+**_还有为了提交代码方便，一些本地配置 key 等信息就没有忽略提交了，还请不要搞我呢(￣﹃￣)_**
 
-# AI Intelligent Agent Application Generation Platform
+## 项目定位
 
-## 项目简介
+这不是一个完全通用的 Agent 开发框架，而是一个更聚焦的：
 
-基于 Spring Boot + Spring AI Alibaba 构建的 AI 智能体应用生成平台，支持用户输入自然语言需求，自动生成可运行的小型应用代码文件等功能。
+**面向网页与小应用生成场景的 Agent 应用生成平台**
 
-### 示例页面（GPT 生成）
+核心主链路是：
 
-**主页**
+1. 用户输入一句自然语言需求创建应用
+2. Agent 根据需求生成或修改代码
+3. 前端在对话页展示回复与应用预览
+4. 用户继续多轮对话迭代应用
+5. 用户下载代码或一键部署
+6. 平台提供模板、社区、后台管理、任务监控与模型调用可观测能力
 
-![主页](page/img.png)
-![主页](page/img_1.png)
+## 核心能力
 
-**对话页**
+### 用户侧能力
 
-![对话页](page/对话页.png)
+- 自然语言创建应用
+- 对话式继续修改应用
+- 单文件 / Vue 项目两类代码生成
+- 应用预览、下载、部署
+- 应用版本快照与恢复
+- 模板广场与基于模板创建应用
+- 评论、点赞、分享、社区通知
+- 账号注册、登录、重置密码、个人设置
 
-**应用编辑页**
+### 平台侧能力
 
-![应用编辑页](page/img_3.png)
+- 用户管理
+- 应用管理
+- 对话管理
+- 任务监控与失败任务重试
+- 运营概览面板
+- 模型调用可观测性面板
+  - 模型名
+  - Agent 名称
+  - userId / appId / threadId
+  - promptTokens / completionTokens / totalTokens
+  - 调用耗时 / 成功率 / 失败率
 
-**社区中心页**
+### Agent 相关能力
 
-![社区中心页](page/img_2.png)
+- 主 Agent 应用生成
+- 代码修改计划校验与执行
+- 副 Agent 代码优化
+- 运行态线程绑定与上下文记忆
+- 代码规范 / 文档类 RAG 检索支撑
+- 异步任务执行与状态轮询
 
+## 页面展示
 
-**管理页**
+### 首页
 
+![主页1](page/主页1.png)
+![主页2](page/主页2.png)
+![主页3](page/主页3.png)
+
+### 应用生成与详情
+
+![应用对话生成页](page/应用对话生成页.png)
+![应用详情页](page/应用详情页.png)
+![应用评论页](page/应用评论页.png)
+
+### 后台管理
+
+![运营概览页](page/运营概览页.png)
 ![用户管理页](page/用户管理页.png)
 ![应用管理页](page/应用管理页.png)
+![任务监控页](page/任务监控页.png)
+![可观测性面板页](page/可观测性面板页.png)
 
-**应用评论页**
+### 社区
 
-![评论页](page/评论页.png)
+![社区中心页](page/社区中心页.png)
 
-**用户设置页**
+## 技术栈
 
-![账号设置页](page/账号设置页.png)
+### 后端
 
-**登录注册页**
+- `Spring Boot 3.5.6`
+- `Spring AI Alibaba`
+- `Spring AI Alibaba Agent Framework`
+- `DashScope / 通义千问`
+- `MyBatis-Flex`
+- `Sa-Token`
+- `Redis`
+- `MySQL`
+- `MinIO`
+- `Redisson`
+- `Knife4j + SpringDoc`
+- `Micrometer + Prometheus`
 
-![登录页](page/登录页.png)
-![注册页](page/注册页.png)
+### 前端
 
-### 核心技术栈
+- `Vue 3`
+- `TypeScript`
+- `Vite`
+- `Pinia`
+- `Vue Router`
+- `Ant Design Vue`
+- `Axios`
 
-| 技术/框架             | 版本      | 用途             |
-|-------------------|---------|----------------|
-| Spring Boot       | 3.5.6   | 项目核心框架         |
-| Spring AI Alibaba | 1.1.2.1 | 阿里通义千问 AI 模型调用 |
-| MyBatis Flex      | 1.11.4  | 数据库操作          |
-| Redis             | 7.4     | 缓存、分布式锁、状态管理   |
-| MinIO             | 8.5.9   | 分布式文件存储        |
-| MySQL             | 8.0+    | 关系型数据库         |
-| JDK               | 21      | 基础开发环境，适配虚拟线程  |
-| Maven             | 3.8.8   | 项目构建工具         |
+### 环境要求
 
-### 项目结构
+- `JDK 21`
+- `Maven 3.8+`
+- `Node.js 18+`
+- `MySQL 8.0+`
+- `Redis 7+`
+- `MinIO`
+- 可用的 DashScope API Key
 
-```
+## 项目结构
+
+```text
 agent-application-creator/
-├── src/main/java/com/xiaorui/agentapplicationcreator/
-│   ├── agent/              # 智能体核心逻辑
-│   ├── common/             # 通用组件
-│   ├── config/             # 配置类
-│   ├── constant/           # 常量定义
-│   ├── controller/         # 控制器层
-│   ├── enums/              # 枚举类
-│   ├── exception/          # 异常处理
-│   ├── infrastructure/     # 基础设施层
-│   ├── mapper/             # 数据访问层
-│   ├── model/              # 数据模型
-│   ├── service/            # 业务逻辑层
-│   └── utils/              # 工具类
-├── src/main/resources/
-│   ├── application.yml     # 主配置文件
-│   └── application-dev.yml # 开发环境配置
-├── db/                     # 数据库脚本
-├── design/                 # 设计文档
-├── doc/                    # 项目文档
-├── page/                   # 页面截图
-└── pom.xml                 # Maven 项目配置
+├─ src/main/java/com/xiaorui/agentapplicationcreator/
+│  ├─ agent/                # Agent 编排、协议、计划执行、RAG、sub-agent
+│  ├─ controller/           # 用户、应用、任务、社区、可观测性等接口
+│  ├─ service/              # 业务逻辑
+│  ├─ manager/              # 鉴权、监控、任务、部署等管理能力
+│  ├─ model/                # DTO / Entity / VO
+│  ├─ mapper/               # MyBatis-Flex 数据访问
+│  ├─ config/               # 系统配置
+│  └─ util/                 # 工具类
+├─ src/main/resources/      # Spring Boot 配置
+├─ app-creator-fronted/
+│  └─ app-creator-fronted/
+│     ├─ src/api/           # OpenAPI 生成接口与类型
+│     ├─ src/components/    # 通用组件
+│     ├─ src/pages/         # 首页、应用页、用户页、管理页
+│     ├─ src/stores/        # Pinia 状态管理
+│     └─ src/utils/         # 通用工具
+├─ db/                      # 数据库脚本
+├─ doc/                     # 设计文档与迭代文档
+├─ page/                    # README 页面截图
+└─ README.md
 ```
 
-## 环境要求
+## 典型业务流程
 
-- JDK：21+（推荐 21，适配虚拟线程）
-- Maven：3.8.8+
-- Git：任意版本
-- 第三方服务：阿里云百炼 API_KEY 等
+### 1. 创建应用
+
+1. 用户在首页输入需求
+2. 后端创建应用记录
+3. 前端跳转应用对话页
+4. 用户继续发送需求，系统创建异步任务
+5. Agent 生成结构化结果并落盘代码
+6. 前端轮询任务状态并刷新预览
+
+### 2. 模板复用
+
+1. 用户将已有应用沉淀为模板
+2. 模板进入模板广场
+3. 用户选择模板快速创建新应用
+4. 生成后的应用继续支持对话迭代
+
+### 3. 后台运营
+
+1. 管理员查看运营概览
+2. 查看用户、应用、对话、任务整体情况
+3. 在任务监控页查看失败任务并重试
+4. 在可观测性面板查看模型调用与 Token 消耗
 
 ## 快速开始
 
@@ -104,193 +180,140 @@ git clone https://github.com/xiaorui6110/agent-application-creator.git
 cd agent-application-creator
 ```
 
-### 2. 数据库初始化
+### 2. 初始化数据库
 
-```bash
-# 创建数据库
-mysql -u root -p
+先创建数据库，再执行 `db/` 目录中的建表与增量脚本。
+
+示例：
+
+```sql
 CREATE DATABASE xiaorui_app_creator CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-EXIT;
-
-# 导入数据库表结构
-mysql -u root -p xiaorui_app_creator < db/create_table.sql
 ```
 
-### 3. 环境配置
+如果你已经跑过项目，请确认后续新增表脚本也已执行，例如模型调用日志相关脚本。
 
-修改 `src/main/resources/application-dev.yml` 文件，配置以下信息（当然不止以下这些）：
+### 3. 配置后端环境
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/xiaorui_app_creator?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-    username: your_username
-    password: your_password
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
-      database: 3
-    mongodb:
-      uri: mongodb://127.0.0.1:27017/agent_memory_store
-  ai:
-    dashscope:
-      api-key: your_dashscope_api_key
+请根据本地环境修改：
 
-minio:
-  endpoint: http://your-minio-server:9000
-  access-key: your_access_key
-  secret-key: your_secret_key
-```
+- `src/main/resources/application-dev.yml`
 
-### 4. 安装依赖并启动
+至少需要确认这些配置：
+
+- MySQL
+- Redis
+- DashScope API Key
+- MinIO
+- SFTP / 部署目录
+- 应用产物目录与部署域名
+
+建议把敏感信息改为你自己的本地配置或环境变量，不要直接使用仓库中的示例值。
+
+### 4. 启动后端
 
 ```bash
-# 使用 Maven 编译项目
 mvn clean install
-
-# 运行项目
 mvn spring-boot:run
-
-# 或者直接运行 jar 包
-java -jar target/agent-application-creator-0.0.1-SNAPSHOT.jar
 ```
 
-### 5. 访问应用
+默认后端地址：
 
-- **应用地址**：http://localhost:8123/api
-- **接口文档**：http://localhost:8123/api/doc.html
+- API：`http://localhost:8123/api`
+- Knife4j：`http://localhost:8123/api/doc.html`
 
-## 核心功能
+### 5. 启动前端
 
-### 1. 用户模块
+进入前端目录：
 
-- 用户注册/登录
-- 个人信息管理
-- 邮箱验证
-- 密码重置
+```bash
+cd app-creator-fronted/app-creator-fronted
+npm install
+npm run dev
+```
 
-### 2. 智能体模块
+常用命令：
 
-- 自然语言对话交互
-- 多智能体协同
-- 代码生成智能体
-- 代码优化智能体
+```bash
+npm run dev
+npm run type-check
+npm run build
+npm run lint
+```
 
-### 3. 应用模块
+默认前端开发环境会请求：
 
-- 应用自动生成
-- 应用部署管理
-- 应用下载
-- 应用监控
-- 应用评论/点赞/分享
+- `http://localhost:8123/api`
 
-### 4. 对话历史模块
+如有需要，可在前端环境变量中覆盖接口地址与部署域名。
 
-- 对话记录保存
-- 历史对话查询
-- 上下文管理
+## 主要路由
 
-### 5. 工程项目生成模块
+### 用户侧
 
-- Vue 项目自动创建
-- 项目结构生成
-- 代码文件生成
+- `/`：首页
+- `/user/login`：登录页
+- `/user/register`：注册页
+- `/user/reset-password`：重置密码页
+- `/app/chat/:id`：应用对话与预览页
+- `/app/edit/:id`：应用编辑页
+- `/user/community`：社区中心
+- `/user/settings`：个人设置
 
-### 6. RAG 模块
+### 管理员侧
 
-- 文档上传解析
-- 知识库管理
-- 代码规范 RAG
-- 智能检索
-
-### 7. 扩展功能
-
-- 应用封面自动生成
-- 文件上传下载
-- 敏感词过滤
-- 异步任务处理
-
-## API 接口文档
-
-项目集成了 Knife4j 接口文档，访问地址：`http://localhost:8123/api/doc.html`
-
-主要接口分类：
-
-- 用户管理：`/api/user/*`
-- 智能体对话：`/api/agent/*`
-- 应用管理：`/api/app/*`
-- 对话历史：`/api/chatHistory/*`
-- 任务管理：`/api/agentTask/*`
+- `/admin/overview`：运营概览
+- `/admin/userManage`：用户管理
+- `/admin/appManage`：应用管理
+- `/admin/chatManage`：对话管理
+- `/admin/taskManage`：任务监控
+- `/admin/observability`：可观测性面板
 
 ## 技术亮点
 
-1. **虚拟线程优化**：利用 JDK 21 的虚拟线程提升并发性能
-2. **分布式锁**：基于 Redisson 实现分布式锁，保证数据一致性
-3. **多级缓存**：Redis + Caffeine 双级缓存策略
-4. **异步处理**：异步任务队列处理耗时操作
-5. **AI 智能体框架**：基于 Spring AI Alibaba 的智能体应用
-6. **代码规范 RAG**：结合 RAG 技术实现代码规范智能检索
-7. **多 Agent 协同**：主智能体 + 副智能体协同工作模式
-8. **文件存储**：MinIO 分布式文件存储
-9. **监控告警**：集成 Prometheus + Grafana 监控
-10. **接口文档**：Knife4j 自动生成接口文档
+- 基于 `Spring AI Alibaba` 构建 Agent 应用生成链路
+- 主 Agent + 副 Agent 协同的代码生成与优化方案
+- 结构化输出协议 + 代码修改计划执行
+- 异步任务机制，支持轮询、失败重试、任务监控
+- 模板广场与版本快照，增强应用复用能力
+- 社区互动能力，支持评论、点赞、分享、通知
+- 后台运营能力逐步完善，覆盖用户、应用、对话、任务、模型调用
+- 模型调用可观测性落库，支持 Token、耗时、成功率统计
+- JDK 21 虚拟线程、TTL 上下文透传、缓存与部署能力结合
 
-## 项目文档
+## 相关文档
 
-详细的设计文档请参考 `doc/` 目录：
+`doc/` 目录中已经整理了较完整的设计与迭代文档，推荐优先阅读：
 
-| 文档                                | 说明         |
-|-----------------------------------|------------|
-| 0-MustFirstRead.md                | 项目必读文档     |
-| 1-ProjectInitialization.md        | 项目初始化指南    |
-| 2-UserModuleDesign.md             | 用户模块设计     |
-| 3-AgentModuleDesign.md            | 智能体模块设计    |
-| 4-AppModuleDesign.md              | 应用模块设计     |
-| 5-ChatHistoryModuleDesign.md      | 对话历史模块设计   |
-| 6-VueProjectCreateModuleDesign.md | Vue 项目创建模块 |
-| 7-ExtendedFeaturesModuleDesign.md | 扩展功能模块     |
-| 8-SubAgentMuduleDesign.md         | 副智能体模块设计   |
-| 9-RagModuleDesign.md              | RAG 模块设计   |
-| 10-SystemOptimizationDesign.md    | 系统优化设计     |
+- `doc/0-MustFirstRead.md`
+- `doc/11-ProjectImprovementRoadmap.md`
+- `doc/12-AgentInputOutputProtocol.md`
+- `doc/13-AgentMemoryStrategy.md`
+- `doc/15-SubAgentStrategy.md`
+- `doc/16-RagBoundaryStrategy.md`
+- `doc/18-P3VersionManagement.md`
+- `doc/19-P3AppTemplate.md`
+- `doc/20-P3CommunityCapability.md`
+- `doc/22-ModelTokenObservability.md`
 
-## 开发计划
+## 当前状态
 
-### 已完成 ✅
+目前项目的主链路和平台扩展能力都已经比较完整：
 
-- 用户模块（注册/登录、信息管理、邮箱验证、密码重置、管理员功能）
-- 应用模块（自动生成、部署管理、信息管理、下载、监控、评论、点赞分享、管理员功能）
-- 智能体模块（应用代码生成、对话历史、工程项目生成、多智能体协同、RAG 实现）
-- 扩展功能（应用封面生成、文件上传下载、敏感词过滤等）
+- 应用创建、对话生成、预览、下载、部署
+- 模板化复用
+- 社区互动
+- 后台运营
+- 可观测性面板
 
-### 待完善 ⏳
+仍然可以继续优化的方向包括：
 
-- MCP 模型上下文协议集成
-- 智能体上下文工程优化
-- 智能体记忆管理优化
-- 应用模块扩展完善
-- 可观测性监控完善
-
-## 常见问题
-
-### 1. 启动时连接数据库失败
-
-检查数据库配置是否正确，确保 MySQL 服务已启动且端口可访问。
-
-### 2. Redis 连接超时
-
-确保 Redis 服务已启动，检查 `application-dev.yml` 中的 Redis 配置。
-
-### 3. MinIO 文件上传失败
-
-检查 MinIO 服务是否正常运行，确认 endpoint、access-key 和 secret-key 配置正确。
-
-### 4. AI 对话无响应
-
-检查阿里云百炼 API Key 是否正确，确保账户有足够的调用额度。
+- 更稳定的流式输出体验
+- 更细粒度的权限与匿名访问体验
+- 更完整的趋势统计与运营分析
+- 更成熟的 Agent 上下文与长期记忆策略
 
 ## 联系方式
 
-- 作者：xiaorui
-- 邮箱：368649957@qq.com
-- 项目地址：[GitHub Repository](https://github.com/xiaorui6110/agent-application-creator)
+- 作者：`xiaorui`
+- 邮箱：`shenrui6110@outlook.com`
+- GitHub：`https://github.com/xiaorui6110/agent-application-creator`

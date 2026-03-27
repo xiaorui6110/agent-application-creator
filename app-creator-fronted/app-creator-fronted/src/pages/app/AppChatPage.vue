@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="appChatPage">
     <!-- 顶部栏 -->
     <div class="header-bar">

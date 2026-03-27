@@ -152,6 +152,15 @@ const handleMenuClick: MenuProps['onClick'] = (e) => {
   const key = e.key as string
   selectedKeys.value = [key]
   if (key.startsWith('/')) {
+    if (!loginUserStore.loginUser.userId && key !== '/') {
+      router.push({
+        path: '/user/login',
+        query: {
+          redirect: key,
+        },
+      })
+      return
+    }
     router.push(key)
   }
 }

@@ -2,6 +2,8 @@ create database if not exists `xiaorui_app_creator` default character set utf8mb
 
 use xiaorui_app_creator;
 
+-- 由于项目确实不好支持批量测试数据导入，所以这里不创建测试数据
+
 -- 用户表
 drop table if exists `xr_user`;
 create table `xr_user`

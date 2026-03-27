@@ -11,11 +11,6 @@ import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 
 import java.util.Map;
 
-/**
- * @description: Agent 输出协议解析与校验
- * @author: xiaorui
- * @date: 2026-03-26 20:20
- **/
 public class AgentOutputProtocolResolver {
 
     public AgentResponse parse(String rawResponseText) {
@@ -75,9 +70,6 @@ public class AgentOutputProtocolResolver {
         }
 
         StructuredReply structuredReply = agentResponse.getStructuredReply();
-        require(!(structuredReply != null && agentResponse.getCodeModificationPlan() != null),
-                "structuredReply 与 codeModificationPlan 不能同时出现");
-
         AgentResponseTypeEnum responseType = AgentResponseTypeEnum.valueOf(agentResponse.getResponseType());
         switch (responseType) {
             case CLARIFICATION, MODE_SELECTION, SOLUTION_DESIGN -> {
@@ -102,14 +94,14 @@ public class AgentOutputProtocolResolver {
     }
 
     private String resolveResponseType(AgentResponse agentResponse) {
-        if (StrUtil.isNotBlank(agentResponse.getResponseType())) {
-            return agentResponse.getResponseType().trim().toUpperCase();
-        }
-        if (agentResponse.getCodeModificationPlan() != null) {
-            return AgentResponseTypeEnum.CODE_MODIFICATION.name();
-        }
         if (agentResponse.getStructuredReply() != null && hasFiles(agentResponse.getStructuredReply().getFiles())) {
             return AgentResponseTypeEnum.CODE_GENERATION.name();
+        }
+        if (agentResponse.getCodeModificationPlan() != null && agentResponse.getStructuredReply() == null) {
+            return AgentResponseTypeEnum.CODE_MODIFICATION.name();
+        }
+        if (StrUtil.isNotBlank(agentResponse.getResponseType())) {
+            return agentResponse.getResponseType().trim().toUpperCase();
         }
         if (StrUtil.isNotBlank(agentResponse.getCodeGenType())) {
             return AgentResponseTypeEnum.SOLUTION_DESIGN.name();

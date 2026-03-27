@@ -11,6 +11,7 @@ import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.stream.AgentTaskStreamManager;
 import com.xiaorui.agentapplicationcreator.mapper.AgentTaskMapper;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentTask;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
@@ -56,6 +57,9 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
     @Resource
     private UserService userService;
 
+    @Resource
+    private AgentTaskStreamManager agentTaskStreamManager;
+
     @Override
     public void initTask(String taskId, String threadId, String appId) {
         AgentTask state = new AgentTask();
@@ -68,6 +72,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         state.setUpdateTime(LocalDateTime.now());
         saveTaskState(state);
         persistAsync(state);
+        agentTaskStreamManager.publishStatus(taskId, buildTaskOutputSnapshot(state, false));
     }
 
     @Override
@@ -77,6 +82,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         state.setUpdateTime(LocalDateTime.now());
         saveTaskState(state);
         persistAsync(state);
+        agentTaskStreamManager.publishStatus(taskId, buildTaskOutputSnapshot(state, false));
     }
 
     @Override
@@ -90,6 +96,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         state.setUpdateTime(LocalDateTime.now());
         saveTaskState(state);
         persistAsync(state);
+        agentTaskStreamManager.publishDone(taskId, buildTaskOutputSnapshot(state, true));
     }
 
     @Override
@@ -119,6 +126,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
 
         saveTaskState(state);
         persistAsync(state);
+        agentTaskStreamManager.publishFailed(taskId, buildTaskOutputSnapshot(state, false));
     }
 
     @Override
@@ -127,25 +135,9 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         ThrowUtil.throwIf(agentTask == null, ErrorCode.NOT_FOUND_ERROR, "task not found");
         validateTaskAccess(agentTask);
 
-        String normalizedStatus = AgentTaskStatusEnum.toApiValue(agentTask.getTaskStatus());
-        SystemOutput.SystemOutputBuilder builder = SystemOutput.builder()
-                .threadId(agentTask.getThreadId())
-                .userId(SecurityUtil.getUserInfo().getUserId())
-                .appId(agentTask.getAppId())
-                .taskId(agentTask.getTaskId())
-                .taskStatus(normalizedStatus)
-                .message(buildTaskMessage(normalizedStatus, agentTask))
-                .failType(agentTask.getFailType())
-                .taskError(agentTask.getTaskError())
-                .retryCount(agentTask.getRetryCount())
-                .nextRetryTime(agentTask.getNextRetryTime())
-                .fromMemory(false)
-                .timestamp(System.currentTimeMillis());
-
-        if ("SUCCEEDED".equals(normalizedStatus)) {
-            builder.agentResponse(agentTask.getTaskResult());
-        }
-        return builder.build();
+        SystemOutput snapshot = buildTaskOutputSnapshot(agentTask, true);
+        snapshot.setUserId(SecurityUtil.getUserInfo().getUserId());
+        return snapshot;
     }
 
     @Override
@@ -256,5 +248,26 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
             case "SUCCEEDED" -> "task succeeded";
             default -> "unknown task status";
         };
+    }
+
+    private SystemOutput buildTaskOutputSnapshot(AgentTask agentTask, boolean includeResult) {
+        String normalizedStatus = AgentTaskStatusEnum.toApiValue(agentTask.getTaskStatus());
+        SystemOutput.SystemOutputBuilder builder = SystemOutput.builder()
+                .threadId(agentTask.getThreadId())
+                .appId(agentTask.getAppId())
+                .taskId(agentTask.getTaskId())
+                .taskStatus(normalizedStatus)
+                .message(buildTaskMessage(normalizedStatus, agentTask))
+                .agentName("app_creator_agent")
+                .failType(agentTask.getFailType())
+                .taskError(agentTask.getTaskError())
+                .retryCount(agentTask.getRetryCount())
+                .nextRetryTime(agentTask.getNextRetryTime())
+                .fromMemory(false)
+                .timestamp(System.currentTimeMillis());
+        if (includeResult && "SUCCEEDED".equals(normalizedStatus)) {
+            builder.agentResponse(agentTask.getTaskResult());
+        }
+        return builder.build();
     }
 }

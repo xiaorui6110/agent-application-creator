@@ -28,6 +28,7 @@ const persistLoginUser = (user: API.UserVO) => {
 
 export const useLoginUserStore = defineStore('loginUser', () => {
   const loginUser = ref<API.UserVO>(loadCachedLoginUser())
+  const loginUserFetched = ref(false)
 
   async function fetchLoginUser() {
     try {
@@ -35,6 +36,7 @@ export const useLoginUserStore = defineStore('loginUser', () => {
       if (isSuccessResponse(res.data) && res.data.data) {
         loginUser.value = res.data.data
         persistLoginUser(loginUser.value)
+        loginUserFetched.value = true
         return
       }
       if (isUnauthorizedResponse(res.data)) {
@@ -42,11 +44,14 @@ export const useLoginUserStore = defineStore('loginUser', () => {
       }
     } catch (error) {
       clearLoginUser()
+    } finally {
+      loginUserFetched.value = true
     }
   }
 
   function setLoginUser(newLoginUser: API.UserVO) {
     loginUser.value = newLoginUser
+    loginUserFetched.value = true
     persistLoginUser(newLoginUser)
   }
 
@@ -55,5 +60,5 @@ export const useLoginUserStore = defineStore('loginUser', () => {
     persistLoginUser({})
   }
 
-  return { loginUser, fetchLoginUser, setLoginUser, clearLoginUser }
+  return { loginUser, loginUserFetched, fetchLoginUser, setLoginUser, clearLoginUser }
 })

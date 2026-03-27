@@ -33,6 +33,8 @@ declare namespace API {
     threadId?: string
     appId?: string
     taskStatus?: string
+    /** 浠诲姟鐘舵€佽鏄?*/
+    message?: string
     message?: string
     taskError?: string
     taskResult?: AgentResponse
@@ -1036,6 +1038,14 @@ declare namespace API {
     agentResponse?: AgentResponse
     /** 本次回复是否命中历史 / 缓存 */
     fromMemory?: boolean
+    /** 澶辫触绫诲瀷 */
+    failType?: string
+    /** 澶辫触鍘熷洜 */
+    taskError?: string
+    /** 閲嶈瘯娆℃暟 */
+    retryCount?: number
+    /** 涓嬫閲嶈瘯鏃堕棿 */
+    nextRetryTime?: string
     /** 本次回复时间戳（秒） */
     timestamp?: number
   }

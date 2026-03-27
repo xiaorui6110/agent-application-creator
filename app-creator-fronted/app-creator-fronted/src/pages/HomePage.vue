@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { ArrowRightOutlined, AppstoreAddOutlined, CopyOutlined, RocketOutlined } from '@ant-design/icons-vue'
@@ -154,13 +154,17 @@ const loadTemplates = async () => {
   }
 }
 
-const viewChat = (appId: string | number | undefined) => {
+const viewChat = async (appId: string | number | undefined) => {
+  const ok = await requireLogin()
+  if (!ok) return
   if (appId) {
     router.push(`/app/chat/${appId}?view=1`)
   }
 }
 
-const viewWork = (app: API.AppVO) => {
+const viewWork = async (app: API.AppVO) => {
+  const ok = await requireLogin()
+  if (!ok) return
   if (app.deployUrl) {
     window.open(app.deployUrl, '_blank')
   }
@@ -208,11 +212,26 @@ const handleCreateFromTemplate = async () => {
 }
 
 onMounted(() => {
-  loadMyApps()
   loadFeaturedApps()
   loadTemplates()
   loadCategories()
 })
+
+watch(
+  () => [loginUserStore.loginUserFetched, loginUserStore.loginUser.userId] as const,
+  ([fetched, userId]) => {
+    if (!fetched) {
+      return
+    }
+    if (!userId) {
+      myApps.value = []
+      myAppsPage.total = 0
+      return
+    }
+    loadMyApps()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

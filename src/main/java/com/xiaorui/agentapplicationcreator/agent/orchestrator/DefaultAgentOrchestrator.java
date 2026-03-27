@@ -7,12 +7,13 @@ import com.xiaorui.agentapplicationcreator.agent.creator.AgentAppCreator;
 import com.xiaorui.agentapplicationcreator.agent.model.dto.AgentTaskStatus;
 import com.xiaorui.agentapplicationcreator.agent.model.schema.SystemOutput;
 import com.xiaorui.agentapplicationcreator.constant.AgentTaskConstant;
-import com.xiaorui.agentapplicationcreator.enums.AppVersionSourceEnum;
 import com.xiaorui.agentapplicationcreator.enums.AgentFailTypeEnum;
 import com.xiaorui.agentapplicationcreator.enums.AgentTaskStatusEnum;
+import com.xiaorui.agentapplicationcreator.enums.AppVersionSourceEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.manager.stream.AgentTaskStreamManager;
 import com.xiaorui.agentapplicationcreator.model.entity.AgentTask;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.service.AgentTaskService;
@@ -72,6 +73,9 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
     @Resource
     private AppVersionService appVersionService;
 
+    @Resource
+    private AgentTaskStreamManager agentTaskStreamManager;
+
     @Override
     public AgentTaskStatus handleUserMessage(String message, String threadId, String appId) {
         validateUserInput(message);
@@ -92,15 +96,22 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
 
         agentTaskService.initTask(taskId, updatedThreadId, appId);
         chatHistoryService.saveChatHistory(appId, userId, message, "user");
+        agentTaskStreamManager.publishProgress(taskId, updatedThreadId, appId, "WAITING",
+                "任务已进入队列，准备开始生成", "app_creator_agent");
 
         String finalUserId = userId;
         agentTaskExecutor.submitAgentTask(taskId, () -> {
             try {
                 agentTaskService.updateStatus(taskId, RUNNING);
-                SystemOutput output = agentAppCreator.chatWithUserId(message, updatedThreadId, appId, finalUserId);
+                agentTaskStreamManager.publishProgress(taskId, updatedThreadId, appId, "RUNNING",
+                        "正在分析需求并调用模型", "app_creator_agent");
+                SystemOutput output = agentAppCreator.chatWithUserId(
+                        message, updatedThreadId, appId, finalUserId, taskId);
                 if (output.getAgentResponse() != null
                         && output.getAgentResponse().getStructuredReply() != null
                         && output.getAgentResponse().getStructuredReply().getFiles() != null) {
+                    agentTaskStreamManager.publishProgress(taskId, updatedThreadId, appId, "RUNNING",
+                            "模型响应完成，正在写入生成文件", "app_creator_agent");
                     codeFileSaverUtil.writeFilesToLocal(
                             output.getAgentResponse().getStructuredReply().getFiles(), appId);
                     appVersionService.createVersionSnapshot(appId, AppVersionSourceEnum.GENERATED.getValue(),
@@ -108,6 +119,8 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
                 }
                 if (output.getAgentResponse() != null
                         && output.getAgentResponse().getCodeOptimizationInput() != null) {
+                    agentTaskStreamManager.publishProgress(taskId, updatedThreadId, appId, "RUNNING",
+                            "主生成已完成，正在触发代码优化任务", "app_creator_agent");
                     agentTaskExecutor.submitOptimizationTask(
                             output.getAgentResponse().getCodeOptimizationInput(),
                             updatedThreadId,
@@ -177,10 +190,13 @@ public class DefaultAgentOrchestrator implements AgentOrchestrator {
                 if (task.getTaskResult() == null || StrUtil.isBlank(task.getTaskResult().getIntentSummary())) {
                     throw new IllegalStateException("任务缺少重试上下文，无法自动重试");
                 }
+                agentTaskStreamManager.publishProgress(task.getTaskId(), task.getThreadId(), task.getAppId(), "RUNNING",
+                        "任务重试中，正在重新调用模型", "app_creator_agent");
                 SystemOutput output = agentAppCreator.chat(
                         task.getTaskResult().getIntentSummary(),
                         task.getThreadId(),
-                        task.getAppId());
+                        task.getAppId(),
+                        task.getTaskId());
                 agentTaskService.saveFinalOutput(task.getTaskId(), output);
             } catch (Exception e) {
                 agentTaskService.markFailed(task.getTaskId(), e);
