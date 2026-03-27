@@ -10,6 +10,9 @@ import lombok.Getter;
 @Getter
 public enum AppVersionSourceEnum {
 
+    /**
+     * 应用版本来源
+     */
     GENERATED("GENERATED"),
     DEPLOYED("DEPLOYED"),
     RESTORED("RESTORED");

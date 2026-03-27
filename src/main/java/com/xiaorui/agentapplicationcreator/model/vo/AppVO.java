@@ -8,6 +8,9 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * @author xiaorui
+ */
 @Data
 public class AppVO implements Serializable {
 

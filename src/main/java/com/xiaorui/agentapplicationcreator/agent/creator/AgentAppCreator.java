@@ -46,6 +46,9 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @Component
 public class AgentAppCreator {
@@ -219,25 +222,31 @@ public class AgentAppCreator {
                 .build();
     }
 
+    /**
+     * 执行聊天
+     */
     private SystemOutput executeChat(String userMessage, String threadId, String appId, String userId, String taskId) {
+        // 如果有，拼接代码优化结果
         CodeOptimizeResult codeOptimizeResult = codeOptimizeResultService.getByAppId(appId);
         String codeOptimizeResultStr = codeOptimizeResult == null ? "" : codeOptimizeResult.toString();
         String finalInputMessage = userMessage + "\n【应用ID】" + appId + "\n【应用代码优化结果详情】：" + codeOptimizeResultStr;
         RunnableConfig runnableConfig = buildRunnableConfig(threadId, userId);
-
+        // 设置监控上下文
         MonitorContextHolder.setContext(MonitorContext.builder()
                 .userId(userId)
                 .appId(appId)
                 .threadId(threadId)
                 .agentName("app_creator_agent")
                 .build());
-
+        // 在外部声明对象
         AssistantMessage response;
         AgentResponse agentResponse;
         try {
             publishProgress(taskId, threadId, appId, "RUNNING", "已提交模型，正在等待结构化结果");
+            // 统计模型响应时间
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
+            // 调用模型
             response = appCreatorAgent.call(finalInputMessage, runnableConfig);
             stopWatch.stop();
             log.info("agent.call() execution completed, time taken = {} ms", stopWatch.getTotalTimeMillis());
@@ -247,16 +256,19 @@ public class AgentAppCreator {
             publishProgress(taskId, threadId, appId, "RUNNING", "模型响应已返回，正在解析结构化结果");
             agentResponse = parseAgentResponse(response.getText());
         } catch (Exception e) {
+            // 发生错误也要清除监控上下文
             MonitorContextHolder.clearContext();
             log.error("agent call failed, threadId={}, userId={}, error={}", threadId, userId, e.getMessage(), e);
             throw new BusinessException("智能体应用生成 AI 服务暂时不可用，请稍后再试", ErrorCode.SYSTEM_ERROR);
         }
-
+        // 清除监控上下文
         MonitorContextHolder.clearContext();
+        // 保存聊天记录、异步更新应用名称、更新代码生成类型
         chatHistoryService.saveChatHistory(appId, userId, response.getText(), "ai");
         appService.updateAppNameAsync(appId, agentResponse.getAppName());
         appService.updateAppCodeGenTypeAsync(appId, agentResponse.getCodeGenType());
         publishProgress(taskId, threadId, appId, "RUNNING", "结构化结果解析完成，正在整理应用信息");
+        // 校验代码修改计划
         handleCodeModificationPlan(agentResponse);
 
         return SystemOutput.builder()
@@ -304,6 +316,9 @@ public class AgentAppCreator {
         }
     }
 
+    /**
+     * 发布进度（主要是在实现SSE流式输出时，代码相关的实现，目前并未使用流式输出，故只是占位）
+     */
     private void publishProgress(String taskId, String threadId, String appId, String taskStatus, String progressMessage) {
         if (StringUtil.isBlank(taskId)) {
             return;

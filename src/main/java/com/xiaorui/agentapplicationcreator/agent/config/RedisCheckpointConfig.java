@@ -20,10 +20,8 @@ public class RedisCheckpointConfig {
     @Resource
     private RedissonClient redissonClient;
 
-
     @Resource
     private AgentStateFactory<OverAllState> stateFactory;
-
 
     @Bean
     public RedisSaver redisSaver() {

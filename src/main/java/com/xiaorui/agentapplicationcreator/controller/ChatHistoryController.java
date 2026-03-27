@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
  *
  * @author xiaorui
  */
-//@Tag(name = "对话历史接口")
 @RestController
 @RequestMapping("/chatHistory")
 public class ChatHistoryController {

@@ -28,6 +28,9 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @Service
 public class AppVersionServiceImpl extends ServiceImpl<AppVersionMapper, AppVersion> implements AppVersionService {

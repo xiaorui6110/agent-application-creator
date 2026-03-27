@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MonitorContextHolder {
 
+    /**
+     * 使用 TransmittableThreadLocal 来传递监控上下文，避免线程池中线程的上下文丢失
+     */
     private static final TransmittableThreadLocal<MonitorContext> CONTEXT_HOLDER =
             new TransmittableThreadLocal<>();
 

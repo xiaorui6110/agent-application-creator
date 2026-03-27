@@ -11,7 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
- * @description: 密码检查管理器（经AI优化代码后）
+ * @description: 密码检查管理器
  * @author: xiaorui
  * @date: 2025-11-30 14:35
  **/

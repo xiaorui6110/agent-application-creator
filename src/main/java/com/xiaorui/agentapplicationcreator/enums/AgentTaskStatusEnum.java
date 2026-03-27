@@ -3,6 +3,10 @@ package com.xiaorui.agentapplicationcreator.enums;
 import cn.hutool.core.util.ObjUtil;
 import lombok.Getter;
 
+/**
+ * @author xiaorui
+ */
+
 @Getter
 public enum AgentTaskStatusEnum {
 

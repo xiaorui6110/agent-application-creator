@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * @date: 2026-03-26 21:01
  **/
 @Service
-public class DefaultSpecSearchService implements SpecSearchService {
+public class DefaultSpecSearchServiceImpl implements SpecSearchService {
 
     @Resource
     private VectorStore documentVectorStore;
@@ -33,13 +33,13 @@ public class DefaultSpecSearchService implements SpecSearchService {
         if (request == null || request.query() == null || request.query().isBlank()) {
             return new SpecSearchResult("", List.of());
         }
-
+        // 初始化 spec 数据
         metadataManager.ensureSpecsInitialized();
         List<String> candidateSpecIds = metadataManager.findCandidateSpecIds(request.generationMode(), request.stage());
         if (candidateSpecIds == null || candidateSpecIds.isEmpty()) {
             return new SpecSearchResult("", List.of());
         }
-
+        // 构建搜索请求
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(request.query())
                 .topK(2)
@@ -51,18 +51,18 @@ public class DefaultSpecSearchService implements SpecSearchService {
                                 "]"
                 )
                 .build();
-
+        // 执行相似度搜索
         List<Document> docs = documentVectorStore.similaritySearch(searchRequest);
         if (docs == null || docs.isEmpty()) {
             return new SpecSearchResult("", List.of());
         }
-
+        // 提取匹配的 specId
         List<String> matchedSpecIds = docs.stream()
                 .map(Document::getId)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
-
+        // 拼接匹配的 spec 内容
         String combinedContent = matchedSpecIds.stream()
                 .map(metadataManager::loadSpecContent)
                 .filter(Objects::nonNull)

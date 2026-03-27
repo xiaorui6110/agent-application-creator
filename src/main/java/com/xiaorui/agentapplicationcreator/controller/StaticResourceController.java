@@ -29,6 +29,9 @@ import java.nio.file.Path;
 import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.DEPLOY;
 import static com.xiaorui.agentapplicationcreator.enums.StaticVisitTypeEnum.PREVIEW;
 
+/**
+ * @author xiaorui
+ */
 @RestController
 @RequestMapping("/static")
 public class StaticResourceController {

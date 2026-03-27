@@ -11,7 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * JSON 类型处理器（AI 写入的）
+ * JSON 类型处理器
  * 用于处理 MyBatis/Flex 中的 JSON 字段映射
  *
  * @author xiaorui

@@ -92,6 +92,9 @@ public class AppProperties {
         return value;
     }
 
+    /**
+     * 存储配置
+     */
     @Data
     public static class Storage {
         private String codeOutputDir = "./tmp/code_output";

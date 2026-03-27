@@ -39,6 +39,9 @@ import java.util.stream.Collectors;
 import static com.xiaorui.agentapplicationcreator.model.dto.appcomment.AppCommentLikeRequest.LikeType.CANCEL_LIKE;
 import static com.xiaorui.agentapplicationcreator.model.dto.appcomment.AppCommentLikeRequest.LikeType.LIKE;
 
+/**
+ * @author xiaorui
+ */
 @Service
 public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComment> implements AppCommentService {
 
@@ -55,14 +58,14 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "鐢ㄦ埛涓嶅瓨鍦?");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
         App app = appService.getById(appCommentAddRequest.getAppId());
         if (app == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "搴旂敤涓嶅瓨鍦?");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
         }
         if (StrUtil.isBlank(appCommentAddRequest.getCommentContent())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "璇勮涓嶈兘涓虹┖");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "comment content is empty");
         }
 
         AppComment appComment = new AppComment();
@@ -79,7 +82,7 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
         appComment.setUpdateTime(LocalDateTime.now());
         boolean result = save(appComment);
         if (!result) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "璇勮淇濆瓨澶辫触");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "add app comment failed");
         }
         updateCommentCount(appCommentAddRequest.getAppId(), 1);
         return true;
@@ -91,14 +94,14 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "鐢ㄦ埛涓嶅瓨鍦?");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
         AppComment appComment = getById(appCommentDeleteRequest.getCommentId());
         if (appComment == null || Integer.valueOf(1).equals(appComment.getIsDeleted())) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "璇勮涓嶅瓨鍦?");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app comment not found");
         }
         if (!userId.equals(appComment.getUserId())) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "鏃犳潈鍒犻櫎浠栦汉璇勮");
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "comment not belong to user");
         }
 
         int totalCount = countCommentsRecursively(appComment.getCommentId());
@@ -112,9 +115,9 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "鐢ㄦ埛涓嶅瓨鍦?");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
         }
-        ThrowUtil.throwIf(StrUtil.isBlank(appCommentQueryRequest.getAppId()), ErrorCode.PARAMS_ERROR, "搴旂敤ID涓嶈兘涓虹┖");
+        ThrowUtil.throwIf(StrUtil.isBlank(appCommentQueryRequest.getAppId()), ErrorCode.PARAMS_ERROR, "app id is empty");
 
         Page<AppComment> page = new Page<>(appCommentQueryRequest.getCurrent(), appCommentQueryRequest.getPageSize());
         QueryWrapper queryWrapper = new QueryWrapper()
@@ -137,8 +140,8 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
 
     @Override
     public Boolean likeAppComment(AppCommentLikeRequest appCommentLikeRequest) {
-        ThrowUtil.throwIf(appCommentLikeRequest.getCommentId() == null, ErrorCode.PARAMS_ERROR, "璇勮ID涓嶈兘涓虹┖");
-        ThrowUtil.throwIf(appCommentLikeRequest.getLikeType() == null, ErrorCode.PARAMS_ERROR, "鐐硅禐绫诲瀷涓嶈兘涓虹┖");
+        ThrowUtil.throwIf(appCommentLikeRequest.getCommentId() == null, ErrorCode.PARAMS_ERROR, "comment id is empty");
+        ThrowUtil.throwIf(appCommentLikeRequest.getLikeType() == null, ErrorCode.PARAMS_ERROR, "like type is empty");
 
         if (appCommentLikeRequest.getLikeType() == LIKE || appCommentLikeRequest.getLikeCount() != 0) {
             UpdateChain.of(AppComment.class)
@@ -237,7 +240,7 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
     private void updateCommentCount(String appId, int delta) {
         App app = appService.getById(appId);
         if (app == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "搴旂敤涓嶅瓨鍦?");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
         }
         long currentCount = app.getCommentCount() == null ? 0 : app.getCommentCount();
         app.setCommentCount(Math.max(0, currentCount + delta));

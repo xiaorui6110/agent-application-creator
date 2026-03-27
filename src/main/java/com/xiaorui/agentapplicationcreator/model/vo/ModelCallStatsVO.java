@@ -3,8 +3,17 @@ package com.xiaorui.agentapplicationcreator.model.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+
+/**
+ * @author xiaorui
+ */
 @Data
-public class ModelCallStatsVO {
+public class ModelCallStatsVO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 4520341778298969477L;
 
     @Schema(description = "调用总数")
     private Long totalCallCount;

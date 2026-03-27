@@ -55,6 +55,9 @@ import java.util.stream.Collectors;
 import static com.xiaorui.agentapplicationcreator.constant.LogicDeletedConstant.LOGIC_DELETED_NO;
 import static com.xiaorui.agentapplicationcreator.constant.UserConstant.USER_LOGIN_STATE;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {

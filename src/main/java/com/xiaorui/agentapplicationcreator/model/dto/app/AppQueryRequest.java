@@ -8,6 +8,9 @@ import lombok.EqualsAndHashCode;
 import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * @author xiaorui
+ */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class AppQueryRequest extends PageRequest implements Serializable {

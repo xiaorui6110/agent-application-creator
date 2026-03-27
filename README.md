@@ -41,11 +41,6 @@
 - 任务监控与失败任务重试
 - 运营概览面板
 - 模型调用可观测性面板
-  - 模型名
-  - Agent 名称
-  - userId / appId / threadId
-  - promptTokens / completionTokens / totalTokens
-  - 调用耗时 / 成功率 / 失败率
 
 ### Agent 相关能力
 

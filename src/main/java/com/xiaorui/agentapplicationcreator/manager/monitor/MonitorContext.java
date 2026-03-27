@@ -32,8 +32,14 @@ public class MonitorContext implements Serializable {
      */
     private String appId;
 
+    /**
+     * 线程id
+     */
     private String threadId;
 
+    /**
+     * 模型名称
+     */
     private String agentName;
 
 }

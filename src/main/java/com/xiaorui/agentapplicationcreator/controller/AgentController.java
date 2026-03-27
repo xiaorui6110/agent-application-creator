@@ -24,14 +24,10 @@ import java.io.IOException;
  * @author: xiaorui
  * @date: 2025-12-15 15:36
  **/
-//@Tag(name = "智能体对话接口")
 @Slf4j
 @RestController
 @RequestMapping("/agent")
 public class AgentController {
-
-    //@Resource
-    //private AgentAppCreator agentAppCreator;
 
     @Resource
     private AgentOrchestrator agentOrchestrator;
@@ -53,7 +49,7 @@ public class AgentController {
     }
 
 /*    *//**
-     * 智能体对话接口（流式输出）TODO 要修改好多噢，暂时只能管理员使用
+     * 智能体对话接口（流式输出）要修改好多噢，暂时舍弃
      *//*
     @PostMapping("/stream_chat")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)

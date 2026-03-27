@@ -45,6 +45,9 @@ import static com.xiaorui.agentapplicationcreator.constant.AppConstant.DEFAULT_A
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.DEFAULT_RECOMMEND_SCORE;
 import static com.xiaorui.agentapplicationcreator.constant.AppConstant.GOOD_APP_PRIORITY;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {

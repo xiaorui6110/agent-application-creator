@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "spring.ai.dashscope")
 public class DashScopeProperties {
+
     private String apiKey;
 
     private Chat chat = new Chat();

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
  * @author: xiaorui
  * @date: 2025-11-29 10:44
  **/
-//@Tag(name = "健康检查接口")
 @RestController
 @RequestMapping("/")
 public class HealthController {

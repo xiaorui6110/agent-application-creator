@@ -6,6 +6,9 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * @author xiaorui
+ */
 @Data
 public class AppTemplateCreateRequest implements Serializable {
 

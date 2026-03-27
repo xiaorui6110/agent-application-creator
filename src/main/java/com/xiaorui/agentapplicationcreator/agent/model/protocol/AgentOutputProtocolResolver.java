@@ -11,8 +11,14 @@ import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 
 import java.util.Map;
 
+/**
+ * @author xiaorui
+ */
 public class AgentOutputProtocolResolver {
 
+    /**
+     * 解析 Agent 输出，校验是否为 合法 JSON 格式
+     */
     public AgentResponse parse(String rawResponseText) {
         if (StrUtil.isBlank(rawResponseText)) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Agent 输出为空");
@@ -28,6 +34,9 @@ public class AgentOutputProtocolResolver {
         return agentResponse;
     }
 
+    /**
+     * 正常规范化 Agent 输出
+     */
     private void normalize(AgentResponse agentResponse) {
         if (agentResponse == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Agent 输出解析失败");
@@ -61,6 +70,9 @@ public class AgentOutputProtocolResolver {
         }
     }
 
+    /**
+     * 校验 Agent 输出
+     */
     private void validate(AgentResponse agentResponse) {
         require(StrUtil.isNotBlank(agentResponse.getReply()), "Agent reply 不能为空");
         require(AgentResponseTypeEnum.isValid(agentResponse.getResponseType()), "Agent responseType 不合法");

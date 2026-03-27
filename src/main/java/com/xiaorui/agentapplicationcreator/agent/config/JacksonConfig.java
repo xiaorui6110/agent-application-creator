@@ -20,17 +20,13 @@ public class JacksonConfig {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-
         // 处理 Java8 类例如 Optional
         mapper.registerModule(new Jdk8Module());
-
         // 处理 LocalDateTime / Instant 等
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
         // 确保私有字段也能被序列化（避免存储异常）
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-
         return mapper;
     }
 }

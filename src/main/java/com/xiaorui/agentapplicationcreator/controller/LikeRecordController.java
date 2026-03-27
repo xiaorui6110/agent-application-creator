@@ -23,6 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @RestController
 @RequestMapping("/likeRecord")

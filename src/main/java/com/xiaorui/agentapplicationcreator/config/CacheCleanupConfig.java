@@ -8,7 +8,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 应用启动时清理旧缓存配置（AI 生成的）
+ * 应用启动时清理旧缓存配置
  *
  * @author xiaorui
  */

@@ -14,6 +14,9 @@ import reactor.core.publisher.Flux;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * @author xiaorui
+ */
 @RequiredArgsConstructor
 public class ObservableChatModel implements ChatModel {
 
@@ -23,6 +26,9 @@ public class ObservableChatModel implements ChatModel {
     private final ModelCallLogService modelCallLogService;
     private final String fallbackModelName;
 
+    /**
+     * 重写 call 方法，记录监控日志
+     */
     @Override
     public ChatResponse call(Prompt prompt) {
         MonitorContext context = MonitorContextHolder.getContext();
@@ -44,6 +50,9 @@ public class ObservableChatModel implements ChatModel {
         return delegate.getDefaultOptions();
     }
 
+    /**
+     * 流式输出
+     */
     @Override
     public Flux<ChatResponse> stream(Prompt prompt) {
         MonitorContext context = MonitorContextHolder.getContext();

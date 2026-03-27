@@ -8,6 +8,9 @@ import lombok.EqualsAndHashCode;
 import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * @author xiaorui
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ModelCallLogQueryRequest extends PageRequest implements Serializable {

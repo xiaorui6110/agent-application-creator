@@ -9,6 +9,11 @@ import java.util.Arrays;
  **/
 public enum CodeGenTypeEnum {
 
+    /**
+     * 单文件
+     * 多文件
+     * vue项目
+     */
     SINGLE_FILE("single_file"),
     MULTI_FILE("multi_file"),
     VUE_PROJECT("vue_project");

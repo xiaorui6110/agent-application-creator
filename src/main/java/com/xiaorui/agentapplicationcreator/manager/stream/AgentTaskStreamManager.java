@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * @author xiaorui
+ */
 @Slf4j
 @Component
 public class AgentTaskStreamManager {
