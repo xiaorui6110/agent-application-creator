@@ -137,7 +137,9 @@ public class AppTemplateServiceImpl extends ServiceImpl<AppTemplateMapper, AppTe
     }
 
     private AppTemplateVO toVO(AppTemplate appTemplate) {
-        return BeanUtil.copyProperties(appTemplate, AppTemplateVO.class);
+        AppTemplateVO appTemplateVO = BeanUtil.copyProperties(appTemplate, AppTemplateVO.class);
+        appTemplateVO.setCreatedTime(appTemplate.getCreateTime());
+        return appTemplateVO;
     }
 
     private String resolveEntryFile(App app) {

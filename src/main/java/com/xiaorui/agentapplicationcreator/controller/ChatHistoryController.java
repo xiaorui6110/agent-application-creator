@@ -2,6 +2,7 @@ package com.xiaorui.agentapplicationcreator.controller;
 
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
+import com.xiaorui.agentapplicationcreator.common.DeleteRequest;
 import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
@@ -58,6 +59,16 @@ public class ChatHistoryController {
         return ServerResponseEntity.success(chatHistoryService.page(Page.of(current, pageSize), queryWrapper));
     }
 
-    // TODO 删除对话历史的接口
 
+    @PostMapping("/admin/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @Operation(summary = "管理员删除对话历史" , description = "管理员删除对话历史")
+    public ServerResponseEntity<Boolean> deleteChatHistoryByAdmin(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtil.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        String id = deleteRequest.getId();
+        ThrowUtil.throwIf(id == null || id.isBlank(), ErrorCode.PARAMS_ERROR, "id不能为空");
+        ChatHistory oldChatHistory = chatHistoryService.getById(id);
+        ThrowUtil.throwIf(oldChatHistory == null, ErrorCode.NOT_FOUND_ERROR, "对话历史不存在");
+        return ServerResponseEntity.success(chatHistoryService.removeById(id));
+    }
 }

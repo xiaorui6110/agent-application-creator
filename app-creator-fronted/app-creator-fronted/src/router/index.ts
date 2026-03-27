@@ -5,8 +5,10 @@ import UserRegisterPage from '@/pages/user/UserRegisterPage.vue'
 import UserResetPasswordPage from '@/pages/user/UserResetPasswordPage.vue'
 import UserSettingsPage from '@/pages/user/UserSettingsPage.vue'
 import UserCommunityPage from '@/pages/user/UserCommunityPage.vue'
+import AdminOverviewPage from '@/pages/admin/AdminOverviewPage.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
 import AppManagePage from '@/pages/admin/AppManagePage.vue'
+import TaskManagePage from '@/pages/admin/TaskManagePage.vue'
 import AppChatPage from '@/pages/app/AppChatPage.vue'
 import AppEditPage from '@/pages/app/AppEditPage.vue'
 import ChatManagePage from '@/pages/admin/ChatManagePage.vue'
@@ -45,6 +47,11 @@ const router = createRouter({
       component: UserCommunityPage,
     },
     {
+      path: '/admin/overview',
+      name: '运营概览',
+      component: AdminOverviewPage,
+    },
+    {
       path: '/admin/userManage',
       name: '用户管理',
       component: UserManagePage,
@@ -58,6 +65,11 @@ const router = createRouter({
       path: '/admin/chatManage',
       name: '对话管理',
       component: ChatManagePage,
+    },
+    {
+      path: '/admin/taskManage',
+      name: '任务监控',
+      component: TaskManagePage,
     },
     {
       path: '/app/chat/:id',

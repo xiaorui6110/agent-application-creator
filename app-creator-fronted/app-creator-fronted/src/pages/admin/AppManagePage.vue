@@ -1,17 +1,16 @@
 <template>
   <div id="appManagePage">
-    <!-- 搜索表单 -->
     <a-form layout="inline" :model="searchParams" @finish="doSearch">
       <a-form-item label="应用名称">
-        <a-input v-model:value="searchParams.appName" placeholder="输入应用名称" />
+        <a-input v-model:value="searchParams.appName" placeholder="输入应用名称" allow-clear />
       </a-form-item>
       <a-form-item label="生成类型">
         <a-select
           v-model:value="searchParams.codeGenType"
           placeholder="选择生成类型"
-          style="width: 150px"
+          style="width: 160px"
+          allow-clear
         >
-          <a-select-option value="">全部</a-select-option>
           <a-select-option
             v-for="option in CODE_GEN_TYPE_OPTIONS"
             :key="option.value"
@@ -21,19 +20,37 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item label="应用分类">
+        <a-select
+          v-model:value="searchParams.appCategory"
+          placeholder="选择应用分类"
+          style="width: 160px"
+          allow-clear
+        >
+          <a-select-option
+            v-for="category in categories"
+            :key="category"
+            :value="category"
+          >
+            {{ category }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item>
-        <a-button type="primary" html-type="submit">搜索</a-button>
+        <a-space>
+          <a-button type="primary" html-type="submit">搜索</a-button>
+          <a-button @click="resetSearch">重置</a-button>
+        </a-space>
       </a-form-item>
     </a-form>
     <a-divider />
 
-    <!-- 表格 -->
     <a-table
       :columns="columns"
       :data-source="data"
       :pagination="pagination"
+      :scroll="{ x: 1280 }"
       @change="doTableChange"
-      :scroll="{ x: 1200 }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'appCover'">
@@ -47,6 +64,9 @@
         </template>
         <template v-else-if="column.dataIndex === 'codeGenType'">
           {{ formatCodeGenType(record.codeGenType) }}
+        </template>
+        <template v-else-if="column.dataIndex === 'appCategory'">
+          <a-tag>{{ record.appCategory || 'general' }}</a-tag>
         </template>
         <template v-else-if="column.dataIndex === 'appPriority'">
           <a-tag v-if="record.appPriority === 99" color="gold">精选</a-tag>
@@ -67,14 +87,14 @@
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button size="small" @click="viewAppDetail(record.appId)">详情</a-button>
-            <a-button type="primary" size="small" @click="editApp(record)"> 编辑 </a-button>
+            <a-button type="primary" size="small" @click="editApp(record)">编辑</a-button>
             <a-button
               type="default"
               size="small"
               @click="toggleFeatured(record)"
               :class="{ 'featured-btn': record.appPriority === 99 }"
             >
-              {{ record.appPriority === 99 ? '取消精选' : '精选' }}
+              {{ record.appPriority === 99 ? '取消精选' : '设为精选' }}
             </a-button>
             <a-popconfirm title="确定要删除这个应用吗？" @confirm="deleteApp(record.appId)">
               <a-button danger size="small">删除</a-button>
@@ -99,13 +119,13 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
-  listAppInfoByPageByAdmin,
-  deleteAppByAdmin,
-  updateAppByAdmin,
   getAppInfoByIdByAdmin,
+  listAppCategories,
+  listAppInfoByPageByAdmin,
+  updateAppByAdmin,
+  deleteAppByAdmin,
 } from '@/api/AppController'
-import { CODE_GEN_TYPE_OPTIONS, formatCodeGenType } from '@/utils/codeGenTypes'
-import { isValidCodeGenType } from '@/utils/codeGenTypes'
+import { CODE_GEN_TYPE_OPTIONS, formatCodeGenType, isValidCodeGenType } from '@/utils/codeGenTypes'
 import { formatTime } from '@/utils/time'
 import UserInfo from '@/components/UserInfo.vue'
 import AppDetailModal from '@/components/AppDetailModal.vue'
@@ -113,87 +133,57 @@ import { isSuccessResponse } from '@/utils/apiResponse'
 import { resolveTotalCount } from '@/utils/pagination'
 
 const router = useRouter()
-
 const appDetailVisible = ref(false)
 const selectedAppInfo = ref<API.AppVO>()
+const categories = ref<string[]>([])
 
 const columns = [
-  {
-    title: 'ID',
-    dataIndex: 'appId',
-    width: 80,
-    fixed: 'left',
-  },
-  {
-    title: '应用名称',
-    dataIndex: 'appName',
-    width: 150,
-  },
-  {
-    title: '封面',
-    dataIndex: 'appCover',
-    width: 100,
-  },
-  {
-    title: '初始提示词',
-    dataIndex: 'appInitPrompt',
-    width: 200,
-  },
-  {
-    title: '生成类型',
-    dataIndex: 'codeGenType',
-    width: 100,
-  },
-  {
-    title: '优先级',
-    dataIndex: 'appPriority',
-    width: 80,
-  },
-  {
-    title: '部署时间',
-    dataIndex: 'deployedTime',
-    width: 160,
-  },
-  {
-    title: '创建者',
-    dataIndex: 'userVO',
-    width: 120,
-  },
-  {
-    title: '创建时间',
-    dataIndex: 'createTime',
-    width: 160,
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 200,
-    fixed: 'right',
-  },
+  { title: 'ID', dataIndex: 'appId', width: 80, fixed: 'left' },
+  { title: '应用名称', dataIndex: 'appName', width: 150 },
+  { title: '封面', dataIndex: 'appCover', width: 100 },
+  { title: '初始提示词', dataIndex: 'appInitPrompt', width: 200 },
+  { title: '生成类型', dataIndex: 'codeGenType', width: 100 },
+  { title: '应用分类', dataIndex: 'appCategory', width: 120 },
+  { title: '优先级', dataIndex: 'appPriority', width: 80 },
+  { title: '部署时间', dataIndex: 'deployedTime', width: 160 },
+  { title: '创建者', dataIndex: 'userVO', width: 120 },
+  { title: '创建时间', dataIndex: 'createTime', width: 160 },
+  { title: '操作', key: 'action', width: 220, fixed: 'right' },
 ]
 
-// 数据
 const data = ref<API.AppVO[]>([])
 const total = ref(0)
 
-// 搜索条件
 const searchParams = reactive<API.AppQueryRequest>({
   current: 1,
   pageSize: 10,
+  appName: '',
+  codeGenType: undefined,
+  appCategory: '',
 })
 
-// 获取数据
+const fetchCategories = async () => {
+  const res = await listAppCategories()
+  if (isSuccessResponse(res.data) && res.data.data) {
+    categories.value = res.data.data
+  }
+}
+
 const fetchData = async () => {
   try {
     if (searchParams.codeGenType && !isValidCodeGenType(searchParams.codeGenType)) {
       searchParams.codeGenType = undefined
     }
-    const res = await listAppInfoByPageByAdmin({}, {
-      current: Math.max(searchParams.current ?? 1, 1),
-      pageSize: Math.max(searchParams.pageSize ?? 10, 10),
-      appName: searchParams.appName,
-      codeGenType: searchParams.codeGenType,
-    })
+    const res = await listAppInfoByPageByAdmin(
+      {},
+      {
+        current: Math.max(searchParams.current ?? 1, 1),
+        pageSize: Math.max(searchParams.pageSize ?? 10, 10),
+        appName: searchParams.appName || undefined,
+        codeGenType: searchParams.codeGenType,
+        appCategory: searchParams.appCategory || undefined,
+      },
+    )
     if (isSuccessResponse(res.data) && res.data.data) {
       data.value = res.data.data.records ?? []
       total.value = resolveTotalCount({
@@ -209,84 +199,77 @@ const fetchData = async () => {
     }
     message.error(res.data.msg ?? '获取数据失败')
   } catch (error) {
-    console.error('获取数据失败：', error)
+    console.error('获取应用列表失败', error)
     message.error('获取数据失败')
   }
 }
 
-// 页面加载时请求一次
 onMounted(() => {
   fetchData()
+  fetchCategories()
 })
 
-// 分页参数
-const pagination = computed(() => {
-  return {
-    current: searchParams.current ?? 1,
-    pageSize: searchParams.pageSize ?? 10,
-    total: total.value,
-    showSizeChanger: true,
-    showTotal: (total: number) => `共 ${total} 条`,
-  }
-})
+const pagination = computed(() => ({
+  current: searchParams.current ?? 1,
+  pageSize: searchParams.pageSize ?? 10,
+  total: total.value,
+  showSizeChanger: true,
+  showTotal: (value: number) => `共 ${value} 条`,
+}))
 
-// 表格变化处理
 const doTableChange = (page: { current: number; pageSize: number }) => {
   searchParams.current = page.current
   searchParams.pageSize = page.pageSize
   fetchData()
 }
 
-// 搜索
 const doSearch = () => {
-  // 重置页码
   searchParams.current = 1
   fetchData()
 }
 
-// 编辑应用
+const resetSearch = () => {
+  searchParams.appName = ''
+  searchParams.codeGenType = undefined
+  searchParams.appCategory = ''
+  searchParams.current = 1
+  fetchData()
+}
+
 const editApp = (app: API.AppVO) => {
   router.push(`/app/edit/${app.appId}`)
 }
 
-// 切换精选状态
 const toggleFeatured = async (app: API.AppVO) => {
   if (!app.appId) return
-
   const currentPriority = app.appPriority ?? 0
   const newPriority = currentPriority === 99 ? 0 : 99
-
   try {
     const res = await updateAppByAdmin({}, { appId: app.appId, appPriority: newPriority })
-
     if (isSuccessResponse(res.data) && res.data.data !== false) {
       message.success(newPriority === 99 ? '已设为精选' : '已取消精选')
-      // 刷新数据
       fetchData()
     } else {
-      message.error('操作失败：' + (res.data.msg ?? ''))
+      message.error(`操作失败：${res.data.msg ?? ''}`)
     }
   } catch (error) {
-    console.error('操作失败：', error)
+    console.error('切换精选失败', error)
     message.error('操作失败')
   }
 }
 
-// 删除应用
 const deleteApp = async (appId?: string) => {
   if (!appId) return
-
   try {
     const res = await deleteAppByAdmin({}, { id: appId })
     if (isSuccessResponse(res.data) && res.data.data !== false) {
       message.success('删除成功')
-      // 刷新数据
       fetchData()
     } else {
-      message.error('删除失败：' + (res.data.msg ?? ''))
+      message.error(`删除失败：${res.data.msg ?? ''}`)
     }
   } catch (error) {
-    console.error('删除失败：', error)
+    console.error('删除应用失败', error)
     message.error('删除失败')
   }
 }
@@ -315,7 +298,7 @@ const viewAppDetail = async (appId?: string) => {
     }
     message.error(res.data.msg ?? '获取应用详情失败')
   } catch (error) {
-    console.error('获取应用详情失败：', error)
+    console.error('获取应用详情失败', error)
     message.error('获取应用详情失败')
   }
 }

@@ -69,7 +69,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { listAllChatHistoryByPageForAdmin } from '@/api/chatHistoryController'
+import { deleteChatHistoryByAdmin, listAllChatHistoryByPageForAdmin } from '@/api/chatHistoryController'
 import { formatTime } from '@/utils/time'
 import { isSuccessResponse } from '@/utils/apiResponse'
 import { resolveTotalCount } from '@/utils/pagination'
@@ -194,11 +194,13 @@ const deleteMessage = async (id: string | undefined) => {
   if (!id) return
 
   try {
-    // 注意：这里需要后端提供删除对话历史的接口
-    // 目前先显示成功，实际实现需要调用删除接口
-    message.success('删除成功')
-    // 刷新数据
-    fetchData()
+    const res = await deleteChatHistoryByAdmin({}, { id })
+    if (isSuccessResponse(res.data) && res.data.data !== false) {
+      message.success('删除成功')
+      await fetchData()
+      return
+    }
+    message.error(res.data.msg ?? '删除失败')
   } catch (error) {
     console.error('删除失败：', error)
     message.error('删除失败')

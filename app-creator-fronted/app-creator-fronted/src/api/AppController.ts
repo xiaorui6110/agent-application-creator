@@ -157,6 +157,13 @@ export async function getAppInfoById(
   })
 }
 
+export async function listAppCategories(options?: { [key: string]: any }) {
+  return request<API.ServerResponseEntityListString>('/app/category/list', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 export async function listGoodAppInfoByPage(
   params: API.listGoodAppInfoByPageParams,
   body: API.AppQueryRequest,

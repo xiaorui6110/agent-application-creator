@@ -22,6 +22,14 @@ export async function banOrUnbanUser(
   })
 }
 
+/** 获取用户管理统计 管理员获取用户管理统计数据 GET /user/admin/stats */
+export async function getUserManageStats(options?: { [key: string]: any }) {
+  return request<API.ServerResponseEntityUserManageStatsVO>('/user/admin/stats', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 /** 修改用户邮箱 修改当前用户邮箱 POST /user/change/email */
 export async function changUserEmail(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -288,6 +296,25 @@ export async function updateUserInfo(
   options?: { [key: string]: any }
 ) {
   return request<API.ServerResponseEntityBoolean>('/user/update/info', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    params: {
+      ...params,
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 修改用户角色 管理员修改指定用户角色 POST /user/update/role */
+export async function updateUserRole(
+  params: API.updateUserRoleParams,
+  body: API.UserRoleUpdateRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ServerResponseEntityBoolean>('/user/update/role', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

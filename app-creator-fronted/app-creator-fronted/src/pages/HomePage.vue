@@ -8,6 +8,7 @@ import {
   createApp as createAppApi,
   createAppFromTemplate,
   listAppInfoByPage,
+  listAppCategories,
   listGoodAppInfoByPage,
   listTemplates,
 } from '@/api/AppController'
@@ -15,7 +16,7 @@ import AppCard from '@/components/AppCard.vue'
 import { isSuccessResponse } from '@/utils/apiResponse'
 import { resolveTotalCount } from '@/utils/pagination'
 import { formatCodeGenType } from '@/utils/codeGenTypes'
-import { formatRelativeTime } from '@/utils/time'
+import { formatRelativeTime, formatTime } from '@/utils/time'
 
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
@@ -29,6 +30,7 @@ const selectedTemplate = ref<API.AppTemplateVO>()
 const myApps = ref<API.AppVO[]>([])
 const featuredApps = ref<API.AppVO[]>([])
 const templates = ref<API.AppTemplateVO[]>([])
+const categories = ref<string[]>([])
 
 const myAppsPage = reactive({
   current: 1,
@@ -40,6 +42,11 @@ const featuredAppsPage = reactive({
   current: 1,
   pageSize: 6,
   total: 0,
+})
+
+const featuredFilter = reactive({
+  appName: '',
+  appCategory: '',
 })
 
 const templateForm = reactive({
@@ -110,6 +117,8 @@ const loadFeaturedApps = async () => {
     {
       current: Math.max(featuredAppsPage.current, 1),
       pageSize: Math.max(featuredAppsPage.pageSize, 6),
+      appName: featuredFilter.appName || undefined,
+      appCategory: featuredFilter.appCategory || undefined,
       sortField: 'createTime',
       sortOrder: 'desc',
     },
@@ -124,6 +133,18 @@ const loadFeaturedApps = async () => {
       recordsLength: featuredApps.value.length,
     })
   }
+}
+
+const loadCategories = async () => {
+  const res = await listAppCategories()
+  if (isSuccessResponse(res.data) && res.data.data) {
+    categories.value = res.data.data
+  }
+}
+
+const handleFeaturedSearch = async () => {
+  featuredAppsPage.current = 1
+  await loadFeaturedApps()
 }
 
 const loadTemplates = async () => {
@@ -190,6 +211,7 @@ onMounted(() => {
   loadMyApps()
   loadFeaturedApps()
   loadTemplates()
+  loadCategories()
 })
 </script>
 
@@ -277,7 +299,10 @@ onMounted(() => {
               </p>
               <div class="template-card__meta">
                 <span><CopyOutlined /> 来源应用：{{ template.sourceAppId || '-' }}</span>
-                <span><RocketOutlined /> {{ formatRelativeTime(template.createdTime) || '刚刚创建' }}</span>
+                <span>
+                  <RocketOutlined />
+                  {{ formatTime(template.createdTime) || formatRelativeTime(template.createdTime) || '刚刚创建' }}
+                </span>
               </div>
             </div>
             <div class="template-card__actions">
@@ -316,6 +341,33 @@ onMounted(() => {
             <div class="section-sub">平台里已经沉淀下来的高优先级应用。</div>
           </div>
         </div>
+        <a-form layout="inline" class="featured-filter" @finish="handleFeaturedSearch">
+          <a-form-item>
+            <a-input v-model:value="featuredFilter.appName" placeholder="按应用名称搜索" allow-clear />
+          </a-form-item>
+          <a-form-item>
+            <a-select
+              v-model:value="featuredFilter.appCategory"
+              placeholder="按分类筛选"
+              style="width: 180px"
+              allow-clear
+            >
+              <a-select-option v-for="category in categories" :key="category" :value="category">
+                {{ category }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item>
+            <a-space>
+              <a-button type="primary" html-type="submit">搜索</a-button>
+              <a-button
+                @click="featuredFilter.appName = ''; featuredFilter.appCategory = ''; handleFeaturedSearch()"
+              >
+                重置
+              </a-button>
+            </a-space>
+          </a-form-item>
+        </a-form>
         <div class="featured-grid">
           <AppCard
             v-for="app in featuredApps"
@@ -581,6 +633,10 @@ onMounted(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin-bottom: 30px;
+}
+
+.featured-filter {
+  margin-bottom: 16px;
 }
 
 .pagination-wrapper {

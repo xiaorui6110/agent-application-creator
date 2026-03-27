@@ -23,6 +23,9 @@
         <p class="app-author">
           {{ app.userVO?.nickName || (featured ? '官方' : '未知用户') }}
         </p>
+        <div v-if="app.appCategory" class="app-tags">
+          <a-tag>{{ app.appCategory }}</a-tag>
+        </div>
         <div class="app-actions">
           <a-space size="small">
             <a-button
@@ -46,7 +49,7 @@
               @click="toggleShare"
             >
               <template #icon>
-                <ShareAltOutlined v-if="shared" class="active" />
+                <ShareAltOutlined class="active" v-if="shared" />
                 <ShareAltOutlined v-else />
               </template>
               {{ shareCount }}
@@ -308,10 +311,7 @@ watch(
 
 .app-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -357,6 +357,10 @@ watch(
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.app-tags {
+  margin-top: 8px;
 }
 
 .app-actions {

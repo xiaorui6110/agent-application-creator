@@ -4,6 +4,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.xiaorui.agentapplicationcreator.model.dto.user.UserQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.User;
+import com.xiaorui.agentapplicationcreator.model.vo.UserManageStatsVO;
 import com.xiaorui.agentapplicationcreator.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -160,6 +161,16 @@ public interface UserService extends IService<User> {
      * @return 是否操作成功
      */
     boolean banOrUnbanUser(String userId, Boolean isUnban, User admin);
+
+    /**
+     * 管理员更新用户角色
+     */
+    boolean updateUserRole(String userId, String userRole, User admin);
+
+    /**
+     * 获取用户管理统计数据
+     */
+    UserManageStatsVO getUserManageStats();
 
 
 }

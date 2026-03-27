@@ -33,6 +33,8 @@ declare namespace API {
     threadId?: string
     appId?: string
     taskStatus?: string
+    message?: string
+    taskError?: string
     taskResult?: AgentResponse
     taskError?: string
     retryCount?: number
@@ -64,6 +66,23 @@ declare namespace API {
     createTime?: string
   }
 
+  type AdminDashboardStatsVO = {
+    totalUserCount?: number
+    todayRegisterCount?: number
+    totalAppCount?: number
+    todayAppCount?: number
+    deployedAppCount?: number
+    featuredAppCount?: number
+    totalChatCount?: number
+    todayChatCount?: number
+    totalTaskCount?: number
+    todayTaskCount?: number
+    runningTaskCount?: number
+    waitingTaskCount?: number
+    succeededTaskCount?: number
+    failedTaskCount?: number
+  }
+
   type AppAdminUpdateInfoRequest = {
     /** 应用id */
     appId: string
@@ -75,6 +94,7 @@ declare namespace API {
     appDescription?: string
     /** 应用排序优先级 */
     appPriority?: number
+    appCategory?: string
     /** 代码生成类型（枚举） */
     codeGenType?: string
   }
@@ -167,6 +187,10 @@ declare namespace API {
     codeGenType?: string
     /** 应用排序优先级 */
     appPriority?: number
+    /** 应用分类 */
+    appCategory?: string
+    /** 排行类型 */
+    rankType?: string
   }
 
   type AppUpdateInfoRequest = {
@@ -197,6 +221,8 @@ declare namespace API {
     codeGenType?: 'single_file' | 'multi_file' | 'vue_project'
     /** 应用排序优先级 */
     appPriority?: number
+    /** 应用分类 */
+    appCategory?: string
     /** 部署访问地址 */
     deployUrl?: string
     /** 部署时间 */
@@ -348,6 +374,11 @@ declare namespace API {
   }
 
   type deleteUserParams = {
+    /** 删除请求参数 */
+    deleteRequest?: any
+  }
+
+  type deleteChatHistoryByAdminParams = {
     /** 删除请求参数 */
     deleteRequest?: any
   }
@@ -828,6 +859,39 @@ declare namespace API {
     success?: boolean
   }
 
+  type ServerResponseEntityListString = {
+    code?: string
+    msg?: string
+    data?: string[]
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityAdminDashboardStatsVO = {
+    code?: string
+    msg?: string
+    data?: AdminDashboardStatsVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
+  type ServerResponseEntityUserManageStatsVO = {
+    code?: string
+    msg?: string
+    data?: UserManageStatsVO
+    version?: string
+    timestamp?: number
+    sign?: string
+    fail?: boolean
+    success?: boolean
+  }
+
   type ServerResponseEntityVoid = {
     code?: string
     msg?: string
@@ -942,6 +1006,10 @@ declare namespace API {
     userUpdateInfoRequest?: any
   }
 
+  type updateUserRoleParams = {
+    userRoleUpdateRequest?: any
+  }
+
   type User = {
     userId?: string
     nickName?: string
@@ -1047,6 +1115,11 @@ declare namespace API {
     isUnban: boolean
   }
 
+  type UserRoleUpdateRequest = {
+    userId: string
+    userRole: string
+  }
+
   type UserUpdateInfoRequest = {
     /** 用户id */
     userId: string
@@ -1069,6 +1142,8 @@ declare namespace API {
     nickName?: string
     /** 用户头像 */
     userAvatar?: string
+    /** 用户邮箱 */
+    userEmail?: string
     /** 用户性别 m-男 f-女 */
     userSex?: string
     /** 用户生日 yyyy-mm-dd */
@@ -1077,6 +1152,19 @@ declare namespace API {
     userProfile?: string
     /** 用户角色 */
     userRole?: string
+    /** 用户状态 */
+    userStatus?: number
+    /** 创建时间 */
+    createTime?: string
+  }
+
+  type UserManageStatsVO = {
+    totalUserCount?: number
+    normalUserCount?: number
+    adminUserCount?: number
+    bannedUserCount?: number
+    todayRegisterCount?: number
+    recentSevenDayRegisterCount?: number
   }
 
   type VerificationPlan = {

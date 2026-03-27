@@ -1,5 +1,5 @@
 <template>
-  <a-modal v-model:open="visible" title="应用详情" :footer="null" width="500px">
+  <a-modal v-model:open="visible" title="应用详情" :footer="null" width="720px">
     <div class="app-detail-content">
       <a-tabs v-model:activeKey="activeKey">
         <a-tab-pane key="base" tab="基础信息">
@@ -30,6 +30,11 @@
                 {{ formatCodeGenType(app.codeGenType) }}
               </a-tag>
               <span v-else>未知类型</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">应用分类：</span>
+              <a-tag v-if="app?.appCategory">{{ app.appCategory }}</a-tag>
+              <span v-else>-</span>
             </div>
             <div class="info-item">
               <span class="info-label">优先级：</span>
@@ -75,11 +80,15 @@
 
         <a-tab-pane key="comments" :tab="commentsTabLabel">
           <div class="comment-box">
+            <div v-if="replyTarget" class="reply-banner">
+              <span>正在回复 {{ replyTarget.appCommentUserVO?.nickName ?? '匿名用户' }}</span>
+              <a-button type="link" size="small" @click="cancelReply">取消回复</a-button>
+            </div>
             <a-textarea
               v-model:value="newComment"
               :rows="3"
               :maxlength="500"
-              placeholder="写下你的评论..."
+              :placeholder="replyTarget ? '写下你的回复...' : '写下你的评论...'"
             />
             <div class="comment-actions">
               <a-button type="primary" :loading="submitting" @click="submitComment">发表评论</a-button>
@@ -89,32 +98,77 @@
           <div class="comment-list">
             <a-spin :spinning="loading">
               <a-empty v-if="!loading && comments.length === 0" description="还没有评论，来抢沙发吧" />
-              <div v-else>
-                <div v-for="item in comments" :key="item.commentId" class="comment-item">
-                  <div class="comment-avatar">
-                    <a-avatar :src="item.appCommentUserVO?.userAvatar" />
-                  </div>
-                  <div class="comment-main">
-                    <div class="comment-head">
-                      <div class="comment-meta">
-                        <span class="comment-author">{{ item.appCommentUserVO?.nickName ?? '匿名' }}</span>
-                        <span class="comment-time">{{ formatTime(item.createTime) }}</span>
-                      </div>
-                      <a-popconfirm
-                        v-if="canDelete(item)"
-                        title="确定要删除这条评论吗？"
-                        ok-text="确定"
-                        cancel-text="取消"
-                        @confirm="removeComment(item.commentId)"
-                      >
-                        <a-button type="text" danger size="small" class="comment-delete-btn">
-                          <template #icon>
-                            <DeleteOutlined />
-                          </template>
-                        </a-button>
-                      </a-popconfirm>
+              <div v-else class="comment-thread-list">
+                <div v-for="item in comments" :key="item.commentId" class="comment-thread">
+                  <div class="comment-item">
+                    <div class="comment-avatar">
+                      <a-avatar :src="item.appCommentUserVO?.userAvatar" />
                     </div>
-                    <div class="comment-content">{{ item.commentContent }}</div>
+                    <div class="comment-main">
+                      <div class="comment-head">
+                        <div class="comment-meta">
+                          <span class="comment-author">{{ item.appCommentUserVO?.nickName ?? '匿名' }}</span>
+                          <span class="comment-time">{{ formatTime(item.createTime) }}</span>
+                        </div>
+                        <div class="comment-tools">
+                          <a-button type="link" size="small" @click="startReply(item)">回复</a-button>
+                          <a-popconfirm
+                            v-if="canDelete(item)"
+                            title="确定要删除这条评论吗？"
+                            ok-text="确定"
+                            cancel-text="取消"
+                            @confirm="removeComment(item.commentId)"
+                          >
+                            <a-button type="text" danger size="small" class="comment-delete-btn">
+                              <template #icon>
+                                <DeleteOutlined />
+                              </template>
+                            </a-button>
+                          </a-popconfirm>
+                        </div>
+                      </div>
+                      <div class="comment-content">{{ item.commentContent }}</div>
+
+                      <div
+                        v-if="(item.childCommentList?.length ?? 0) > 0"
+                        class="comment-children"
+                      >
+                        <div
+                          v-for="child in item.childCommentList"
+                          :key="child.commentId"
+                          class="comment-item child-item"
+                        >
+                          <div class="comment-avatar">
+                            <a-avatar :src="child.appCommentUserVO?.userAvatar" />
+                          </div>
+                          <div class="comment-main">
+                            <div class="comment-head">
+                              <div class="comment-meta">
+                                <span class="comment-author">{{ child.appCommentUserVO?.nickName ?? '匿名' }}</span>
+                                <span class="comment-time">{{ formatTime(child.createTime) }}</span>
+                              </div>
+                              <div class="comment-tools">
+                                <a-button type="link" size="small" @click="startReply(item)">回复</a-button>
+                                <a-popconfirm
+                                  v-if="canDelete(child)"
+                                  title="确定要删除这条回复吗？"
+                                  ok-text="确定"
+                                  cancel-text="取消"
+                                  @confirm="removeComment(child.commentId)"
+                                >
+                                  <a-button type="text" danger size="small" class="comment-delete-btn">
+                                    <template #icon>
+                                      <DeleteOutlined />
+                                    </template>
+                                  </a-button>
+                                </a-popconfirm>
+                              </div>
+                            </div>
+                            <div class="comment-content">{{ child.commentContent }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -171,25 +225,23 @@ const route = useRoute()
 const loginUserStore = useLoginUserStore()
 
 const activeKey = ref('base')
-
 const loading = ref(false)
 const loadingMore = ref(false)
 const submitting = ref(false)
 const comments = ref<API.AppCommentVO[]>([])
 const hasMore = ref(false)
 const pendingReload = ref<null | boolean>(null)
+const replyTarget = ref<API.AppCommentVO>()
 const commentPage = ref({
   current: 1,
   pageSize: 10,
   total: 0,
 })
-
 const newComment = ref('')
 
 const commentsTabLabel = computed(() => {
   const base = Math.max(props.app?.commentCount ?? 0, commentPage.value.total)
-  const num = base ? ` (${base})` : ''
-  return `评论${num}`
+  return base ? `评论 (${base})` : '评论'
 })
 
 const appId = computed(() => {
@@ -210,14 +262,11 @@ const requireLogin = async () => {
   return false
 }
 
-const canDelete = (item: API.AppCommentVO) => {
-  if (!loginUserStore.loginUser.userId) return false
-  return String(item.userId ?? '') === String(loginUserStore.loginUser.userId)
-}
+const canDelete = (item: API.AppCommentVO) =>
+  String(item.userId ?? '') === String(loginUserStore.loginUser.userId ?? '')
 
 const loadComments = async (reset: boolean) => {
   if (!appId.value) return
-
   if (loading.value) {
     pendingReload.value = pendingReload.value === true ? true : reset
     return
@@ -249,17 +298,15 @@ const loadComments = async (reset: boolean) => {
 
     const records = res.data.data.records ?? []
     comments.value = reset ? records : [...comments.value, ...records]
-    const inferredTotal = resolveTotalCount({
+    commentPage.value.total = resolveTotalCount({
       current: commentPage.value.current,
       pageSize: commentPage.value.pageSize,
       totalRow: res.data.data.totalRow,
       recordsLength: records.length,
     })
-    commentPage.value.total = inferredTotal
     hasMore.value = records.length >= (commentPage.value.pageSize ?? 10)
   } finally {
     loading.value = false
-
     if (pendingReload.value !== null) {
       const nextReset = pendingReload.value
       pendingReload.value = null
@@ -269,8 +316,7 @@ const loadComments = async (reset: boolean) => {
 }
 
 const loadMore = async () => {
-  if (!hasMore.value) return
-  if (loadingMore.value) return
+  if (!hasMore.value || loadingMore.value) return
   loadingMore.value = true
   try {
     commentPage.value.current += 1
@@ -282,8 +328,7 @@ const loadMore = async () => {
 
 const submitComment = async () => {
   const ok = await requireLogin()
-  if (!ok) return
-  if (!appId.value) return
+  if (!ok || !appId.value) return
 
   const content = newComment.value.trim()
   if (!content) {
@@ -293,10 +338,18 @@ const submitComment = async () => {
 
   submitting.value = true
   try {
-    const res = await addComment({}, { appId: appId.value, commentContent: content })
+    const res = await addComment(
+      {},
+      {
+        appId: appId.value,
+        commentContent: content,
+        parentId: replyTarget.value?.commentId,
+      },
+    )
     if (isSuccessResponse(res.data) && res.data.data) {
-      message.success('评论成功')
+      message.success(replyTarget.value ? '回复成功' : '评论成功')
       newComment.value = ''
+      replyTarget.value = undefined
       await loadComments(true)
       return
     }
@@ -308,25 +361,31 @@ const submitComment = async () => {
 
 const removeComment = async (commentId?: string) => {
   const ok = await requireLogin()
-  if (!ok) return
-  if (!commentId) return
-
+  if (!ok || !commentId) return
   const res = await deleteComment({}, { commentId })
   if (isSuccessResponse(res.data) && res.data.data) {
     message.success('删除成功')
+    if (replyTarget.value?.commentId === commentId) {
+      replyTarget.value = undefined
+    }
     await loadComments(true)
     return
   }
   message.error(res.data.msg ?? '删除失败')
 }
 
-const handleEdit = () => {
-  emit('edit')
+const startReply = async (comment: API.AppCommentVO) => {
+  const ok = await requireLogin()
+  if (!ok) return
+  replyTarget.value = comment
 }
 
-const handleDelete = () => {
-  emit('delete')
+const cancelReply = () => {
+  replyTarget.value = undefined
 }
+
+const handleEdit = () => emit('edit')
+const handleDelete = () => emit('delete')
 
 const openDeployUrl = () => {
   if (props.app?.deployUrl) {
@@ -336,22 +395,21 @@ const openDeployUrl = () => {
 
 watch(
   () => visible.value,
-  async (v) => {
-    if (!v) return
+  (value) => {
+    if (!value) return
     activeKey.value = 'base'
     comments.value = []
     hasMore.value = false
-    commentPage.value = { current: 1, pageSize: 10, total: 0 }
+    replyTarget.value = undefined
     newComment.value = ''
+    commentPage.value = { current: 1, pageSize: 10, total: 0 }
   },
 )
 
 watch(
   () => [activeKey.value, appId.value, visible.value] as const,
-  async ([key, id, v]) => {
-    if (!v) return
-    if (key !== 'comments') return
-    if (!id) return
+  async ([key, id, value]) => {
+    if (!value || key !== 'comments' || !id) return
     await loadComments(true)
   },
 )
@@ -373,7 +431,7 @@ watch(
 }
 
 .info-label {
-  width: 80px;
+  width: 84px;
   color: #666;
   font-size: 14px;
   flex-shrink: 0;
@@ -388,6 +446,17 @@ watch(
   margin-top: 8px;
 }
 
+.reply-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff7e6;
+  color: #ad6800;
+}
+
 .comment-actions {
   display: flex;
   justify-content: flex-end;
@@ -398,11 +467,25 @@ watch(
   margin-top: 14px;
 }
 
+.comment-thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.comment-thread {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .comment-item {
   display: flex;
   gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 8px 0;
+}
+
+.child-item {
+  padding-top: 10px;
 }
 
 .comment-avatar {
@@ -419,15 +502,6 @@ watch(
   justify-content: space-between;
   gap: 10px;
   align-items: center;
-}
-
-.comment-delete-btn {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.comment-item:hover .comment-delete-btn {
-  opacity: 1;
 }
 
 .comment-meta {
@@ -452,6 +526,18 @@ watch(
   white-space: pre-wrap;
   word-break: break-word;
   color: rgba(17, 24, 39, 0.85);
+}
+
+.comment-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comment-children {
+  margin-top: 10px;
+  padding-left: 14px;
+  border-left: 2px solid #f0f0f0;
 }
 
 .load-more {

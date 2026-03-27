@@ -103,7 +103,11 @@ const handleSubmit = async (values: Record<string, unknown>) => {
   const res = await userLogin({}, loginBody)
   // 登录成功，把登录态保存到全局状态中
   if (isSuccessResponse(res.data)) {
-    await loginUserStore.fetchLoginUser()
+    if (res.data.data) {
+      loginUserStore.setLoginUser(res.data.data)
+    } else {
+      await loginUserStore.fetchLoginUser()
+    }
     message.success('登录成功')
 
     const redirect = route.query.redirect

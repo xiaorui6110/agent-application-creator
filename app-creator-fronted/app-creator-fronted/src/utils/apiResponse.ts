@@ -1,5 +1,5 @@
 export const SUCCESS_CODE = '00000'
-export const UNAUTHORIZED_CODE = '40100'
+export const UNAUTHORIZED_CODES = ['40100', 'A00004']
 
 export type ApiResponseBase = {
   code?: string
@@ -15,5 +15,5 @@ export function isSuccessResponse(res: ApiResponseBase | undefined | null): bool
 
 export function isUnauthorizedResponse(res: ApiResponseBase | undefined | null): boolean {
   if (!res) return false
-  return res.code === UNAUTHORIZED_CODE
+  return typeof res.code === 'string' && UNAUTHORIZED_CODES.includes(res.code)
 }

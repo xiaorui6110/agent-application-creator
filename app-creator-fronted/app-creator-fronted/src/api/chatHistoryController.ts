@@ -2,6 +2,25 @@
 /* eslint-disable */
 import request from '@/request'
 
+/** 管理员删除对话历史 管理员删除对话历史 POST /chatHistory/admin/delete */
+export async function deleteChatHistoryByAdmin(
+  params: API.deleteChatHistoryByAdminParams,
+  body: API.DeleteRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.ServerResponseEntityBoolean>('/chatHistory/admin/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    params: {
+      ...params,
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** 管理员分页查询所有对话历史 管理员分页查询所有对话历史 POST /chatHistory/admin/list/page/vo */
 export async function listAllChatHistoryByPageForAdmin(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)

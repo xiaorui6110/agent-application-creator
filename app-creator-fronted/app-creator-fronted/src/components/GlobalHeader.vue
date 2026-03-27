@@ -72,7 +72,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
 } from '@ant-design/icons-vue'
-import { isSuccessResponse } from '@/utils/apiResponse'
+import { isSuccessResponse, isUnauthorizedResponse } from '@/utils/apiResponse'
 
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
@@ -97,6 +97,11 @@ const originItems = [
     title: '社区中心',
   },
   {
+    key: '/admin/overview',
+    label: '运营概览',
+    title: '运营概览',
+  },
+  {
     key: '/admin/userManage',
     label: '用户管理',
     title: '用户管理',
@@ -107,9 +112,19 @@ const originItems = [
     title: '应用管理',
   },
   {
+    key: '/admin/taskManage',
+    label: '任务监控',
+    title: '任务监控',
+  },
+  {
     key: 'others',
-    label: h('a', { href: 'https://space.bilibili.com/495219966', target: '_blank' }, '哔哩哔哩'),
-    title: '哔哩哔哩',
+    label: h('a', { href: 'https://www.promptingguide.ai/zh', target: '_blank' }, '提示工程指南'),
+    title: '提示工程指南',
+  },
+  {
+    key: 'github',
+    label: h('a', { href: 'https://github.com/xiaorui6110/agent-application-creator', target: '_blank' }, 'GitHub'),
+    title: 'GitHub',
   },
 ]
 
@@ -149,7 +164,7 @@ const loadUnreadSummary = async () => {
 
 const doLogout = async () => {
   const res = await userLogout()
-  if (isSuccessResponse(res.data) && res.data.data !== false) {
+  if ((isSuccessResponse(res.data) && res.data.data !== false) || isUnauthorizedResponse(res.data)) {
     loginUserStore.clearLoginUser()
     unreadCount.value = 0
     message.success('退出登录成功')
