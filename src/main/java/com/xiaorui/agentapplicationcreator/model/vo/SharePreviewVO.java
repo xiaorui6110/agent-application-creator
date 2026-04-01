@@ -15,15 +15,15 @@ public class SharePreviewVO implements Serializable {
     @Serial
     private static final long serialVersionUID = -8568375717973520316L;
 
-    @Schema(description = "应用 ID")
+    @Schema(description = "app id")
     private String appId;
 
-    @Schema(description = "应用名称")
+    @Schema(description = "app name")
     private String appName;
 
-    @Schema(description = "分享链接")
+    @Schema(description = "share url")
     private String shareUrl;
 
-    @Schema(description = "二维码 Data URL")
+    @Schema(description = "QR code data URL")
     private String qrCodeDataUrl;
 }

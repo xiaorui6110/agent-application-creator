@@ -40,6 +40,7 @@ import java.util.concurrent.TimeoutException;
 public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask> implements AgentTaskService {
 
     private static final int MAX_RETRY = 3;
+    private static final String TASK_INPUT_KEY_PREFIX = "agent:task:input:";
 
     @Resource
     private RedisTemplate<String, AgentTask> agentTaskRedisTemplate;
@@ -61,7 +62,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
     private AgentTaskStreamManager agentTaskStreamManager;
 
     @Override
-    public void initTask(String taskId, String threadId, String appId) {
+    public void initTask(String taskId, String threadId, String appId, String originalMessage) {
         AgentTask state = new AgentTask();
         state.setTaskId(taskId);
         state.setThreadId(threadId);
@@ -71,6 +72,7 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         state.setCreateTime(LocalDateTime.now());
         state.setUpdateTime(LocalDateTime.now());
         saveTaskState(state);
+        saveOriginalMessage(taskId, originalMessage);
         persistAsync(state);
         agentTaskStreamManager.publishStatus(taskId, buildTaskOutputSnapshot(state, false));
     }
@@ -193,6 +195,14 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
         defaultAgentOrchestrator.manualRetry(task);
     }
 
+    @Override
+    public String getOriginalMessage(String taskId) {
+        if (taskId == null || taskId.trim().isEmpty()) {
+            return null;
+        }
+        return stringRedisTemplate.opsForValue().get(TASK_INPUT_KEY_PREFIX + taskId);
+    }
+
     private AgentFailTypeEnum classify(Throwable error) {
         if (error instanceof TimeoutException || error instanceof IOException) {
             return AgentFailTypeEnum.SYSTEM_RETRYABLE;
@@ -202,6 +212,13 @@ public class AgentTaskServiceImpl extends ServiceImpl<AgentTaskMapper, AgentTask
 
     private long backoffSeconds(int retryCount) {
         return Math.min(1L << retryCount, 30L);
+    }
+
+    private void saveOriginalMessage(String taskId, String originalMessage) {
+        if (taskId == null || taskId.trim().isEmpty() || originalMessage == null) {
+            return;
+        }
+        stringRedisTemplate.opsForValue().set(TASK_INPUT_KEY_PREFIX + taskId, originalMessage, 24, TimeUnit.HOURS);
     }
 
     private AgentTask getTaskState(String taskId) {

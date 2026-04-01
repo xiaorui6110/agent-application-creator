@@ -8,43 +8,41 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * @description: 用户 vo
- * @author: xiaorui
- * @date: 2025-11-30 14:02
- **/
+ * @author xiaorui
+ */
 @Data
 public class UserVO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -76161459138373646L;
 
-    @Schema(description = "用户 id")
+    @Schema(description = "user id")
     private String userId;
 
-    @Schema(description = "用户昵称")
+    @Schema(description = "nickname")
     private String nickName;
 
-    @Schema(description = "用户头像")
+    @Schema(description = "user avatar")
     private String userAvatar;
 
-    @Schema(description = "用户邮箱")
+    @Schema(description = "user email")
     private String userEmail;
 
-    @Schema(description = "用户性别 m-男 f-女")
+    @Schema(description = "user sex: m or f")
     private String userSex;
 
-    @Schema(description = "用户生日 yyyy-mm-dd")
+    @Schema(description = "user birthday: yyyy-mm-dd")
     private String userBirthday;
 
-    @Schema(description = "用户简介")
+    @Schema(description = "user profile")
     private String userProfile;
 
-    @Schema(description = "用户角色")
+    @Schema(description = "user role")
     private String userRole;
 
-    @Schema(description = "用户状态 1-正常 2-封禁")
+    @Schema(description = "user status: 1 normal, 2 banned")
     private Integer userStatus;
 
-    @Schema(description = "创建时间")
+    @Schema(description = "create time")
     private LocalDateTime createTime;
 }

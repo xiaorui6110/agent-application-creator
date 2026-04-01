@@ -20,6 +20,7 @@ import com.xiaorui.agentapplicationcreator.service.AppVersionService;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -44,20 +45,16 @@ public class AppTemplateServiceImpl extends ServiceImpl<AppTemplateMapper, AppTe
     private AppProperties appProperties;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public AppTemplateVO createTemplateFromApp(String appId, String templateName, String templateDescription) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
         ThrowUtil.throwIf(StrUtil.isBlank(templateName), ErrorCode.PARAMS_ERROR, "templateName is blank");
 
-        App app = appService.getById(appId);
-        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
-
+        App app = appService.validateAppAccess(appId);
         String currentUserId = resolveCurrentUserId();
-        ThrowUtil.throwIf(!currentUserId.equals(app.getUserId()), ErrorCode.NOT_AUTH_ERROR,
-                "no access to create template from this app");
 
         File sourceDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
-        ThrowUtil.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(), ErrorCode.NOT_FOUND_ERROR,
-                "app source directory not found");
+        validateTemplateSource(app, sourceDir);
 
         AppTemplate appTemplate = AppTemplate.builder()
                 .templateName(templateName)
@@ -70,24 +67,30 @@ public class AppTemplateServiceImpl extends ServiceImpl<AppTemplateMapper, AppTe
                 .updateTime(LocalDateTime.now())
                 .isDeleted(0)
                 .build();
-        boolean saved = this.save(appTemplate);
-        ThrowUtil.throwIf(!saved, ErrorCode.OPERATION_ERROR, "failed to save app template");
+        Path templateRoot = null;
+        boolean saved = false;
+        try {
+            saved = this.save(appTemplate);
+            ThrowUtil.throwIf(!saved, ErrorCode.OPERATION_ERROR, "failed to save app template");
 
-        Path templateRoot = appProperties.resolveTemplateDir(appTemplate.getTemplateId());
-        File templateRootFile = templateRoot.toFile();
-        File templateFilesDir = templateRoot.resolve(TEMPLATE_FILES_DIR).toFile();
-        FileUtil.mkdir(templateFilesDir);
-        FileUtil.copyContent(sourceDir, templateFilesDir, true);
+            templateRoot = appProperties.resolveTemplateDir(appTemplate.getTemplateId());
+            File templateFilesDir = templateRoot.resolve(TEMPLATE_FILES_DIR).toFile();
+            FileUtil.mkdir(templateFilesDir);
+            FileUtil.copyContent(sourceDir, templateFilesDir, true);
 
-        AppTemplate updateTemplate = new AppTemplate();
-        updateTemplate.setTemplateId(appTemplate.getTemplateId());
-        updateTemplate.setStoragePath(appTemplate.getTemplateId());
-        updateTemplate.setUpdateTime(LocalDateTime.now());
-        boolean updated = this.updateById(updateTemplate);
-        ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update app template storage path");
+            AppTemplate updateTemplate = new AppTemplate();
+            updateTemplate.setTemplateId(appTemplate.getTemplateId());
+            updateTemplate.setStoragePath(appTemplate.getTemplateId());
+            updateTemplate.setUpdateTime(LocalDateTime.now());
+            boolean updated = this.updateById(updateTemplate);
+            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update app template storage path");
 
-        appTemplate.setStoragePath(appTemplate.getTemplateId());
-        return toVO(appTemplate);
+            appTemplate.setStoragePath(appTemplate.getTemplateId());
+            return toVO(appTemplate);
+        } catch (Exception e) {
+            cleanupTemplateCreation(appTemplate, templateRoot, saved);
+            throw e;
+        }
     }
 
     @Override
@@ -97,11 +100,12 @@ public class AppTemplateServiceImpl extends ServiceImpl<AppTemplateMapper, AppTe
                 .orderBy(AppTemplate::getCreateTime, false)
                 .list()
                 .stream()
-                .map(this::toVO)
+                .map(this::toPublicVO)
                 .toList();
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public String createAppFromTemplate(String templateId, String appName, String appDescription) {
         ThrowUtil.throwIf(StrUtil.isBlank(templateId), ErrorCode.PARAMS_ERROR, "templateId is blank");
 
@@ -117,31 +121,44 @@ public class AppTemplateServiceImpl extends ServiceImpl<AppTemplateMapper, AppTe
                 "template files not found");
 
         String initPrompt = "create from template: " + appTemplate.getTemplateName();
-        String appId = appService.createApp(initPrompt);
-        App app = new App();
-        app.setAppId(appId);
-        app.setAppName(StrUtil.blankToDefault(appName, appTemplate.getTemplateName()));
-        app.setAppDescription(StrUtil.blankToDefault(appDescription, appTemplate.getTemplateDescription()));
-        app.setCodeGenType(appTemplate.getCodeGenType());
-        app.setUpdateTime(LocalDateTime.now());
-        boolean updated = appService.updateById(app);
-        ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to initialize app from template");
+        String appId = null;
+        try {
+            appId = appService.createApp(initPrompt);
+            App app = new App();
+            app.setAppId(appId);
+            app.setAppName(StrUtil.blankToDefault(appName, appTemplate.getTemplateName()));
+            app.setAppDescription(StrUtil.blankToDefault(appDescription, appTemplate.getTemplateDescription()));
+            app.setCodeGenType(appTemplate.getCodeGenType());
+            app.setUpdateTime(LocalDateTime.now());
+            boolean updated = appService.updateById(app);
+            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to initialize app from template");
 
-        File targetDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
-        if (targetDir.exists()) {
-            FileUtil.clean(targetDir);
-        } else {
-            FileUtil.mkdir(targetDir);
+            File targetDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
+            if (targetDir.exists()) {
+                FileUtil.clean(targetDir);
+            } else {
+                FileUtil.mkdir(targetDir);
+            }
+            FileUtil.copyContent(templateFilesDir, targetDir, true);
+            appVersionService.createVersionSnapshot(appId, AppVersionSourceEnum.GENERATED.getValue(),
+                    "generated from template " + appTemplate.getTemplateName(), null);
+            return appId;
+        } catch (Exception e) {
+            cleanupAppCreationFromTemplate(appId);
+            throw e;
         }
-        FileUtil.copyContent(templateFilesDir, targetDir, true);
-        appVersionService.createVersionSnapshot(appId, AppVersionSourceEnum.GENERATED.getValue(),
-                "generated from template " + appTemplate.getTemplateName(), null);
-        return appId;
     }
 
     private AppTemplateVO toVO(AppTemplate appTemplate) {
         AppTemplateVO appTemplateVO = BeanUtil.copyProperties(appTemplate, AppTemplateVO.class);
         appTemplateVO.setCreatedTime(appTemplate.getCreateTime());
+        return appTemplateVO;
+    }
+
+    private AppTemplateVO toPublicVO(AppTemplate appTemplate) {
+        AppTemplateVO appTemplateVO = toVO(appTemplate);
+        appTemplateVO.setSourceAppId(null);
+        appTemplateVO.setCreatedBy(null);
         return appTemplateVO;
     }
 
@@ -169,5 +186,38 @@ public class AppTemplateServiceImpl extends ServiceImpl<AppTemplateMapper, AppTe
             return appTemplate.getTemplateId();
         }
         return storagePath;
+    }
+
+    private void validateTemplateSource(App app, File sourceDir) {
+        ThrowUtil.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(), ErrorCode.NOT_FOUND_ERROR,
+                "app source directory not found");
+        File[] children = sourceDir.listFiles();
+        ThrowUtil.throwIf(children == null || children.length == 0, ErrorCode.NOT_FOUND_ERROR,
+                "app source files not found");
+        File entryFile = resolveEntryFilePath(app, sourceDir);
+        ThrowUtil.throwIf(!entryFile.exists() || !entryFile.isFile(), ErrorCode.NOT_FOUND_ERROR,
+                "template entry file not found: " + entryFile.getName());
+    }
+
+    private File resolveEntryFilePath(App app, File sourceDir) {
+        String entryFile = resolveEntryFile(app);
+        return sourceDir.toPath().resolve(entryFile).normalize().toFile();
+    }
+
+    private void cleanupTemplateCreation(AppTemplate appTemplate, Path templateRoot, boolean saved) {
+        if (templateRoot != null) {
+            FileUtil.del(templateRoot.toFile());
+        }
+        if (saved && appTemplate != null && StrUtil.isNotBlank(appTemplate.getTemplateId())) {
+            this.removeById(appTemplate.getTemplateId());
+        }
+    }
+
+    private void cleanupAppCreationFromTemplate(String appId) {
+        if (StrUtil.isBlank(appId)) {
+            return;
+        }
+        FileUtil.del(appProperties.resolveCodeOutputAppDir(appId).toFile());
+        appService.removeById(appId);
     }
 }

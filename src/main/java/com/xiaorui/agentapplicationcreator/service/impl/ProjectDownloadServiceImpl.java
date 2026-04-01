@@ -6,6 +6,7 @@ import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
+import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.ProjectDownloadService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,9 +49,13 @@ public class ProjectDownloadServiceImpl implements ProjectDownloadService {
     @Resource
     private AppProperties appProperties;
 
+    @Resource
+    private AppService appService;
+
     @Override
     public boolean downloadProjectAsZip(String appId, HttpServletResponse response) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
+        appService.validateAppAccess(appId);
         File projectDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
         ThrowUtil.throwIf(!projectDir.exists(), ErrorCode.NOT_FOUND_ERROR, "project directory not found");
         ThrowUtil.throwIf(!projectDir.isDirectory(), ErrorCode.SYSTEM_ERROR, "project path is not a directory");

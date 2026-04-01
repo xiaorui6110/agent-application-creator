@@ -22,6 +22,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -92,6 +93,7 @@ public class AppVersionServiceImpl extends ServiceImpl<AppVersionMapper, AppVers
     @Override
     public List<AppVersionVO> listAppVersions(String appId) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
+        appService.validateAppAccess(appId);
         return QueryChain.of(AppVersion.class)
                 .eq(AppVersion::getAppId, appId)
                 .eq(AppVersion::getIsDeleted, 0)
@@ -103,9 +105,11 @@ public class AppVersionServiceImpl extends ServiceImpl<AppVersionMapper, AppVers
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean restoreVersion(String appId, String appVersionId) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
         ThrowUtil.throwIf(StrUtil.isBlank(appVersionId), ErrorCode.PARAMS_ERROR, "appVersionId is blank");
+        appService.validateAppAccess(appId);
 
         AppVersion appVersion = QueryChain.of(AppVersion.class)
                 .eq(AppVersion::getAppVersionId, appVersionId)
@@ -119,20 +123,45 @@ public class AppVersionServiceImpl extends ServiceImpl<AppVersionMapper, AppVers
         ThrowUtil.throwIf(!snapshotDirFile.exists() || !snapshotDirFile.isDirectory(), ErrorCode.NOT_FOUND_ERROR, "snapshot directory not found");
 
         File targetDir = appProperties.resolveCodeOutputAppDir(appId).toFile();
+        Path backupDir = appProperties.resolvePathWithinRoot(
+                appProperties.getCodeOutputRootPath(),
+                appId + "_restore_backup"
+        );
+        File backupDirFile = backupDir.toFile();
+        App existingApp = appService.getById(appId);
+        String previousDeployUrl = existingApp == null ? null : existingApp.getDeployUrl();
+        LocalDateTime previousDeployedTime = existingApp == null ? null : existingApp.getDeployedTime();
         try {
+            if (backupDirFile.exists()) {
+                FileUtil.del(backupDirFile);
+            }
             if (targetDir.exists()) {
+                FileUtil.copyContent(targetDir, backupDirFile, true);
                 FileUtil.clean(targetDir);
             } else {
                 FileUtil.mkdir(targetDir);
             }
+            if (targetDir.exists()) {
+                FileUtil.mkdir(targetDir);
+            }
             FileUtil.copyContent(snapshotDirFile, targetDir, true);
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to restore app version: " + e.getMessage());
-        }
 
-        createVersionSnapshot(appId, AppVersionSourceEnum.RESTORED.getValue(),
-                "restore from version #" + appVersion.getVersionNumber(), appVersion.getDeployUrl());
-        return true;
+            App updateApp = new App();
+            updateApp.setAppId(appId);
+            updateApp.setUpdateTime(LocalDateTime.now());
+            updateApp.setDeployUrl(null);
+            updateApp.setDeployedTime(null);
+            boolean updated = appService.updateById(updateApp);
+            ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to reset deploy status after restore");
+
+            createVersionSnapshot(appId, AppVersionSourceEnum.RESTORED.getValue(),
+                    "restore from version #" + appVersion.getVersionNumber(), appVersion.getDeployUrl());
+            FileUtil.del(backupDirFile);
+            return true;
+        } catch (Exception e) {
+            rollbackRestoreFailure(targetDir, backupDirFile, appId, previousDeployUrl, previousDeployedTime);
+            throw e;
+        }
     }
 
     private int getNextVersionNumber(String appId) {
@@ -168,5 +197,33 @@ public class AppVersionServiceImpl extends ServiceImpl<AppVersionMapper, AppVers
             return "restore snapshot v" + versionNumber;
         }
         return "generated snapshot v" + versionNumber;
+    }
+
+    private void rollbackRestoreFailure(
+            File targetDir,
+            File backupDirFile,
+            String appId,
+            String previousDeployUrl,
+            LocalDateTime previousDeployedTime
+    ) {
+        try {
+            if (targetDir.exists()) {
+                FileUtil.clean(targetDir);
+            } else {
+                FileUtil.mkdir(targetDir);
+            }
+            if (backupDirFile.exists()) {
+                FileUtil.copyContent(backupDirFile, targetDir, true);
+                FileUtil.del(backupDirFile);
+            }
+            App restoreApp = new App();
+            restoreApp.setAppId(appId);
+            restoreApp.setUpdateTime(LocalDateTime.now());
+            restoreApp.setDeployUrl(previousDeployUrl);
+            restoreApp.setDeployedTime(previousDeployedTime);
+            appService.updateById(restoreApp);
+        } catch (Exception rollbackError) {
+            log.error("failed to rollback restore operation, appId={}", appId, rollbackError);
+        }
     }
 }

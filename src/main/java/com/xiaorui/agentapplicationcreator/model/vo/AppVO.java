@@ -17,57 +17,57 @@ public class AppVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 3583557824430216469L;
 
-    @Schema(description = "应用id")
+    @Schema(description = "app id")
     private String appId;
 
-    @Schema(description = "应用名称")
+    @Schema(description = "app name")
     private String appName;
 
-    @Schema(description = "应用封面")
+    @Schema(description = "app cover")
     private String appCover;
 
-    @Schema(description = "应用初始化 prompt")
+    @Schema(description = "app initial prompt")
     private String appInitPrompt;
 
-    @Schema(description = "应用描述")
+    @Schema(description = "app description")
     private String appDescription;
 
-    @Schema(description = "代码生成类型")
+    @Schema(description = "code generation type")
     private CodeGenTypeEnum codeGenType;
 
-    @Schema(description = "应用排序优先级")
+    @Schema(description = "app priority")
     private Integer appPriority;
 
-    @Schema(description = "应用分类")
+    @Schema(description = "app category")
     private String appCategory;
 
-    @Schema(description = "推荐分")
+    @Schema(description = "recommendation score")
     private Double recommendScore;
 
-    @Schema(description = "部署访问地址")
+    @Schema(description = "deploy url")
     private String deployUrl;
 
-    @Schema(description = "部署时间")
+    @Schema(description = "deploy time")
     private LocalDateTime deployedTime;
 
-    @Schema(description = "评论数")
+    @Schema(description = "comment count")
     private Long commentCount;
 
-    @Schema(description = "点赞数")
+    @Schema(description = "like count")
     private Long likeCount;
 
-    @Schema(description = "分享数")
+    @Schema(description = "share count")
     private Long shareCount;
 
-    @Schema(description = "浏览量")
+    @Schema(description = "view count")
     private Long viewCount;
 
-    @Schema(description = "创建时间")
+    @Schema(description = "create time")
     private LocalDateTime createTime;
 
-    @Schema(description = "更新时间")
+    @Schema(description = "update time")
     private LocalDateTime updateTime;
 
-    @Schema(description = "创建用户信息")
+    @Schema(description = "creator user info")
     private UserVO userVO;
 }

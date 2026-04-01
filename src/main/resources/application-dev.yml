@@ -1,9 +1,7 @@
-# dev environment（生产环境）
 server:
   port: 8123
   servlet:
     context-path: /api
-    # cookie 7 天过期
     session:
       cookie:
         max-age: 604800
@@ -13,10 +11,10 @@ server:
     connection-timeout: 20000
     threads:
       max: 200
+
 spring:
   application:
     name: agent-application-creator
-  # 文件上传设置
   servlet:
     multipart:
       max-file-size: 100MB
@@ -24,51 +22,39 @@ spring:
       enabled: true
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: Asia/Shanghai  # 统一Jackson序列化时区（东八区）
-  # 数据库配置
+    time-zone: Asia/Shanghai
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/xiaorui_app_creator?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
-    # HikariCP 连接池配置
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/xiaorui_app_creator?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
     hikari:
-      # 最小空闲连接数
       minimum-idle: 5
-      # 最大连接池大小
       maximum-pool-size: 20
-      # 连接超时时间（毫秒）
       connection-timeout: 30000
-      # 空闲连接存活最大时间（毫秒）
       idle-timeout: 600000
-      # 连接最大存活时间（毫秒）
       max-lifetime: 1800000
-      # 连接测试查询
       connection-test-query: SELECT 1
-  # Session 配置
   session:
     redis:
-      namespace: "xiaorui:session" # 定义存储在 Redis 中的 session 数据的命名空间
-      flush-mode: on_save  # 每次保存或更新 session 时立即将数据同步到 Redis
-      save-mode: always  # 每次请求结束时都保存 session
-  # 邮箱配置
+      namespace: ${SPRING_SESSION_REDIS_NAMESPACE:agent-app:session}
+      flush-mode: on_save
+      save-mode: always
   mail:
-    username: 368649957@qq.com
-    password: ozxbkjocwsaicbag  # 邮箱授权码
-    host: smtp.qq.com  # SMTP服务器地址
-    port: 465  # SMTP服务器端口
+    username: ${SPRING_MAIL_USERNAME:368649957@qq.com}
+    password: ${SPRING_MAIL_PASSWORD:ozxbkjocwsaicbag}
+    host: ${SPRING_MAIL_HOST:smtp.qq.com}
+    port: ${SPRING_MAIL_PORT:465}
   security:
     user:
-      name: xiaorui
-      password: 123456
-  # Redis 配置
+      name: ${SPRING_SECURITY_USER_NAME:xiaorui}
+      password: ${SPRING_SECURITY_USER_PASSWORD:123456}
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
-      database: 0
-      # Redis 密码，如果有的话
-      #password: 123456
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: ${SPRING_DATA_REDIS_DATABASE:0}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
       timeout: 10000ms
       lettuce:
         pool:
@@ -77,30 +63,24 @@ spring:
           min-idle: 10
           max-wait: 10000ms
         shutdown-timeout: 200ms
-  # AI 配置
   ai:
     dashscope:
-      api-key: sk-b1aea9f904d6478db3fa8bf439a1a460  # 阿里云百炼
+      api-key: ${DASHSCOPE_API_KEY:sk-b1aea9f904d6478db3fa8bf439a1a460}
       chat:
         options:
-          model: "qwen3-coder-plus"  # 这里使用 通义千问3-Coder-Plus
+          model: ${DASHSCOPE_CHAT_MODEL:qwen3-coder-plus}
           stream: true
-          incremental-output: true  # 开启增量输出
-          temperature: 0.1  # 设置在 0.1 至 0.3 之间，以减少生成结果的随机性。
-# Sa-Token 权限认证
+          incremental-output: true
+          temperature: ${DASHSCOPE_CHAT_TEMPERATURE:0.1}
+
 sa-token:
-  # token名称 (同时也是cookie名称)
   token-name: Authorization
   timeout: 2592000
-  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
   is-concurrent: false
-  # 在多人登录同一账号时，是否共用一个token(不共用，避免登出时导致其他用户也登出)
   is-share: false
-  # token风格(默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik)
   token-style: uuid
-  # 是否输出操作日志
   is-log: false
-# springdoc-openapi（4 版本的 knife4j 接口文档依赖于 springdoc）
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -109,27 +89,27 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   group-configs:
-    - group: 'default'
-      paths-to-match: '/**'
+    - group: "default"
+      paths-to-match: "/**"
       packages-to-scan: com.xiaorui.agentapplicationcreator.controller
-# knife4j 接口文档
+
 knife4j:
   enable: true
   setting:
     language: zh_cn
-# minio 配置
+
 minio:
-  endpoint: http://172.19.48.249:9000  # minio服务器API地址（linux）
-  access-key: xiaorui   # minio服务器用户名
-  secret-key: 18656412886ty   # minio服务器密码
-  default-bucket: agent-app-creator-bucket  # 创建的 bucket 名称
-# sftp 配置
+  endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+  access-key: ${MINIO_ACCESS_KEY:xiaorui}
+  secret-key: ${MINIO_SECRET_KEY:18656412886ty}
+  default-bucket: ${MINIO_DEFAULT_BUCKET:agent-app-creator-bucket}
+
 sftp:
-  host: 172.19.48.249  # Linux服务器IP
-  port: 22  # SFTP端口（默认22）
-  username: root   # 服务器用户名
-  password: 123456   # 服务器密码
-# Actuator 监控配置，暴露监控端点（暂时未使用）
+  host: ${SFTP_HOST:172.19.48.249}
+  port: ${SFTP_PORT:22}
+  username: ${SFTP_USERNAME:root}
+  password: ${SFTP_PASSWORD:123456}
+
 management:
   endpoints:
     web:
@@ -138,10 +118,13 @@ management:
   endpoint:
     health:
       show-details: always
+
 app:
   storage:
     code-output-dir: ${APP_CODE_OUTPUT_DIR:${user.dir}/tmp/code_output}
     code-deploy-dir: ${APP_CODE_DEPLOY_DIR:${user.dir}/tmp/code_deploy}
+    code-version-dir: ${APP_CODE_VERSION_DIR:${user.dir}/tmp/code_version}
+    code-template-dir: ${APP_CODE_TEMPLATE_DIR:${user.dir}/tmp/code_template}
   deploy:
     public-base-url: ${APP_DEPLOY_PUBLIC_BASE_URL:http://172.19.48.249}
     remote-dir: ${APP_REMOTE_DEPLOY_DIR:/home/xiaorui/nginx/code_deploy/}
@@ -150,7 +133,6 @@ app:
       allowed-origin-patterns:
         - ${APP_CORS_API_ALLOWED_ORIGIN_1:http://localhost:*}
         - ${APP_CORS_API_ALLOWED_ORIGIN_2:http://127.0.0.1:*}
-        - ${APP_CORS_API_ALLOWED_ORIGIN_3:http://172.19.48.249:*}
       allowed-methods:
         - GET
         - POST
@@ -167,7 +149,6 @@ app:
       allowed-origin-patterns:
         - ${APP_CORS_STATIC_ALLOWED_ORIGIN_1:http://localhost:*}
         - ${APP_CORS_STATIC_ALLOWED_ORIGIN_2:http://127.0.0.1:*}
-        - ${APP_CORS_STATIC_ALLOWED_ORIGIN_3:http://172.19.48.249:*}
       allowed-methods:
         - GET
         - HEAD

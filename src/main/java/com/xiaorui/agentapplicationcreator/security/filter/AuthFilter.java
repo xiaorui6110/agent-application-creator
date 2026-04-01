@@ -113,7 +113,7 @@ public class AuthFilter implements Filter {
             return null;
         }
         try {
-            StpUtil.checkLogin();
+            StpUtil.getLoginIdByToken(accessToken);
             return tokenStoreManager.getUserInfoByAccessToken(accessToken, true);
         } catch (Exception e) {
             return null;

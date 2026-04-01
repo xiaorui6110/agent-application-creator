@@ -16,27 +16,27 @@ public class CommunityNotificationVO implements Serializable {
     @Serial
     private static final long serialVersionUID = 6990568827800254671L;
 
-    @Schema(description = "消息类型 COMMENT/LIKE/SHARE")
+    @Schema(description = "notification type: COMMENT, LIKE, SHARE")
     private String notificationType;
 
-    @Schema(description = "消息记录id")
+    @Schema(description = "notification record id")
     private String notificationId;
 
-    @Schema(description = "触发用户id")
+    @Schema(description = "actor user id")
     private String actorUserId;
 
-    @Schema(description = "触发用户昵称")
+    @Schema(description = "actor user name")
     private String actorUserName;
 
-    @Schema(description = "关联应用id")
+    @Schema(description = "related app id")
     private String appId;
 
-    @Schema(description = "关联应用名称")
+    @Schema(description = "related app name")
     private String appName;
 
-    @Schema(description = "消息内容")
+    @Schema(description = "notification content")
     private String content;
 
-    @Schema(description = "消息时间")
+    @Schema(description = "notification time")
     private LocalDateTime actionTime;
 }

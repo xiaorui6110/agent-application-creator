@@ -45,21 +45,23 @@ public class StaticResourceController {
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
 
     @GetMapping("/preview/{appId}/**")
-    @Operation(summary = "访问预览应用", description = "访问预览应用")
-    @Parameter(name = "appId", description = "应用 ID")
+    @Operation(summary = "visit app preview", description = "visit app preview")
+    @Parameter(name = "appId", description = "app id")
     public ResponseEntity<org.springframework.core.io.Resource> serveStaticPreviewResource(@PathVariable String appId, HttpServletRequest request) {
         return getResource(PREVIEW, appId, request);
     }
 
     @GetMapping("/deploy/{deployKey}/**")
-    @Operation(summary = "访问部署应用", description = "访问部署应用")
-    @Parameter(name = "deployKey", description = "部署 key")
+    @Operation(summary = "visit deployed app", description = "visit deployed app")
+    @Parameter(name = "deployKey", description = "deploy key")
     public ResponseEntity<org.springframework.core.io.Resource> serveStaticDeployResource(@PathVariable String deployKey, HttpServletRequest request) {
         return getResource(DEPLOY, deployKey, request);
     }
 
-    private ResponseEntity<org.springframework.core.io.Resource> getResource(StaticVisitTypeEnum visitType, String appIdOrDeployKey,
-                                                 HttpServletRequest request) {
+    private ResponseEntity<org.springframework.core.io.Resource> getResource(
+            StaticVisitTypeEnum visitType,
+            String appIdOrDeployKey,
+            HttpServletRequest request) {
         try {
             String resourcePath = resolveResourcePath(request);
             if (resourcePath.isEmpty()) {
@@ -76,7 +78,6 @@ public class StaticResourceController {
 
             Path basePath = resolveBasePath(visitType, appIdOrDeployKey);
             Path resolvedPath = appProperties.resolvePathWithinRoot(basePath, resourcePath.substring(1));
-
             File file = resolvedPath.toFile();
             if (!file.exists() || !file.isFile()) {
                 return ResponseEntity.notFound().build();
@@ -104,6 +105,7 @@ public class StaticResourceController {
 
     private Path resolveBasePath(StaticVisitTypeEnum visitType, String appIdOrDeployKey) {
         if (PREVIEW.equals(visitType)) {
+            appService.validateAppAccess(appIdOrDeployKey);
             return appProperties.resolveCodeOutputAppDir(appIdOrDeployKey);
         }
         if (DEPLOY.equals(visitType)) {
@@ -116,7 +118,7 @@ public class StaticResourceController {
         if (DEPLOY.equals(visitType)) {
             return "/index.html";
         }
-        App app = appService.getById(appIdOrDeployKey);
+        App app = appService.validateAppAccess(appIdOrDeployKey);
         if (app != null && CodeGenTypeEnum.VUE_PROJECT.getValue().equals(app.getCodeGenType())) {
             return "/dist/index.html";
         }

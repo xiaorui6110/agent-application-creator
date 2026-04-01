@@ -9,10 +9,8 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * @description: 用户查询请求
- * @author: xiaorui
- * @date: 2025-11-30 13:58
- **/
+ * @author xiaorui
+ */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class UserQueryRequest extends PageRequest implements Serializable {
@@ -20,16 +18,9 @@ public class UserQueryRequest extends PageRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = -4804821250622563683L;
 
-    /**
-     * 用户id
-     */
-    @Schema(description = "用户id")
+    @Schema(description = "user id")
     private String userId;
 
-    /**
-     * 用户昵称
-     */
-    @Schema(description = "用户昵称")
+    @Schema(description = "nickname")
     private String nickName;
-
 }

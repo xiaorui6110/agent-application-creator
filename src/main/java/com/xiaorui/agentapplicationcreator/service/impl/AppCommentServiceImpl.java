@@ -54,6 +54,7 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
     private AppService appService;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean addAppComment(AppCommentAddRequest appCommentAddRequest) {
         String userId = SecurityUtil.getUserInfo().getUserId();
         User loginUser = userService.getById(userId);
@@ -112,11 +113,6 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
 
     @Override
     public Page<AppCommentVO> queryAppComment(AppCommentQueryRequest appCommentQueryRequest) {
-        String userId = SecurityUtil.getUserInfo().getUserId();
-        User loginUser = userService.getById(userId);
-        if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
-        }
         ThrowUtil.throwIf(StrUtil.isBlank(appCommentQueryRequest.getAppId()), ErrorCode.PARAMS_ERROR, "app id is empty");
 
         Page<AppComment> page = new Page<>(appCommentQueryRequest.getCurrent(), appCommentQueryRequest.getPageSize());
@@ -139,52 +135,74 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean likeAppComment(AppCommentLikeRequest appCommentLikeRequest) {
-        ThrowUtil.throwIf(appCommentLikeRequest.getCommentId() == null, ErrorCode.PARAMS_ERROR, "comment id is empty");
+        ThrowUtil.throwIf(appCommentLikeRequest == null, ErrorCode.PARAMS_ERROR, "comment like request is null");
+        ThrowUtil.throwIf(StrUtil.isBlank(appCommentLikeRequest.getCommentId()), ErrorCode.PARAMS_ERROR, "comment id is empty");
         ThrowUtil.throwIf(appCommentLikeRequest.getLikeType() == null, ErrorCode.PARAMS_ERROR, "like type is empty");
 
-        if (appCommentLikeRequest.getLikeType() == LIKE || appCommentLikeRequest.getLikeCount() != 0) {
-            UpdateChain.of(AppComment.class)
-                    .setRaw(AppComment::getLikeCount, "like_count + 1")
-                    .where(AppComment::getCommentId).eq(appCommentLikeRequest.getCommentId())
-                    .update();
+        String userId = SecurityUtil.getUserInfo().getUserId();
+        ThrowUtil.throwIf(StrUtil.isBlank(userId), ErrorCode.NOT_LOGIN_ERROR, "user not logged in");
+        User loginUser = userService.getById(userId);
+        ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR, "user not found");
+
+        AppComment comment = this.getById(appCommentLikeRequest.getCommentId());
+        ThrowUtil.throwIf(comment == null || Integer.valueOf(1).equals(comment.getIsDeleted()),
+                ErrorCode.NOT_FOUND_ERROR, "comment not found");
+
+        long currentLikeCount = comment.getLikeCount() == null ? 0L : comment.getLikeCount();
+        if (appCommentLikeRequest.getLikeType() == LIKE) {
+            comment.setLikeCount(currentLikeCount + 1);
+        } else if (appCommentLikeRequest.getLikeType() == CANCEL_LIKE) {
+            comment.setLikeCount(Math.max(0L, currentLikeCount - 1));
         }
-        if (appCommentLikeRequest.getLikeType() == CANCEL_LIKE) {
-            UpdateChain.of(AppComment.class)
-                    .setRaw(AppComment::getLikeCount, "like_count - 1")
-                    .where(AppComment::getCommentId).eq(appCommentLikeRequest.getCommentId())
-                    .update();
-        }
-        if (appCommentLikeRequest.getDislikeCount() != null && appCommentLikeRequest.getDislikeCount() != 0) {
-            UpdateChain.of(AppComment.class)
-                    .setRaw(AppComment::getDislikeCount, "dislike_count + 1")
-                    .where(AppComment::getCommentId).eq(appCommentLikeRequest.getCommentId())
-                    .update();
-        }
+        comment.setUpdateTime(LocalDateTime.now());
+        boolean updated = this.updateById(comment);
+        ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update comment like count");
         return true;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public List<AppCommentVO> getAndClearUnreadAppComment(String userId) {
+    public List<AppCommentVO> listUnreadAppComments(String userId, int limit) {
+        int finalLimit = Math.max(1, limit);
         QueryWrapper queryWrapper = new QueryWrapper()
                 .eq("app_user_id", userId)
                 .eq("is_read", 0)
                 .eq("is_deleted", 0)
                 .ne("user_id", userId)
                 .orderBy("create_time", false)
-                .limit(50);
+                .limit(finalLimit);
         List<AppComment> unreadComments = this.list(queryWrapper);
         if (CollUtil.isEmpty(unreadComments)) {
             return new ArrayList<>();
         }
+        return buildCommentVOList(unreadComments, true);
+    }
 
-        List<String> commentIds = unreadComments.stream().map(AppComment::getCommentId).toList();
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markCommentsAsRead(String userId, List<String> commentIds) {
+        if (StrUtil.isBlank(userId) || CollUtil.isEmpty(commentIds)) {
+            return;
+        }
         UpdateChain.of(AppComment.class)
                 .setRaw(AppComment::getIsRead, 1)
-                .where(AppComment::getCommentId).in(commentIds)
+                .where(AppComment::getAppUserId).eq(userId)
+                .and(AppComment::getCommentId).in(commentIds)
+                .and(AppComment::getIsRead).eq(0)
+                .and(AppComment::getIsDeleted).eq(0)
                 .update();
-        return buildCommentVOList(unreadComments, true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<AppCommentVO> getAndClearUnreadAppComment(String userId) {
+        List<AppCommentVO> unreadComments = listUnreadAppComments(userId, 50);
+        if (CollUtil.isEmpty(unreadComments)) {
+            return new ArrayList<>();
+        }
+        markCommentsAsRead(userId, unreadComments.stream().map(AppCommentVO::getCommentId).toList());
+        return unreadComments;
     }
 
     @Override
@@ -244,7 +262,8 @@ public class AppCommentServiceImpl extends ServiceImpl<AppCommentMapper, AppComm
         }
         long currentCount = app.getCommentCount() == null ? 0 : app.getCommentCount();
         app.setCommentCount(Math.max(0, currentCount + delta));
-        appService.updateById(app);
+        boolean updated = appService.updateById(app);
+        ThrowUtil.throwIf(!updated, ErrorCode.OPERATION_ERROR, "failed to update app comment count");
     }
 
     private int countCommentsRecursively(String commentId) {

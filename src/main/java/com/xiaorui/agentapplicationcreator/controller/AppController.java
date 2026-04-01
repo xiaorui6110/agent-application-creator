@@ -7,7 +7,6 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.xiaorui.agentapplicationcreator.common.DeleteRequest;
 import com.xiaorui.agentapplicationcreator.constant.AppConstant;
 import com.xiaorui.agentapplicationcreator.constant.UserConstant;
-import com.xiaorui.agentapplicationcreator.execption.BusinessException;
 import com.xiaorui.agentapplicationcreator.execption.ErrorCode;
 import com.xiaorui.agentapplicationcreator.execption.ThrowUtil;
 import com.xiaorui.agentapplicationcreator.manager.authority.annotation.AuthCheck;
@@ -20,7 +19,6 @@ import com.xiaorui.agentapplicationcreator.model.dto.app.AppQueryRequest;
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppUpdateInfoRequest;
 import com.xiaorui.agentapplicationcreator.model.dto.app.AppVersionRestoreRequest;
 import com.xiaorui.agentapplicationcreator.model.entity.App;
-import com.xiaorui.agentapplicationcreator.model.entity.User;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVO;
 import com.xiaorui.agentapplicationcreator.model.vo.AppTemplateVO;
 import com.xiaorui.agentapplicationcreator.model.vo.AppVersionVO;
@@ -29,7 +27,6 @@ import com.xiaorui.agentapplicationcreator.service.AppService;
 import com.xiaorui.agentapplicationcreator.service.AppTemplateService;
 import com.xiaorui.agentapplicationcreator.service.AppVersionService;
 import com.xiaorui.agentapplicationcreator.service.ProjectDownloadService;
-import com.xiaorui.agentapplicationcreator.service.UserService;
 import com.xiaorui.agentapplicationcreator.util.RedisCacheUtil;
 import com.xiaorui.agentapplicationcreator.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,11 +51,12 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/app")
 public class AppController {
 
-    @Resource
-    private AppService appService;
+    private static final long DEFAULT_PAGE_SIZE = 10L;
+    private static final long MAX_PAGE_SIZE = 50L;
+    private static final long MAX_ADMIN_PAGE_SIZE = 100L;
 
     @Resource
-    private UserService userService;
+    private AppService appService;
 
     @Resource
     private ProjectDownloadService projectDownloadService;
@@ -126,13 +124,7 @@ public class AppController {
     public ServerResponseEntity<Boolean> updateApp(@RequestBody AppUpdateInfoRequest appUpdateRequest) {
         ThrowUtil.throwIf(appUpdateRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         String appId = appUpdateRequest.getAppId();
-        App oldApp = appService.getById(appId);
-        ThrowUtil.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
-        ThrowUtil.throwIf(
-                !oldApp.getUserId().equals(SecurityUtil.getUserInfo().getUserId()),
-                ErrorCode.NOT_AUTH_ERROR,
-                "no access"
-        );
+        appService.validateAppAccess(appId);
 
         App app = new App();
         app.setAppId(appId);
@@ -166,6 +158,7 @@ public class AppController {
     @Parameter(name = "appQueryRequest", description = "app query request")
     public ServerResponseEntity<Page<AppVO>> listRecommendedApps(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        normalizePageRequest(appQueryRequest, MAX_PAGE_SIZE);
         return ServerResponseEntity.success(appService.listRecommendedApps(appQueryRequest));
     }
 
@@ -174,6 +167,7 @@ public class AppController {
     @Parameter(name = "appQueryRequest", description = "app query request")
     public ServerResponseEntity<Page<AppVO>> listRankedApps(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        normalizePageRequest(appQueryRequest, MAX_PAGE_SIZE);
         return ServerResponseEntity.success(appService.listRankedApps(appQueryRequest));
     }
 
@@ -185,14 +179,7 @@ public class AppController {
         String appId = deleteRequest.getId();
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
 
-        App oldApp = appService.getById(appId);
-        ThrowUtil.throwIf(oldApp == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
-
-        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
-        if (!oldApp.getUserId().equals(SecurityUtil.getUserInfo().getUserId())
-                && !UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access");
-        }
+        appService.validateAppAccess(appId);
         return ServerResponseEntity.success(appService.removeById(appId));
     }
 
@@ -201,15 +188,16 @@ public class AppController {
     @Parameter(name = "appQueryRequest", description = "app query request")
     public ServerResponseEntity<Page<AppVO>> listAppInfoByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        normalizePageRequest(appQueryRequest, MAX_PAGE_SIZE);
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
-        ThrowUtil.throwIf(current <= 0, ErrorCode.PARAMS_ERROR, "current must be greater than 0");
-        ThrowUtil.throwIf(pageSize <= 0, ErrorCode.PARAMS_ERROR, "pageSize must be greater than 0");
+        String currentUserId = SecurityUtil.getUserInfo().getUserId();
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
+        queryWrapper.eq("user_id", currentUserId);
         Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
 
         Page<AppVO> appInfoPage = new Page<>(current, pageSize, appPage.getTotalRow());
-        appInfoPage.setRecords(appService.getMyAppInfoList(appPage.getRecords()));
+        appInfoPage.setRecords(appService.getPrivateAppInfoList(appPage.getRecords()));
         return ServerResponseEntity.success(appInfoPage);
     }
 
@@ -218,11 +206,9 @@ public class AppController {
     @Parameter(name = "appQueryRequest", description = "app query request")
     public ServerResponseEntity<Page<AppVO>> listGoodAppInfoByPage(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        normalizePageRequest(appQueryRequest, 20L);
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
-        ThrowUtil.throwIf(current <= 0, ErrorCode.PARAMS_ERROR, "current must be greater than 0");
-        ThrowUtil.throwIf(pageSize <= 0, ErrorCode.PARAMS_ERROR, "pageSize must be greater than 0");
-        ThrowUtil.throwIf(pageSize > 20, ErrorCode.PARAMS_ERROR, "pageSize exceeds limit");
 
         String category = StrUtil.blankToDefault(appQueryRequest.getAppCategory(), "all");
         String cacheKey = "good_app:list:" + category + ":" + current + ":" + pageSize;
@@ -285,15 +271,14 @@ public class AppController {
     @Parameter(name = "appQueryRequest", description = "app query request")
     public ServerResponseEntity<Page<AppVO>> listAppInfoByPageByAdmin(@RequestBody AppQueryRequest appQueryRequest) {
         ThrowUtil.throwIf(appQueryRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
+        normalizePageRequest(appQueryRequest, MAX_ADMIN_PAGE_SIZE);
         long current = appQueryRequest.getCurrent();
         long pageSize = appQueryRequest.getPageSize();
-        ThrowUtil.throwIf(current <= 0, ErrorCode.PARAMS_ERROR, "current must be greater than 0");
-        ThrowUtil.throwIf(pageSize <= 0, ErrorCode.PARAMS_ERROR, "pageSize must be greater than 0");
         QueryWrapper queryWrapper = appService.getQueryWrapper(appQueryRequest);
         Page<App> appPage = appService.page(Page.of(current, pageSize), queryWrapper);
 
         Page<AppVO> appInfoPage = new Page<>(current, pageSize, appPage.getTotalRow());
-        appInfoPage.setRecords(appService.getAppInfoList(appPage.getRecords()));
+        appInfoPage.setRecords(appService.getPrivateAppInfoList(appPage.getRecords()));
         return ServerResponseEntity.success(appInfoPage);
     }
 
@@ -303,7 +288,7 @@ public class AppController {
     @Parameter(name = "appId", description = "app id")
     public ServerResponseEntity<AppVO> getAppInfoByIdByAdmin(@PathVariable String appId) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
-        return ServerResponseEntity.success(appService.getAppInfo(appId));
+        return ServerResponseEntity.success(appService.getPrivateAppInfo(appId));
     }
 
     @GetMapping("/download/{appId}")
@@ -311,13 +296,7 @@ public class AppController {
     @Parameter(name = "appId", description = "app id")
     public ServerResponseEntity<Boolean> downloadAppCode(@PathVariable String appId, HttpServletResponse response) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
-        App app = appService.getById(appId);
-        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
-
-        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
-        if (!app.getUserId().equals(loginUser.getUserId())) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to download this app");
-        }
+        appService.validateAppAccess(appId);
         return ServerResponseEntity.success(projectDownloadService.downloadProjectAsZip(appId, response));
     }
 
@@ -326,13 +305,7 @@ public class AppController {
     @Parameter(name = "appId", description = "app id")
     public ServerResponseEntity<List<AppVersionVO>> listAppVersions(@PathVariable String appId) {
         ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
-        App app = appService.getById(appId);
-        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
-
-        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
-        if (!app.getUserId().equals(loginUser.getUserId())) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to list app versions");
-        }
+        appService.validateAppAccess(appId);
         return ServerResponseEntity.success(appVersionService.listAppVersions(appId));
     }
 
@@ -343,14 +316,7 @@ public class AppController {
         ThrowUtil.throwIf(appVersionRestoreRequest == null, ErrorCode.PARAMS_ERROR, "request is blank");
         ThrowUtil.throwIf(StrUtil.isBlank(appVersionRestoreRequest.getAppId()), ErrorCode.PARAMS_ERROR, "appId is blank");
         ThrowUtil.throwIf(StrUtil.isBlank(appVersionRestoreRequest.getAppVersionId()), ErrorCode.PARAMS_ERROR, "appVersionId is blank");
-
-        App app = appService.getById(appVersionRestoreRequest.getAppId());
-        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
-
-        User loginUser = userService.getById(SecurityUtil.getUserInfo().getUserId());
-        if (!app.getUserId().equals(loginUser.getUserId())) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to restore this app version");
-        }
+        appService.validateAppAccess(appVersionRestoreRequest.getAppId());
         return ServerResponseEntity.success(
                 appVersionService.restoreVersion(appVersionRestoreRequest.getAppId(), appVersionRestoreRequest.getAppVersionId())
         );
@@ -367,5 +333,18 @@ public class AppController {
             return numberValue.longValue();
         }
         return null;
+    }
+
+    private void normalizePageRequest(AppQueryRequest appQueryRequest, long maxPageSize) {
+        long current = appQueryRequest.getCurrent();
+        long pageSize = appQueryRequest.getPageSize();
+        if (current <= 0) {
+            appQueryRequest.setCurrent(1);
+        }
+        if (pageSize <= 0) {
+            appQueryRequest.setPageSize((int) DEFAULT_PAGE_SIZE);
+            return;
+        }
+        ThrowUtil.throwIf(pageSize > maxPageSize, ErrorCode.PARAMS_ERROR, "pageSize exceeds limit");
     }
 }

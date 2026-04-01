@@ -1,5 +1,6 @@
 package com.xiaorui.agentapplicationcreator.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.xiaorui.agentapplicationcreator.model.vo.AppCommentVO;
 import com.xiaorui.agentapplicationcreator.model.vo.CommunityNotificationVO;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author xiaorui
@@ -53,14 +56,17 @@ public class CommunityServiceImpl implements CommunityService {
     public List<CommunityNotificationVO> getAndClearUnreadNotifications(String userId, Integer limit) {
         int finalLimit = normalizeLimit(limit);
         List<CommunityNotificationVO> notifications = new ArrayList<>();
-        notifications.addAll(appCommentService.getAndClearUnreadAppComment(userId).stream().map(this::fromComment).toList());
-        notifications.addAll(likeRecordService.getAndClearUnreadLikes(userId).stream().map(this::fromLike).toList());
-        notifications.addAll(shareRecordService.getAndClearUnreadShares(userId).stream().map(this::fromShare).toList());
-        return notifications.stream()
+        notifications.addAll(appCommentService.listUnreadAppComments(userId, finalLimit).stream().map(this::fromComment).toList());
+        notifications.addAll(likeRecordService.listUnreadLikes(userId, finalLimit).stream().map(this::fromLike).toList());
+        notifications.addAll(shareRecordService.listUnreadShares(userId, finalLimit).stream().map(this::fromShare).toList());
+
+        List<CommunityNotificationVO> result = notifications.stream()
                 .sorted(Comparator.comparing(CommunityNotificationVO::getActionTime,
                         Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(finalLimit)
                 .toList();
+        markReturnedNotificationsAsRead(userId, result);
+        return result;
     }
 
     @Override
@@ -91,7 +97,7 @@ public class CommunityServiceImpl implements CommunityService {
         notificationVO.setActorUserName(likeRecordVO.getUserVO() == null ? null : likeRecordVO.getUserVO().getNickName());
         notificationVO.setAppId(likeRecordVO.getTargetId());
         notificationVO.setAppName(likeRecordVO.getAppVO() == null ? null : likeRecordVO.getAppVO().getAppName());
-        notificationVO.setContent(buildActionContent(likeRecordVO.getAppVO() == null ? null : likeRecordVO.getAppVO().getAppName(), "赞了你的应用"));
+        notificationVO.setContent(buildActionContent(likeRecordVO.getAppVO() == null ? null : likeRecordVO.getAppVO().getAppName(), "liked your app"));
         notificationVO.setActionTime(likeRecordVO.getLastLikeTime());
         return notificationVO;
     }
@@ -104,7 +110,7 @@ public class CommunityServiceImpl implements CommunityService {
         notificationVO.setActorUserName(shareRecordVO.getUserVO() == null ? null : shareRecordVO.getUserVO().getNickName());
         notificationVO.setAppId(shareRecordVO.getTargetId());
         notificationVO.setAppName(shareRecordVO.getAppVO() == null ? null : shareRecordVO.getAppVO().getAppName());
-        notificationVO.setContent(buildActionContent(shareRecordVO.getAppVO() == null ? null : shareRecordVO.getAppVO().getAppName(), "分享了你的应用"));
+        notificationVO.setContent(buildActionContent(shareRecordVO.getAppVO() == null ? null : shareRecordVO.getAppVO().getAppName(), "shared your app"));
         notificationVO.setActionTime(shareRecordVO.getShareTime());
         return notificationVO;
     }
@@ -121,5 +127,19 @@ public class CommunityServiceImpl implements CommunityService {
             return suffix;
         }
         return appName + " - " + suffix;
+    }
+
+    private void markReturnedNotificationsAsRead(String userId, List<CommunityNotificationVO> notifications) {
+        if (CollUtil.isEmpty(notifications)) {
+            return;
+        }
+        Map<String, List<String>> idsByType = notifications.stream()
+                .filter(notification -> StrUtil.isNotBlank(notification.getNotificationType())
+                        && StrUtil.isNotBlank(notification.getNotificationId()))
+                .collect(Collectors.groupingBy(CommunityNotificationVO::getNotificationType,
+                        Collectors.mapping(CommunityNotificationVO::getNotificationId, Collectors.toList())));
+        appCommentService.markCommentsAsRead(userId, idsByType.get("COMMENT"));
+        likeRecordService.markLikesAsRead(userId, idsByType.get("LIKE"));
+        shareRecordService.markSharesAsRead(userId, idsByType.get("SHARE"));
     }
 }

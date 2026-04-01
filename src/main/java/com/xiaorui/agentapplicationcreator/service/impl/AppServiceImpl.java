@@ -10,6 +10,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.xiaorui.agentapplicationcreator.config.properties.AppProperties;
 import com.xiaorui.agentapplicationcreator.constant.AppCategoryConstant;
+import com.xiaorui.agentapplicationcreator.constant.UserConstant;
 import com.xiaorui.agentapplicationcreator.enums.AppVersionSourceEnum;
 import com.xiaorui.agentapplicationcreator.enums.CodeGenTypeEnum;
 import com.xiaorui.agentapplicationcreator.execption.BusinessException;
@@ -118,19 +119,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Override
     public String deployApp(String appId) {
-        String userId = SecurityUtil.getUserInfo().getUserId();
-        User loginUser = userService.getById(userId);
-        if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "user not found");
-        }
-
-        App app = this.mapper.selectOneById(appId);
-        if (app == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
-        }
-        if (!app.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "no access to deploy this app");
-        }
+        App app = validateAppAccess(appId);
 
         String deployKey = app.getDeployKey();
         if (StrUtil.isBlank(deployKey)) {
@@ -142,6 +131,11 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
         File deployDir = appProperties.resolveCodeDeployAppDir(deployKey).toFile();
         try {
+            if (deployDir.exists()) {
+                FileUtil.clean(deployDir);
+            } else {
+                FileUtil.mkdir(deployDir);
+            }
             FileUtil.copyContent(sourceDir, deployDir, true);
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "failed to copy deploy files: " + e.getMessage());
@@ -176,7 +170,16 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (app == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
         }
-        return buildAppVO(app, loadUserInfoMap(Collections.singletonList(app)));
+        return buildAppVO(app, loadUserInfoMap(Collections.singletonList(app)), false);
+    }
+
+    @Override
+    public AppVO getPrivateAppInfo(String appId) {
+        App app = this.mapper.selectOneById(appId);
+        if (app == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "app not found");
+        }
+        return buildAppVO(app, loadUserInfoMap(Collections.singletonList(app)), true);
     }
 
     @Override
@@ -184,7 +187,15 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (CollUtil.isEmpty(appList)) {
             return new ArrayList<>();
         }
-        return buildAppVOList(appList);
+        return buildAppVOList(appList, false);
+    }
+
+    @Override
+    public List<AppVO> getPrivateAppInfoList(List<App> appList) {
+        if (CollUtil.isEmpty(appList)) {
+            return new ArrayList<>();
+        }
+        return buildAppVOList(appList, true);
     }
 
     @Override
@@ -199,7 +210,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (CollUtil.isEmpty(filteredApps)) {
             return new ArrayList<>();
         }
-        return buildAppVOList(filteredApps);
+        return buildAppVOList(filteredApps, true);
     }
 
     @Override
@@ -213,7 +224,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (CollUtil.isEmpty(featuredApps)) {
             return new ArrayList<>();
         }
-        return buildAppVOList(featuredApps);
+        return buildAppVOList(featuredApps, false);
     }
 
     @Override
@@ -298,6 +309,22 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         return AppCategoryConstant.CATEGORY_LIST;
     }
 
+    @Override
+    public App validateAppAccess(String appId) {
+        ThrowUtil.throwIf(StrUtil.isBlank(appId), ErrorCode.PARAMS_ERROR, "appId is blank");
+        String userId = SecurityUtil.getUserInfo().getUserId();
+        User loginUser = userService.getById(userId);
+        ThrowUtil.throwIf(loginUser == null, ErrorCode.NOT_FOUND_ERROR, "user not found");
+
+        App app = this.getById(appId);
+        ThrowUtil.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app not found");
+        if (UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole())) {
+            return app;
+        }
+        ThrowUtil.throwIf(!userId.equals(app.getUserId()), ErrorCode.NOT_AUTH_ERROR, "no permission for app");
+        return app;
+    }
+
     private Page<AppVO> toAppVOPage(Page<App> appPage) {
         Page<AppVO> appVOPage = new Page<>(appPage.getPageNumber(), appPage.getPageSize(), appPage.getTotalRow());
         appVOPage.setRecords(getAppInfoList(appPage.getRecords()));
@@ -328,24 +355,22 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
     }
 
-    private List<AppVO> buildAppVOList(List<App> appList) {
+    private List<AppVO> buildAppVOList(List<App> appList, boolean includeSensitiveFields) {
         Map<String, UserVO> userInfoMap = loadUserInfoMap(appList);
         return appList.stream()
-                .map(app -> buildAppVO(app, userInfoMap))
+                .map(app -> buildAppVO(app, userInfoMap, includeSensitiveFields))
                 .collect(Collectors.toList());
     }
 
-    private AppVO buildAppVO(App app, Map<String, UserVO> userInfoMap) {
+    private AppVO buildAppVO(App app, Map<String, UserVO> userInfoMap, boolean includeSensitiveFields) {
         AppVO appVO = new AppVO();
         appVO.setAppId(app.getAppId());
         appVO.setAppName(app.getAppName());
         appVO.setAppCover(app.getAppCover());
-        appVO.setAppInitPrompt(app.getAppInitPrompt());
         appVO.setAppDescription(app.getAppDescription());
         appVO.setCodeGenType(CodeGenTypeEnum.getEnumByValue(app.getCodeGenType()));
         appVO.setAppPriority(app.getAppPriority());
         appVO.setAppCategory(app.getAppCategory());
-        appVO.setRecommendScore(app.getRecommendScore());
         appVO.setDeployUrl(app.getDeployUrl());
         appVO.setDeployedTime(app.getDeployedTime());
         appVO.setCommentCount(app.getCommentCount());
@@ -354,6 +379,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         appVO.setViewCount(app.getViewCount());
         appVO.setCreateTime(app.getCreateTime());
         appVO.setUpdateTime(app.getUpdateTime());
+        if (includeSensitiveFields) {
+            appVO.setAppInitPrompt(app.getAppInitPrompt());
+            appVO.setRecommendScore(app.getRecommendScore());
+        }
         if (userInfoMap != null) {
             appVO.setUserVO(userInfoMap.get(app.getUserId()));
         }
